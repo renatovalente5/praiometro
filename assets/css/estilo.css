@@ -19,12 +19,12 @@
   --borda: #dde5ec;
   --tinta: #10222e;
   --tinta-2: #4a6274;
-  --tinta-3: #7b94a6;
+  --tinta-3: #566e7d;   /* 5,35:1 em branco, 4,97:1 no fundo — passa em todas as superfícies */
 
   /* veredictos — escolhidos com contraste AA sobre branco */
   --verde: #0e7a4a;
   --verde-luz: #d7f2e3;
-  --amarelo: #9a6800;
+  --amarelo: #8a5c00;
   --amarelo-luz: #fdf0cf;
   --vermelho: #b3261e;
   --vermelho-luz: #fbdfdc;

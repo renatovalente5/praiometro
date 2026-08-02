@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Vai dar praia? — o tempo na praia, sem termos técnicos</title>
+  <meta name="description" content="Escolhe uma praia de Portugal e vê logo se hoje e nos próximos 5 dias vale a pena ir. Sem saber nada de meteorologia: verde é bom, amarelo é assim-assim, vermelho fica para outro dia." />
+  <meta name="theme-color" content="#0891b2" />
+  <meta name="color-scheme" content="light dark" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="pt_PT" />
+  <meta property="og:title" content="Vai dar praia?" />
+  <meta property="og:description" content="Escolhe uma praia de Portugal e vê logo se vale a pena ir, hoje e nos próximos 5 dias." />
+  <meta property="og:image" content="https://renatovalente5.github.io/vai-dar-praia/assets/img/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/img/icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://api.open-meteo.com" />
+  <link rel="preconnect" href="https://marine-api.open-meteo.com" />
+  <link rel="stylesheet" href="assets/css/estilo.css" />
+</head>
+<body>
+  <a class="salta" href="#resultado">Saltar para o resultado</a>
+
+  <!-- O céu de fundo muda de cor com o veredicto do dia escolhido. -->
+  <div class="ceu" id="ceu" aria-hidden="true">
+    <span class="ceu__sol"></span>
+    <span class="ceu__mar"></span>
+  </div>
+
+  <header class="topo">
+    <h1 class="marca">
+      <span class="marca__icone" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="6" fill="currentColor"/><path d="M2 24c3 0 3-2 6-2s3 2 6 2 3-2 6-2 3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </span>
+      Vai dar praia?
+    </h1>
+    <p class="marca__lead">Escolhe a praia. Dizemos-te se vale a pena ir.</p>
+  </header>
+
+  <main>
+    <!-- ============================================ ESCOLHER A PRAIA -->
+    <section class="procura" aria-labelledby="procura-t">
+      <h2 class="visually-hidden" id="procura-t">Escolher a praia</h2>
+      <div class="procura__caixa">
+        <svg class="procura__lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input class="procura__input" id="procura" type="search" autocomplete="off"
+               role="combobox" aria-expanded="false" aria-controls="sugestoes" aria-autocomplete="list"
+               placeholder="Escreve o nome de uma praia…" aria-label="Procurar praia" />
+        <button class="procura__perto" id="perto" type="button" title="Usar a minha localização">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>
+          <span class="visually-hidden">Praias perto de mim</span>
+        </button>
+      </div>
+      <ul class="sugestoes" id="sugestoes" role="listbox" aria-label="Praias encontradas" hidden></ul>
+      <p class="procura__estado" id="procura-estado" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- ================================================== RESULTADO -->
+    <section class="resultado" id="resultado" aria-labelledby="resultado-t" hidden>
+      <h2 class="visually-hidden" id="resultado-t">Previsão</h2>
+
+      <!-- veredicto do dia escolhido -->
+      <article class="veredicto" id="veredicto" aria-live="polite">
+        <div class="veredicto__topo">
+          <p class="veredicto__praia" id="v-praia"></p>
+          <p class="veredicto__dia" id="v-dia"></p>
+        </div>
+        <div class="veredicto__selo" id="v-selo">
+          <span class="selo__icone" id="v-icone" aria-hidden="true"></span>
+          <span class="selo__palavra" id="v-palavra"></span>
+        </div>
+        <p class="veredicto__frase" id="v-frase"></p>
+        <p class="veredicto__nota" id="v-nota"></p>
+        <p class="veredicto__aviso" id="v-aviso" hidden></p>
+      </article>
+
+      <!-- os 6 dias -->
+      <div class="dias" id="dias" role="tablist" aria-label="Escolher o dia"></div>
+
+      <!-- detalhe -->
+      <details class="detalhe" id="detalhe">
+        <summary>
+          <span>Ver os números</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="detalhe__corpo" id="detalhe-corpo"></div>
+      </details>
+    </section>
+
+    <!-- estado inicial / erro -->
+    <section class="vazio" id="vazio">
+      <p class="vazio__texto">Começa por escrever o nome de uma praia — ou carrega no alfinete para usar a tua localização.</p>
+      <div class="vazio__sugestoes" id="atalhos"></div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <details class="comofunciona">
+      <summary>Como é que isto decide?</summary>
+      <div class="comofunciona__corpo">
+        <p>Cada dia leva uma nota de 0 a 100, a partir de cinco coisas: <strong>sol</strong> (28
+        pontos), <strong>vento</strong> (26), <strong>calor que se sente</strong> (20),
+        <strong>temperatura da água</strong> (16) e <strong>chuva</strong> (10).</p>
+        <p>O vento pesa muito porque, em Portugal, é o que mais dias estraga — a partir dos
+        20-25 km/h começa a levantar areia, e é aí que se fala de <em>nortada</em>.</p>
+        <p>A escala da água é portuguesa, não mediterrânica: no Atlântico, 19 °C é uma
+        temperatura normal de Verão, não é um dia mau.</p>
+        <p>Há condições que sozinhas chumbam o dia, faça o sol que fizer: trovoada, chuva a
+        sério, vento acima de 45 km/h, sensação abaixo de 16 °C, ou mar acima de 2,5 m.</p>
+        <p class="comofunciona__mais"><a href="https://github.com/renatovalente5/vai-dar-praia/blob/main/MODELO.md" target="_blank" rel="noopener">Ver o modelo completo, com a origem de cada número</a></p>
+      </div>
+    </details>
+
+    <p class="rodape__aviso">
+      <strong>Isto não diz se o mar está seguro para nadar.</strong> As cores aqui são sobre se
+      vale a pena ir à praia. Na praia, as bandeiras significam outra coisa — verde é banho
+      permitido, amarela é só pé na água, vermelha é proibido entrar. <strong>A bandeira do
+      nadador-salvador manda sempre.</strong>
+    </p>
+    <p class="rodape__fontes">
+      Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+      praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
+      <a href="https://github.com/renatovalente5/vai-dar-praia" target="_blank" rel="noopener">código no GitHub</a>
+    </p>
+  </footer>
+
+  <script src="assets/js/modelo.js"></script>
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>

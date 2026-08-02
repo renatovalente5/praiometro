@@ -1,0 +1,8 @@
+[out:json][timeout:180];
+area["ISO3166-1"="PT"][admin_level=2]->.pt;
+(
+  node["natural"="beach"]["name"](area.pt);
+  way["natural"="beach"]["name"](area.pt);
+  relation["natural"="beach"]["name"](area.pt);
+);
+out center tags;

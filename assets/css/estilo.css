@@ -315,3 +315,22 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   .ceu { transition: none; }
 }
+
+/* Um veto de segurança — trovoada, rajadas, mar muito cavado — não pode ser
+   dito no mesmo tom amarelo que «a água está fria». */
+.veredicto__aviso--perigo {
+  background: var(--vermelho-luz); color: var(--vermelho);
+  border: 1px solid currentColor;
+}
+
+/* Aviso das bandeiras, junto ao veredicto. Discreto mas presente — estava no
+   rodapé, onde ninguém chega, e é a única coisa no site que pode evitar que
+   alguém confunda «vale a pena ir» com «é seguro nadar». */
+.aviso-bandeiras {
+  display: flex; align-items: flex-start; gap: .6rem;
+  margin-top: 1rem; padding: .75rem .9rem;
+  background: var(--carta); border: 1px solid var(--borda); border-radius: var(--raio);
+  font-size: .85rem; color: var(--tinta-2); line-height: 1.45;
+}
+.aviso-bandeiras svg { width: 20px; height: 20px; flex: none; color: var(--mar); margin-top: .1rem; }
+.aviso-bandeiras strong { color: var(--tinta); }

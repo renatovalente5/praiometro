@@ -153,21 +153,59 @@
     var v = a.filter(function (x) { return x != null; });
     return v.length ? v.reduce(function (s, x) { return s + x; }, 0) / v.length : null;
   }
+  function soma(a) {
+    var v = a.filter(function (x) { return x != null; });
+    return v.length ? v.reduce(function (s, x) { return s + x; }, 0) : null;
+  }
   function maximo(a) {
     var v = a.filter(function (x) { return x != null; });
     return v.length ? Math.max.apply(null, v) : null;
   }
+  /* A direcção do vento é uma grandeza CIRCULAR: a média aritmética de 350° e
+     10° dá 180° — sul, o oposto de norte. E a nortada vive exactamente em cima
+     dessa descontinuidade. Medido com ERA5 (Jul+Ago, 2019-2025): a média
+     aritmética perdia 15% das nortadas na Nazaré e 38% em Peniche. Média
+     vectorial, que é o método da WMO. */
+  function mediaDir(a) {
+    var v = a.filter(function (x) { return x != null; });
+    if (!v.length) return null;
+    var sx = 0, cx = 0;
+    v.forEach(function (d) { var r = d * Math.PI / 180; sx += Math.sin(r); cx += Math.cos(r); });
+    if (Math.abs(sx) < 1e-9 && Math.abs(cx) < 1e-9) return null;  /* direcções a anular-se */
+    return (Math.atan2(sx, cx) * 180 / Math.PI + 360) % 360;
+  }
 
-  /* Índices das horas que caem na janela de praia, para um dia. */
-  function janela(horas, dia) {
+  /* Percentil por interpolação linear. Usado no vento: a média de nove horas
+     achatava exactamente o pico da tarde, que é quando a nortada sopra e quando
+     as pessoas estão na praia. Medido no Furadouro: média 11,2 km/h contra
+     15,2 no pico — o site dizia menos vento do que qualquer outro sítio, e
+     tinha razão em relação à média e nenhuma em relação ao que se sente. */
+  function percentil(a, p) {
+    var v = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; });
+    if (!v.length) return null;
+    if (v.length === 1) return v[0];
+    var i = (v.length - 1) * p, b = Math.floor(i), r = i - b;
+    return v[b + 1] != null ? v[b] + (v[b + 1] - v[b]) * r : v[b];
+  }
+
+  /* Índices das horas que caem numa janela, para um dia. */
+  function janela(horas, dia, ini, fim) {
+    ini = ini == null ? HORA_INI : ini;
+    fim = fim == null ? HORA_FIM : fim;
     var ix = [];
     for (var i = 0; i < horas.length; i++) {
       if (horas[i].slice(0, 10) !== dia) continue;
       var h = +horas[i].slice(11, 13);
-      if (h >= HORA_INI && h <= HORA_FIM) ix.push(i);
+      if (h >= ini && h <= fim) ix.push(i);
     }
     return ix;
   }
+  /* A nortada é um jacto costeiro que se levanta à tarde. Medido com ERA5
+     (Jul+Ago, 2019-2025): em Espinho a média das 11h-15h é 23% inferior à das
+     15h-19h, e em 63% dos dias a manhã está bem melhor do que a tarde. Dizer
+     «de manhã 12, à tarde 26 — vá cedo» é a informação mais útil que este site
+     pode dar a um português no Verão, e os dados já cá estavam. */
+  var HORA_MEIO = 15;
   function fatia(arr, ix) {
     if (!arr) return [];
     return ix.map(function (i) { return arr[i]; });
@@ -218,14 +256,17 @@
     var nota = pesoTotal ? Math.round(obtidos / pesoTotal * 100) : null;
 
     /* ------- vetos: sozinhos mandam o dia para vermelho ------- */
+    /* Os vetos com `perigo: true` são questões de segurança, não de conforto, e
+       a interface trata-os de outra maneira. Um aviso de trovoada dito no mesmo
+       tom que «a água está fria» é um aviso que ninguém lê. */
     var vetos = [];
-    if (d.trovoada) vetos.push('trovoada prevista');
-    if (d.chuva != null && d.chuva > 70) vetos.push('chuva quase certa');
-    if (d.mm != null && d.mm >= 2) vetos.push('chuva a sério');
-    if (d.vento != null && d.vento > 45) vetos.push('vento demasiado forte');
-    if (d.rajada != null && d.rajada > 65) vetos.push('rajadas perigosas');
-    if (d.ar != null && d.ar < 16) vetos.push('frio a mais');
-    if (mar && d.ondas != null && d.ondas > 2.5) vetos.push('mar muito cavado');
+    if (d.trovoada) vetos.push({ t: 'trovoada prevista', perigo: true });
+    if (d.chuva != null && d.chuva > 70) vetos.push({ t: 'chuva quase certa' });
+    if (d.mm != null && d.mm >= 2) vetos.push({ t: 'chuva a sério' });
+    if (d.vento != null && d.vento > 45) vetos.push({ t: 'vento demasiado forte', perigo: true });
+    if (d.rajada != null && d.rajada > 65) vetos.push({ t: 'rajadas perigosas', perigo: true });
+    if (d.ar != null && d.ar < 16) vetos.push({ t: 'frio a mais' });
+    if (mar && d.ondas != null && d.ondas > 2.5) vetos.push({ t: 'mar muito cavado', perigo: true });
 
     /* ------- factor limitante -------
        A soma ponderada tem um defeito conhecido, e é a crítica que a
@@ -244,6 +285,10 @@
       if (r < pior_racio) { pior_racio = r; limitante = x; }
     });
 
+    /* Um dia vetado não pode continuar a exibir a nota que teria sem o veto.
+       A revisão apanhou «Nota 94 em 100» ao lado de «Hoje não», e a nota é o
+       que as pessoas acreditam. Um veto zera a nota, porque é isso que ele
+       significa: o resto deixou de contar. */
     var cor;
     if (vetos.length) cor = 'vermelho';
     else if (pior_racio < 0.08) cor = 'vermelho';
@@ -271,7 +316,7 @@
     var nortada = eNortada(d.dirVento, d.vento, d.lat, d.lon);
     var frase;
     if (vetos.length) {
-      frase = 'Não vale a pena: ' + vetos[0] + '.';
+      frase = (vetos[0].perigo ? 'Não vá: ' : 'Não vale a pena: ') + vetos[0].t + '.';
     } else if (cor === 'verde') {
       frase = piorPerda <= 4 ? 'Está tudo a favor.'
             : (piorPerda >= 8 && pior ? 'Bom dia de praia, ' + ressalva(pior) + '.'
@@ -283,7 +328,9 @@
     }
 
     return {
-      nota: nota, cor: cor, frase: frase, vetos: vetos, factores: f,
+      nota: vetos.length ? null : nota, notaBruta: nota,
+      cor: cor, frase: frase, vetos: vetos.map(function (v) { return v.t; }),
+      perigo: vetos.some(function (v) { return v.perigo; }), factores: f,
       nortada: nortada, pior: pior ? pior.id : null, melhor: melhor ? melhor.id : null,
       limitante: (limitante && pior_racio < 0.20) ? limitante.id : null
     };
@@ -329,23 +376,38 @@
 
     return dias.map(function (dia, iDia) {
       var ix = janela(horas, dia);
+      var ixManha = janela(horas, dia, HORA_INI, HORA_MEIO - 1);
+      var ixTarde = janela(horas, dia, HORA_MEIO, HORA_FIM);
       var ixm = mHoras.length ? janela(mHoras, dia) : [];
 
-      var vento = media(fatia(tempo.hourly.wind_speed_10m, ix));
+      var ventosJanela = fatia(tempo.hourly.wind_speed_10m, ix);
+      /* p75 e não média: é o vento da parte ventosa da tarde, sem ser refém de
+         uma hora isolada como seria o máximo. */
+      var vento = percentil(ventosJanela, 0.75);
+      var ventoManha = media(fatia(tempo.hourly.wind_speed_10m, ixManha));
+      var ventoTarde = media(fatia(tempo.hourly.wind_speed_10m, ixTarde));
       var agua = ixm.length ? media(fatia(mh.sea_surface_temperature, ixm)) : null;
       var ondas = ixm.length ? maximo(fatia(mh.wave_height, ixm)) : null;
 
       return {
         dia: dia,
         vento: vento == null ? null : Math.round(vento),
+        ventoMin: percentil(ventosJanela, 0.10) != null ? Math.round(percentil(ventosJanela, 0.10)) : null,
+        ventoMax: maximo(ventosJanela) != null ? Math.round(maximo(ventosJanela)) : null,
+        ventoManha: ventoManha == null ? null : Math.round(ventoManha),
+        ventoTarde: ventoTarde == null ? null : Math.round(ventoTarde),
         rajada: maximo(fatia(tempo.hourly.wind_gusts_10m, ix)),
-        dirVento: media(fatia(tempo.hourly.wind_direction_10m, ix)),
+        dirVento: mediaDir(fatia(tempo.hourly.wind_direction_10m, ix)),
         ceu: media(fatia(tempo.hourly.cloud_cover, ix)),
         ar: maximo(fatia(tempo.hourly.apparent_temperature, ix)),
         arReal: maximo(fatia(tempo.hourly.temperature_2m, ix)),
         agua: agua,
         chuva: maximo(fatia(tempo.hourly.precipitation_probability, ix)),
-        mm: (tempo.daily.precipitation_sum || [])[iDia],
+        /* Acumulado DENTRO da janela de praia, não do dia inteiro. Medido pela
+           revisão: 79% dos vetos de chuva vinham de chuva que caía de
+           madrugada ou à noite, e chumbavam tardes de sol. */
+        mm: soma(fatia(tempo.hourly.precipitation || [], ix)),
+        mmDia: (tempo.daily.precipitation_sum || [])[iDia],
         ondas: ondas,
         uv: maximo(fatia(tempo.hourly.uv_index, ix)),
         trovoada: temTrovoada(fatia(tempo.hourly.weather_code, ix).filter(function (x) { return x != null; })),
@@ -359,6 +421,8 @@
     classificarDia: classificarDia,
     agregar: agregar,
     beaufort: beaufort,
+    percentil: percentil,
+    _mediaDir: mediaDir,
     palavrasOndas: palavrasOndas,
     PESOS: PESOS,
     HORA_INI: HORA_INI,

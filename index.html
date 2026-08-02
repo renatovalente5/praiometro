@@ -81,6 +81,16 @@
       <!-- os 6 dias -->
       <div class="dias" id="dias" role="tablist" aria-label="Escolher o dia"></div>
 
+      <!-- O aviso das bandeiras estava no rodapé, onde ninguém chega. Este site
+           usa o MESMO semáforo que as praias portuguesas usam para outra coisa
+           — segurança para nadar — e isso tem de ser dito ao pé do veredicto,
+           não no fundo da página. -->
+      <p class="aviso-bandeiras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>
+        <span>Estas cores dizem se <strong>vale a pena ir</strong> — não se o mar está seguro.
+        Na praia, a bandeira do nadador-salvador manda sempre.</span>
+      </p>
+
       <!-- detalhe -->
       <details class="detalhe" id="detalhe">
         <summary>
@@ -113,20 +123,23 @@
         temperatura normal de Verão, não é um dia mau.</p>
         <p>Há condições que sozinhas chumbam o dia, faça o sol que fizer: trovoada, chuva a
         sério, vento acima de 45 km/h, sensação abaixo de 16 °C, ou mar acima de 2,5 m.</p>
-        <p class="comofunciona__mais"><a href="https://github.com/renatovalente5/vai-dar-praia/blob/main/MODELO.md" target="_blank" rel="noopener">Ver o modelo completo, com a origem de cada número</a></p>
+        <p>O vento é a média de <strong>quatro modelos meteorológicos</strong> (ECMWF, ICON,
+        GFS e UKMO), e o valor mostrado é o da parte ventosa da tarde — não a média do dia
+        inteiro, que esconderia a nortada. Por isso pode ser diferente do que vês noutros
+        sites: uns mostram o máximo do dia, outros as rajadas.</p>
       </div>
     </details>
 
     <p class="rodape__aviso">
-      <strong>Isto não diz se o mar está seguro para nadar.</strong> As cores aqui são sobre se
-      vale a pena ir à praia. Na praia, as bandeiras significam outra coisa — verde é banho
-      permitido, amarela é só pé na água, vermelha é proibido entrar. <strong>A bandeira do
-      nadador-salvador manda sempre.</strong>
+      <strong>As bandeiras da praia significam outra coisa.</strong> Verde é banho permitido,
+      amarela é só pé na água, vermelha é proibido entrar, xadrez preto e branco é praia sem
+      vigilância. Nada disso se prevê: depende do mar naquele momento e de quem lá está a
+      vigiar. Este site também não sabe da qualidade da água, nem se há sombra, nem se vai
+      estar cheia.
     </p>
     <p class="rodape__fontes">
       Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
-      praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
-      <a href="https://github.com/renatovalente5/vai-dar-praia" target="_blank" rel="noopener">código no GitHub</a>
+      praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
     </p>
   </footer>
 

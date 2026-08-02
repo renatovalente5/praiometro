@@ -35,7 +35,14 @@
     amarelo: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="17" r="7" fill="currentColor" stroke="none"/><path d="M17 4v4M4 17h4M8.3 8.3l2.8 2.8"/><path d="M35 40H16a8 8 0 0 1 0-16 10 10 0 0 1 19.3-2.4A7.5 7.5 0 0 1 35 40Z" fill="var(--carta)"/></svg>',
     vermelho: '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M34 29H15a8 8 0 0 1 0-16 10 10 0 0 1 19.3-2.4A7.5 7.5 0 0 1 34 29Z"/><path d="M16 35l-2 6M25 35l-2 6M34 35l-2 6"/></svg>'
   };
-  var PALAVRAS = { verde: 'Vai dar praia', amarelo: 'Assim-assim', vermelho: 'Hoje não' };
+  /* «Hoje não» num cartão de sexta-feira é simplesmente falso — e é também o
+     que o leitor de ecrã lê em voz alta. A palavra passa a depender do dia. */
+  var PALAVRAS = {
+    verde:    { hoje: 'Vai dar praia',  outro: 'Vai dar praia' },
+    amarelo:  { hoje: 'Assim-assim',    outro: 'Assim-assim' },
+    vermelho: { hoje: 'Hoje não',       outro: 'Não vale a pena' }
+  };
+  function palavra(cor, i) { return PALAVRAS[cor][i === 0 ? 'hoje' : 'outro']; }
 
   var ICONES_FACTOR = {
     ceu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5"/></svg>',
@@ -215,13 +222,91 @@
 
   /* ------------------------------------------------------------- dados */
 
+  /* Quatro centros meteorológicos independentes em vez de um.
+     Medido no Furadouro, mesmo ponto e mesma janela: ECMWF 10,8 · ICON 11,2 ·
+     KNMI 12,7 · Météo-France 13,5 · UKMO 13,8 · GFS 16,0 km/h. A dispersão
+     entre modelos é de 1,6x, e o modelo por omissão calhava no extremo baixo —
+     era por isso que o site dizia menos vento do que os outros sítios.
+     Custa 26 KB em vez de 8, num único pedido. */
+  var MODELOS = ['ecmwf_ifs025', 'icon_seamless', 'gfs_seamless', 'ukmo_seamless'];
+
   function urlTempo(p) {
     return 'https://api.open-meteo.com/v1/forecast'
       + '?latitude=' + p.la + '&longitude=' + p.lo
       + '&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,'
-      + 'wind_direction_10m,cloud_cover,precipitation_probability,uv_index,weather_code'
+      + 'wind_direction_10m,cloud_cover,precipitation,precipitation_probability,uv_index,weather_code'
       + '&daily=weather_code,precipitation_sum'
-      + '&timezone=auto&forecast_days=6';
+      + '&timezone=auto&forecast_days=6'
+      + '&models=' + MODELOS.join(',');
+  }
+
+  /* Junta as colunas dos vários modelos numa só série.
+     A média só se aplica ao que é contínuo. A direcção do vento NÃO se pode
+     mediar — a média de 350° e 10° dá 180°, o oposto do que se quer — por isso
+     usa-se um modelo só. E o código de tempo é uma categoria, não um número:
+     usa-se o máximo, que faz sobressair a trovoada (95/96/99) e erra do lado
+     seguro num veto. */
+  var CONTINUAS = ['temperature_2m', 'apparent_temperature', 'wind_speed_10m',
+                   'wind_gusts_10m', 'cloud_cover', 'precipitation', 'precipitation_probability',
+                   'uv_index'];
+
+  function consenso(resposta) {
+    var h = resposta.hourly, n = (h.time || []).length, saida = { time: h.time };
+
+    function colunas(base) {
+      var c = [];
+      for (var k in h) if (k === base || k.indexOf(base + '_') === 0) c.push(k);
+      return c;
+    }
+    CONTINUAS.forEach(function (base) {
+      var cols = colunas(base);
+      if (!cols.length) return;
+      var out = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var soma = 0, cont = 0;
+        for (var j = 0; j < cols.length; j++) {
+          var v = h[cols[j]][i];
+          if (v != null) { soma += v; cont++; }
+        }
+        out[i] = cont ? soma / cont : null;
+      }
+      saida[base] = out;
+    });
+    var dir = colunas('wind_direction_10m');
+    saida.wind_direction_10m = dir.length ? h[dir[0]] : null;
+    var cod = colunas('weather_code');
+    if (cod.length) {
+      var oc = new Array(n);
+      for (var i2 = 0; i2 < n; i2++) {
+        var m = null;
+        for (var j2 = 0; j2 < cod.length; j2++) {
+          var v2 = h[cod[j2]][i2];
+          if (v2 != null && (m == null || v2 > m)) m = v2;
+        }
+        oc[i2] = m;
+      }
+      saida.weather_code = oc;
+    }
+    /* o diário vem por modelo; a chuva acumulada pela média, o código pelo pior */
+    var dl = resposta.daily || {}, nd = (dl.time || []).length, sd = { time: dl.time };
+    function colsD(base) {
+      var c = []; for (var k in dl) if (k === base || k.indexOf(base + '_') === 0) c.push(k); return c;
+    }
+    var cp = colsD('precipitation_sum');
+    sd.precipitation_sum = new Array(nd);
+    for (var i3 = 0; i3 < nd; i3++) {
+      var s3 = 0, c3 = 0;
+      cp.forEach(function (k) { var v = dl[k][i3]; if (v != null) { s3 += v; c3++; } });
+      sd.precipitation_sum[i3] = c3 ? s3 / c3 : null;
+    }
+    var cw = colsD('weather_code');
+    sd.weather_code = new Array(nd);
+    for (var i4 = 0; i4 < nd; i4++) {
+      var m4 = null;
+      cw.forEach(function (k) { var v = dl[k][i4]; if (v != null && (m4 == null || v > m4)) m4 = v; });
+      sd.weather_code[i4] = m4;
+    }
+    return { hourly: saida, daily: sd };
   }
   function urlMar(p) {
     return 'https://marine-api.open-meteo.com/v1/marine'
@@ -249,7 +334,7 @@
       : Promise.resolve(null));
 
     Promise.all(pedidos).then(function (r) {
-      dias = M.agregar(r[0], r[1], praia);
+      dias = M.agregar(consenso(r[0]), r[1], praia);
       veredictos = dias.map(M.classificarDia);
       diaEscolhido = 0;
       estado.textContent = '';
@@ -278,11 +363,12 @@
       var v = veredictos[i];
       return '<button class="dia dia--' + v.cor + '" type="button" role="tab" data-i="' + i + '"' +
         ' aria-selected="' + (i === diaEscolhido) + '"' +
-        ' aria-label="' + esc(nomeDia(d.dia, i) + ', ' + PALAVRAS[v.cor] + ', nota ' + v.nota + ' em 100') + '">' +
+        ' aria-label="' + esc(nomeDia(d.dia, i) + ', ' + palavra(v.cor, i) +
+          (v.nota == null ? '' : ', nota ' + v.nota + ' em 100')) + '">' +
         '<span class="dia__nome">' + esc(nomeDia(d.dia, i)) + '</span>' +
         '<span class="dia__data">' + dataCurta(d.dia) + '</span>' +
         '<span class="dia__bolha" aria-hidden="true">' + ICONES[v.cor] + '</span>' +
-        '<span class="dia__nota" aria-hidden="true">' + v.nota + '</span>' +
+        '<span class="dia__nota" aria-hidden="true">' + (v.nota == null ? '✕' : v.nota) + '</span>' +
         '</button>';
     }).join('');
   }
@@ -301,20 +387,34 @@
     el('v-praia').setAttribute('title', praiaActual.c ? praiaActual.c + ', ' + praiaActual.r : praiaActual.r);
     el('v-dia').textContent = dataLonga(d.dia, diaEscolhido);
     el('v-icone').innerHTML = ICONES[v.cor];
-    el('v-palavra').textContent = PALAVRAS[v.cor];
+    el('v-palavra').textContent = palavra(v.cor, diaEscolhido);
     el('v-frase').textContent = v.frase;
-    el('v-nota').textContent = 'Nota ' + v.nota + ' em 100'
-      + (diaEscolhido >= 4 ? ' · previsão a ' + (diaEscolhido + 1) + ' dias, ainda pode mudar' : '');
+    /* Sem nota quando há veto: «Nota 94 em 100» ao lado de «Hoje não» destrói a
+       confiança no resto. E a incerteza começa a aparecer ao 3.º dia, não ao 5.º. */
+    var incerteza = diaEscolhido >= 2
+      ? 'Previsão a ' + (diaEscolhido + 1) + ' dias' + (diaEscolhido >= 4 ? ' — ainda pode mudar bastante' : ' — pode mudar')
+      : '';
+    el('v-nota').textContent = (v.nota == null ? '' : 'Nota ' + v.nota + ' em 100')
+      + (v.nota != null && incerteza ? ' · ' : '') + incerteza;
 
     /* Avisos que não entram na nota mas que interessam a quem vai. */
     var avisos = [];
-    if (d.uv != null && d.uv >= 8) avisos.push('UV muito alto (' + Math.round(d.uv) + ') — protector, chapéu e sombra entre as 12h e as 16h');
-    else if (d.uv != null && d.uv >= 6) avisos.push('UV alto (' + Math.round(d.uv) + ') — põe protector');
-    if (v.nortada) avisos.push('É nortada: levanta-se de tarde, de manhã costuma estar mais calmo');
+    if (d.uv != null && d.uv >= 8) avisos.push('Sol muito forte — protector, chapéu e sombra entre as 12h e as 16h');
+    else if (d.uv != null && d.uv >= 6) avisos.push('Sol forte — põe protector');
+    /* A informação mais útil do site num Verão português: se de manhã está
+       muito melhor do que de tarde, diz-se para ir cedo. */
+    if (d.ventoManha != null && d.ventoTarde != null && d.ventoTarde - d.ventoManha >= 7) {
+      avisos.push('De manhã ' + d.ventoManha + ' km/h, à tarde ' + d.ventoTarde + ' km/h — vale a pena ir cedo');
+    } else if (v.nortada) {
+      avisos.push('É nortada: costuma levantar-se de tarde');
+    }
     if (d.mar && d.ondas != null && d.ondas >= 1.5) avisos.push('Mar cavado (' + num(d.ondas, 1) + ' m) — atenção com crianças');
     var av = el('v-aviso');
     av.hidden = !avisos.length;
     av.textContent = avisos.join(' · ');
+    /* Um veto de segurança não é um aviso amarelo: muda de cor e de tom. */
+    av.classList.toggle('veredicto__aviso--perigo', !!v.perigo);
+    if (v.perigo) { av.hidden = false; av.textContent = 'Aviso de segurança: ' + v.vetos[0] + '. ' + avisos.join(' · '); }
   }
 
   function desenharDetalhe() {
@@ -326,12 +426,21 @@
       var valor = '', extra = '';
       switch (f.id) {
         case 'ceu':
-          valor = f.valor == null ? '—' : Math.round(f.valor) + '% de nuvens';
+          /* «Sol: 82% de nuvens» era uma contradição em duas palavras. Mostra-se
+             quanto céu está limpo, que é o que o nome do factor promete. */
+          valor = f.valor == null ? '—' : (100 - Math.round(f.valor)) + '% de céu limpo';
           break;
         case 'vento':
           valor = f.valor == null ? '—' : f.valor + ' km/h';
-          extra = f.valor == null ? '' : 'É o que se chama ' + M.beaufort(f.valor)
-                  + (d.rajada ? '. Rajadas até ' + Math.round(d.rajada) + ' km/h' : '');
+          /* O intervalo é o que torna isto comparável com os outros sites: eles
+             mostram o máximo do dia ou as rajadas, este mostra o vento típico da
+             tarde. Sem o intervalo, parecia que estava errado. */
+          extra = f.valor == null ? '' :
+            'É o que se chama ' + M.beaufort(f.valor) + '. '
+            + (d.ventoMin != null && d.ventoMax != null && d.ventoMax > d.ventoMin
+                ? 'Ao longo da tarde varia entre ' + d.ventoMin + ' e ' + d.ventoMax + ' km/h. ' : '')
+            + (d.rajada ? 'Rajadas até ' + Math.round(d.rajada) + ' km/h. ' : '')
+            + 'Média de quatro modelos meteorológicos.';
           break;
         case 'ar':
           valor = f.valor == null ? '—' : Math.round(f.valor) + ' °C';

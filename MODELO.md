@@ -48,9 +48,26 @@ proporcionalmente pelos outros factores.
 ### Janela horária
 
 Tudo é calculado entre as **11h e as 19h**, hora local — é quando se vai à
-praia. Fora dessa janela os dados são ignorados. Dentro dela: céu e vento pela
-**média**, temperatura do ar pelo **máximo**, água pela **média**, chuva pela
-**probabilidade máxima**, ondulação pelo **máximo**.
+praia. Fora dessa janela os dados são ignorados.
+
+Dentro dela: céu pela **média**, temperatura do ar pelo **máximo**, água pela
+**média**, chuva pela **probabilidade máxima** e pelo **acumulado dentro da
+janela**, ondulação pelo **máximo**.
+
+O **vento é o percentil 75**, não a média. A média de nove horas achatava
+exactamente o pico da tarde, que é quando a nortada sopra. Medido no Furadouro:
+média 11,2 km/h contra 15,2 no pico — o site dizia menos vento do que qualquer
+outro sítio, e tinha razão quanto à média e nenhuma quanto ao que se sente.
+
+A **direcção do vento é uma média vectorial**, não aritmética. A direcção é uma
+grandeza circular: a média de 350° e 10° dá 180° — sul, o oposto de norte — e a
+nortada vive em cima dessa descontinuidade. Medido com ERA5 (Jul+Ago,
+2019–2025), a média aritmética perdia 15% das nortadas na Nazaré e 38% em
+Peniche. Não voltar a trocar por média simples.
+
+Além disso calcula-se o vento **de manhã (11h–15h)** e **de tarde (15h–19h)** em
+separado. Quando a tarde tem 7 km/h ou mais do que a manhã, o site di-lo: «de
+manhã 12 km/h, à tarde 26 km/h — vale a pena ir cedo».
 
 ### Vento (34 pontos)
 
@@ -151,11 +168,18 @@ banho, não impede o dia de praia.
 Estas condições mandam o dia para **vermelho** sozinhas, independentemente da
 pontuação. Um dia com trovoada não é um dia "médio".
 
-- Trovoada prevista na janela (códigos 95, 96, 99)
-- Probabilidade de chuva > 70 % ou acumulado ≥ 2 mm
-- Vento médio > 45 km/h ou rajadas > 65 km/h
+- Trovoada prevista na janela (códigos 95, 96, 99) — **aviso de segurança**
+- Probabilidade de chuva > 70 % ou **acumulado ≥ 2 mm dentro da janela**
+  (era o acumulado do dia inteiro: 79 % dos vetos vinham de chuva de madrugada
+  ou de noite, e chumbavam tardes de sol)
+- Vento > 45 km/h ou rajadas > 65 km/h — **aviso de segurança**
 - Sensação térmica máxima < 16 °C
-- Ondulação máxima > 2,5 m (só em praias de mar)
+- Ondulação máxima > 2,5 m (só em praias de mar) — **aviso de segurança**
+
+Os vetos marcados como aviso de segurança são ditos noutro tom e noutra cor: um
+aviso de trovoada no mesmo amarelo que «a água está fria» é um aviso que
+ninguém lê. E um dia vetado **deixa de mostrar a nota** — «Nota 94 em 100» ao
+lado de «Hoje não» destrói a confiança em tudo o resto.
 
 ## Os cortes
 
@@ -184,5 +208,9 @@ Escrito aqui para não se fingir que sabe:
 
 ## Fontes dos dados
 
-Meteorologia e mar: [Open-Meteo](https://open-meteo.com) (CC BY 4.0).
+Meteorologia: [Open-Meteo](https://open-meteo.com) (CC BY 4.0), com a **média de
+quatro modelos** — ECMWF, ICON, GFS e UKMO. Medido no Furadouro, mesmo ponto e
+mesma janela: ECMWF 10,8 · ICON 11,2 · KNMI 12,7 · Météo-France 13,5 · UKMO 13,8
+· GFS 16,0 km/h. A dispersão entre modelos é de 1,6× e o modelo por omissão
+calhava no extremo baixo. Mar: Open-Meteo Marine.
 Lista de praias: [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL).

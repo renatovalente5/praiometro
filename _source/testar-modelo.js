@@ -51,6 +51,29 @@ if (rio.factores.some(f => f.id === 'agua')) { falhas++; console.log('  ✗ prai
 cor('Janeiro na Nazaré', {ceu:70, vento:24, ar:14, agua:14.5, chuva:60, mm:1.2, ondas:3.5,
   rajada:45, dirVento:270, lat:39.6, lon:-9.07, mar:true, trovoada:false}, 'vermelho');
 
+console.log('\n== o que a revisão apanhou ==');
+// direcção é circular: a média de 350 e 10 tem de dar ~0, não 180
+const dirs = Modelo._mediaDir ? Modelo._mediaDir([350,10]) : null;
+if (dirs != null) {
+  const bom = dirs < 15 || dirs > 345;
+  if (!bom) { falhas++; console.log(`  ✗ média de 350° e 10° deu ${dirs.toFixed(0)}°, devia dar ~0°`); }
+  else console.log(`  ✓ média circular de 350° e 10° dá ${dirs.toFixed(0)}°`);
+}
+// um veto não pode deixar a nota à vista
+const vt = Modelo.classificarDia({ceu:5, vento:8, ar:29, agua:23, chuva:0, mm:0, ondas:0.4,
+  rajada:15, dirVento:180, lat:37.08, lon:-8.25, mar:true, trovoada:true});
+if (vt.nota !== null) { falhas++; console.log('  ✗ dia vetado ainda mostra nota ' + vt.nota); }
+else console.log(`  ✓ dia vetado não mostra nota (bruta era ${vt.notaBruta})`);
+if (!vt.perigo) { falhas++; console.log('  ✗ trovoada devia marcar perigo'); }
+else console.log('  ✓ trovoada marcada como aviso de segurança');
+if (!/^Não vá/.test(vt.frase)) { falhas++; console.log('  ✗ frase de perigo devia ser mais forte: ' + vt.frase); }
+else console.log(`  ✓ frase de perigo: «${vt.frase}»`);
+// frio não é perigo, é desconforto
+const fr = Modelo.classificarDia({ceu:20, vento:10, ar:14, agua:15, chuva:0, mm:0, ondas:0.5,
+  rajada:20, dirVento:180, lat:38.7, lon:-9.3, mar:true, trovoada:false});
+if (fr.perigo) { falhas++; console.log('  ✗ frio não devia ser aviso de segurança'); }
+else console.log('  ✓ frio é veto mas não é perigo');
+
 console.log('\n== pouco vento vale mais? ==');
 const base = {ceu:15, ar:27, agua:18.3, chuva:5, mm:0, ondas:0.9, rajada:20,
               dirVento:180, lat:38.68, lon:-9.34, mar:true, trovoada:false};

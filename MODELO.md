@@ -32,11 +32,15 @@ o HCI tal e qual:
 
 | Factor | Peso | Porquê |
 |---|---:|---|
-| Sol e céu | 28 | É a razão nº1 para ir à praia |
-| Vento | 26 | A nortada é o que mais estraga dias em Portugal |
-| Temperatura do ar (sensação) | 20 | O calor que se sente, não o do termómetro |
-| Temperatura da água | 16 | O que decide se se entra no mar |
-| Chuva | 10 | Pouco peso porque a chuva a sério está nos vetos |
+| **Vento** | **34** | É o que mais dias estraga em Portugal — e um dia sem vento nenhum nota-se |
+| Sol e céu | 26 | A razão nº1 para ir à praia |
+| Temperatura do ar (sensação) | 18 | O calor que se sente, não o do termómetro |
+| Temperatura da água | 14 | O que decide se se entra no mar |
+| Chuva | 8 | Pouco peso porque a chuva a sério está nos vetos |
+
+O vento é o factor mais pesado do modelo, e leva **mais do triplo** do que o
+HCI:Beach lhe dá. Não é um palpite: é a diferença entre um índice validado no
+Mediterrâneo e nas Caraíbas e um país onde a nortada é o assunto de Agosto.
 
 Nas praias de rio não há dados de mar: os 16 pontos da água são redistribuídos
 proporcionalmente pelos outros factores.
@@ -48,16 +52,21 @@ praia. Fora dessa janela os dados são ignorados. Dentro dela: céu e vento pela
 **média**, temperatura do ar pelo **máximo**, água pela **média**, chuva pela
 **probabilidade máxima**, ondulação pelo **máximo**.
 
-### Vento (26 pontos)
+### Vento (34 pontos)
 
 | Vento médio | Pontos | O que se sente |
 |---|---:|---|
-| ≤ 12 km/h | 26 | A toalha fica quieta |
-| 13–19 km/h | 22 | Brisa agradável |
-| 20–25 km/h | 14 | Começa a levantar areia |
-| 26–32 km/h | 6 | Nortada instalada |
+| ≤ 8 km/h | 34 | Sem vento nenhum |
+| 9–12 km/h | 31 | A toalha fica quieta |
+| 13–16 km/h | 27 | Brisa agradável |
+| 17–19 km/h | 23 | Venta um pouco |
+| 20–25 km/h | 15 | Começa a levantar areia |
+| 26–32 km/h | 7 | Nortada instalada |
 | 33–40 km/h | 2 | Areia na cara |
 | > 40 km/h | 0 | Impraticável |
+
+Os degraus do topo existem para premiar o dia calmo: com tudo o resto igual,
+6 km/h dá 94 pontos e 22 km/h dá 75. São 19 pontos de diferença só no vento.
 
 Os cortes não são inventados. **7 m/s (25 km/h)** é o limiar da definição
 operacional de nortada usada em Portugal (vento de 315°–45° com ≥ 7 m/s). E o
@@ -67,30 +76,30 @@ dá-se a uma velocidade de atrito de ~0,23 m/s, o que convertido para vento a
 meteorologia portuguesa e a física eólica — caem na mesma banda dos 20–25 km/h.
 É aí que está o degrau grande da tabela.
 
-### Sol e céu (28 pontos)
+### Sol e céu (26 pontos)
 
 | Nebulosidade média | Pontos |
 |---|---:|
-| 0–20 % | 28 |
-| 21–40 % | 25 |
-| 41–60 % | 18 |
-| 61–80 % | 10 |
+| 0–20 % | 26 |
+| 21–40 % | 23 |
+| 41–60 % | 17 |
+| 61–80 % | 9 |
 | 81–100 % | 4 |
 
-### Temperatura do ar — sensação (20 pontos)
+### Temperatura do ar — sensação (18 pontos)
 
 Usa-se a **temperatura aparente**, não a do termómetro: é a que inclui o efeito
 do vento e da humidade.
 
 | Sensação máxima | Pontos |
 |---|---:|
-| 25–31 °C | 20 |
-| 22–25 ou 31–34 °C | 15 |
-| 19–22 ou 34–37 °C | 8 |
+| 25–31 °C | 18 |
+| 22–25 ou 31–34 °C | 13 |
+| 19–22 ou 34–37 °C | 7 |
 | 16–19 ou 37–40 °C | 3 |
 | < 16 ou > 40 °C | 0 |
 
-### Temperatura da água (16 pontos)
+### Temperatura da água (14 pontos)
 
 **É aqui que um modelo estrangeiro se enganava em Portugal inteiro.** O
 Atlântico português anda entre 17 e 20 °C em Agosto por causa do afloramento
@@ -103,22 +112,39 @@ portuguesa:
 
 | Água | Pontos | O que se diz na praia |
 |---|---:|---|
-| ≥ 22 °C | 16 | Está boa |
-| 20–22 °C | 13 | Dá bem |
-| 18–20 °C | 9 | Fresca, entra-se aos poucos |
-| 16–18 °C | 5 | Fria |
+| ≥ 22 °C | 14 | Está boa |
+| 20–22 °C | 11 | Dá bem |
+| 18–20 °C | 8 | Fresca, entra-se aos poucos |
+| 16–18 °C | 4 | Fria |
 | 14–16 °C | 2 | Muito fria |
 | < 14 °C | 0 | Gelada |
 
-### Chuva (10 pontos)
+### Chuva (8 pontos)
 
 | Probabilidade máxima | Pontos |
 |---|---:|
-| < 10 % | 10 |
-| 10–25 % | 7 |
-| 26–45 % | 4 |
+| < 10 % | 8 |
+| 10–25 % | 6 |
+| 26–45 % | 3 |
 | 46–70 % | 1 |
 | > 70 % | 0 |
+
+## O factor limitante
+
+Uma soma ponderada tem um defeito conhecido, e é a crítica que a literatura faz
+aos índices aditivos como o TCI e o HCI: **um factor catastrófico é mascarado
+pelos outros**. Medido durante o desenvolvimento: 38 km/h de vento dava 60
+pontos, porque o sol e a ausência de chuva compensavam. Numa praia, 38 km/h
+manda toda a gente embora, faça o sol que fizer.
+
+Por isso, além da soma:
+
+- se algum factor ficar abaixo de **8 %** do seu peso, o dia é **vermelho**;
+- se ficar abaixo de **40 %**, o dia **não pode ser verde**.
+
+A regra aplica-se ao sol, ao vento, ao calor e à chuva — o que determina se se
+consegue **estar** na areia. **Não se aplica à água**: o mar gelado impede o
+banho, não impede o dia de praia.
 
 ## Vetos
 

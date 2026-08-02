@@ -16,8 +16,11 @@
   var HORA_INI = 11;
   var HORA_FIM = 19;
 
-  /* Pesos. Somam 100 nas praias de mar. */
-  var PESOS = { ceu: 28, vento: 26, ar: 20, agua: 16, chuva: 10 };
+  /* Pesos. Somam 100 nas praias de mar.
+     O vento leva 34 — mais do que qualquer outro factor, e mais do triplo do
+     que o HCI:Beach lhe dá. Em Portugal é o que mais dias estraga, e um dia de
+     praia sem vento nenhum é uma coisa que se nota e se agradece. */
+  var PESOS = { ceu: 26, vento: 34, ar: 18, agua: 14, chuva: 8 };
 
   /* --------------------------------------------------- tabelas de pontos */
 
@@ -26,29 +29,31 @@
      velocidade de atrito) e é aí que a nortada é definida (25 km/h). */
   function pontosVento(v) {
     if (v == null) return null;
-    if (v <= 12) return 26;
-    if (v <= 19) return 22;
-    if (v <= 25) return 14;
-    if (v <= 32) return 6;
+    if (v <= 8) return 34;   /* mar chão, toalha imóvel — o dia que se procura */
+    if (v <= 12) return 31;
+    if (v <= 16) return 27;
+    if (v <= 19) return 23;
+    if (v <= 25) return 15;  /* começa a levantar areia */
+    if (v <= 32) return 7;   /* nortada instalada */
     if (v <= 40) return 2;
     return 0;
   }
 
   function pontosCeu(n) {
     if (n == null) return null;
-    if (n <= 20) return 28;
-    if (n <= 40) return 25;
-    if (n <= 60) return 18;
-    if (n <= 80) return 10;
+    if (n <= 20) return 26;
+    if (n <= 40) return 23;
+    if (n <= 60) return 17;
+    if (n <= 80) return 9;
     return 4;
   }
 
   /* Temperatura APARENTE, não a do termómetro: é a que inclui vento e humidade. */
   function pontosAr(t) {
     if (t == null) return null;
-    if (t >= 25 && t <= 31) return 20;
-    if ((t >= 22 && t < 25) || (t > 31 && t <= 34)) return 15;
-    if ((t >= 19 && t < 22) || (t > 34 && t <= 37)) return 8;
+    if (t >= 25 && t <= 31) return 18;
+    if ((t >= 22 && t < 25) || (t > 31 && t <= 34)) return 13;
+    if ((t >= 19 && t < 22) || (t > 34 && t <= 37)) return 7;
     if ((t >= 16 && t < 19) || (t > 37 && t <= 40)) return 3;
     return 0;
   }
@@ -57,19 +62,19 @@
      uma escala mediterrânica marcava o país inteiro a vermelho todo o ano. */
   function pontosAgua(t) {
     if (t == null) return null;
-    if (t >= 22) return 16;
-    if (t >= 20) return 13;
-    if (t >= 18) return 9;
-    if (t >= 16) return 5;
+    if (t >= 22) return 14;
+    if (t >= 20) return 11;
+    if (t >= 18) return 8;
+    if (t >= 16) return 4;
     if (t >= 14) return 2;
     return 0;
   }
 
   function pontosChuva(p) {
     if (p == null) return null;
-    if (p < 10) return 10;
-    if (p <= 25) return 7;
-    if (p <= 45) return 4;
+    if (p < 10) return 8;
+    if (p <= 25) return 6;
+    if (p <= 45) return 3;
     if (p <= 70) return 1;
     return 0;
   }
@@ -78,8 +83,10 @@
 
   function palavrasVento(v) {
     if (v == null) return '';
+    if (v <= 8) return 'Sem vento nenhum';
     if (v <= 12) return 'A toalha fica quieta';
-    if (v <= 19) return 'Brisa agradável';
+    if (v <= 16) return 'Brisa agradável';
+    if (v <= 19) return 'Venta um pouco';
     if (v <= 25) return 'Já levanta alguma areia';
     if (v <= 32) return 'Vento forte, areia na toalha';
     if (v <= 40) return 'Vento muito forte, areia na cara';

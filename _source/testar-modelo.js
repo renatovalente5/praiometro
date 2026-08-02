@@ -15,14 +15,15 @@ function cor(nome, d, esperada) {
 }
 
 console.log('\n== tabelas ==');
-eq('vento 10 km/h', Modelo._pontos.vento(10), 26);
-eq('vento 22 km/h (levanta areia)', Modelo._pontos.vento(22), 14);
-eq('vento 30 km/h (nortada)', Modelo._pontos.vento(30), 6);
-eq('água 18,5 °C (costa oeste típica)', Modelo._pontos.agua(18.5), 9);
-eq('água 24 °C (Madeira)', Modelo._pontos.agua(24), 16);
+eq('vento 6 km/h (sem vento)', Modelo._pontos.vento(6), 34);
+eq('vento 10 km/h', Modelo._pontos.vento(10), 31);
+eq('vento 22 km/h (levanta areia)', Modelo._pontos.vento(22), 15);
+eq('vento 30 km/h (nortada)', Modelo._pontos.vento(30), 7);
+eq('água 18,5 °C (costa oeste típica)', Modelo._pontos.agua(18.5), 8);
+eq('água 24 °C (Madeira)', Modelo._pontos.agua(24), 14);
 eq('água 13 °C', Modelo._pontos.agua(13), 0);
-eq('ar 28 °C', Modelo._pontos.ar(28), 20);
-eq('céu 10 %', Modelo._pontos.ceu(10), 28);
+eq('ar 28 °C', Modelo._pontos.ar(28), 18);
+eq('céu 10 %', Modelo._pontos.ceu(10), 26);
 
 console.log('\n== dias reais ==');
 // Um dia bom de Agosto em Carcavelos: sol, pouco vento, água a 18 °C
@@ -49,6 +50,18 @@ if (rio.factores.some(f => f.id === 'agua')) { falhas++; console.log('  ✗ prai
 // Inverno na costa oeste
 cor('Janeiro na Nazaré', {ceu:70, vento:24, ar:14, agua:14.5, chuva:60, mm:1.2, ondas:3.5,
   rajada:45, dirVento:270, lat:39.6, lon:-9.07, mar:true, trovoada:false}, 'vermelho');
+
+console.log('\n== pouco vento vale mais? ==');
+const base = {ceu:15, ar:27, agua:18.3, chuva:5, mm:0, ondas:0.9, rajada:20,
+              dirVento:180, lat:38.68, lon:-9.34, mar:true, trovoada:false};
+const calmo  = Modelo.classificarDia({...base, vento:6});
+const brisa  = Modelo.classificarDia({...base, vento:15});
+const ventoso= Modelo.classificarDia({...base, vento:22});
+console.log(`  6 km/h -> ${calmo.nota} | 15 km/h -> ${brisa.nota} | 22 km/h -> ${ventoso.nota}`);
+if (!(calmo.nota > brisa.nota && brisa.nota > ventoso.nota)) { falhas++; console.log('  ✗ a nota devia descer com o vento'); }
+else console.log('  ✓ a nota desce à medida que o vento sobe');
+if (calmo.nota - ventoso.nota < 15) { falhas++; console.log('  ✗ a diferença entre calmo e ventoso é pequena demais'); }
+else console.log(`  ✓ entre sem vento e a levantar areia vão ${calmo.nota - ventoso.nota} pontos`);
 
 console.log('\n== a frase nomeia a nortada? ==');
 const n = Modelo.classificarDia({ceu:15, vento:31, ar:24, agua:18, chuva:5, mm:0, ondas:1.4,

@@ -54,8 +54,13 @@
 
   /* ------------------------------------------------------------ ajudas */
 
+  /* Tem de fazer EXACTAMENTE a mesma limpeza que fez o ficheiro de praias,
+     senão escrever o nome tal como o site o mostra não encontra nada: em
+     «Praia do Furadouro - Norte» o hífen virou espaço nos dados, e na pesquisa
+     ficava um termo «-» que não existe em lado nenhum. */
   function normalizar(s) {
-    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
   }
   /* Vírgula decimal. Em português escreve-se 18,3 °C, não 18.3 °C. */
   function num(v, casas) {
@@ -240,74 +245,6 @@
       + '&models=' + MODELOS.join(',');
   }
 
-  /* Junta as colunas dos vários modelos numa só série.
-     A média só se aplica ao que é contínuo. A direcção do vento NÃO se pode
-     mediar — a média de 350° e 10° dá 180°, o oposto do que se quer — por isso
-     usa-se um modelo só. E o código de tempo é uma categoria, não um número:
-     usa-se o máximo, que faz sobressair a trovoada (95/96/99) e erra do lado
-     seguro num veto. */
-  var CONTINUAS = ['temperature_2m', 'apparent_temperature', 'wind_speed_10m',
-                   'wind_gusts_10m', 'cloud_cover', 'precipitation', 'precipitation_probability',
-                   'uv_index'];
-
-  function consenso(resposta) {
-    var h = resposta.hourly, n = (h.time || []).length, saida = { time: h.time };
-
-    function colunas(base) {
-      var c = [];
-      for (var k in h) if (k === base || k.indexOf(base + '_') === 0) c.push(k);
-      return c;
-    }
-    CONTINUAS.forEach(function (base) {
-      var cols = colunas(base);
-      if (!cols.length) return;
-      var out = new Array(n);
-      for (var i = 0; i < n; i++) {
-        var soma = 0, cont = 0;
-        for (var j = 0; j < cols.length; j++) {
-          var v = h[cols[j]][i];
-          if (v != null) { soma += v; cont++; }
-        }
-        out[i] = cont ? soma / cont : null;
-      }
-      saida[base] = out;
-    });
-    var dir = colunas('wind_direction_10m');
-    saida.wind_direction_10m = dir.length ? h[dir[0]] : null;
-    var cod = colunas('weather_code');
-    if (cod.length) {
-      var oc = new Array(n);
-      for (var i2 = 0; i2 < n; i2++) {
-        var m = null;
-        for (var j2 = 0; j2 < cod.length; j2++) {
-          var v2 = h[cod[j2]][i2];
-          if (v2 != null && (m == null || v2 > m)) m = v2;
-        }
-        oc[i2] = m;
-      }
-      saida.weather_code = oc;
-    }
-    /* o diário vem por modelo; a chuva acumulada pela média, o código pelo pior */
-    var dl = resposta.daily || {}, nd = (dl.time || []).length, sd = { time: dl.time };
-    function colsD(base) {
-      var c = []; for (var k in dl) if (k === base || k.indexOf(base + '_') === 0) c.push(k); return c;
-    }
-    var cp = colsD('precipitation_sum');
-    sd.precipitation_sum = new Array(nd);
-    for (var i3 = 0; i3 < nd; i3++) {
-      var s3 = 0, c3 = 0;
-      cp.forEach(function (k) { var v = dl[k][i3]; if (v != null) { s3 += v; c3++; } });
-      sd.precipitation_sum[i3] = c3 ? s3 / c3 : null;
-    }
-    var cw = colsD('weather_code');
-    sd.weather_code = new Array(nd);
-    for (var i4 = 0; i4 < nd; i4++) {
-      var m4 = null;
-      cw.forEach(function (k) { var v = dl[k][i4]; if (v != null && (m4 == null || v > m4)) m4 = v; });
-      sd.weather_code[i4] = m4;
-    }
-    return { hourly: saida, daily: sd };
-  }
   function urlMar(p) {
     return 'https://marine-api.open-meteo.com/v1/marine'
       + '?latitude=' + p.la + '&longitude=' + p.lo
@@ -334,7 +271,7 @@
       : Promise.resolve(null));
 
     Promise.all(pedidos).then(function (r) {
-      dias = M.agregar(consenso(r[0]), r[1], praia);
+      dias = M.agregar(M.consenso(r[0], MODELOS), r[1], praia);
       veredictos = dias.map(M.classificarDia);
       diaEscolhido = 0;
       estado.textContent = '';

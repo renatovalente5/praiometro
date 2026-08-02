@@ -51,6 +51,41 @@ if (rio.factores.some(f => f.id === 'agua')) { falhas++; console.log('  ✗ prai
 cor('Janeiro na Nazaré', {ceu:70, vento:24, ar:14, agua:14.5, chuva:60, mm:1.2, ondas:3.5,
   rajada:45, dirVento:270, lat:39.6, lon:-9.07, mar:true, trovoada:false}, 'vermelho');
 
+console.log('\n== juntar os modelos (o bug da chuva fantasma) ==');
+// Reproduz o caso real: quatro modelos com 0 mm de chuva mas probabilidade de
+// 18%. Se a correspondência de colunas for por prefixo, a probabilidade entra
+// na conta dos milímetros e o dia leva um veto de «chuva a sério».
+const MODS = ['ecmwf_ifs025','icon_seamless','gfs_seamless','ukmo_seamless'];
+const horas = ['2026-08-07T11:00','2026-08-07T12:00','2026-08-07T13:00'];
+const resp = { hourly: { time: horas }, daily: { time: ['2026-08-07'] } };
+MODS.forEach(m => {
+  resp.hourly['precipitation_' + m] = [0, 0, 0];
+  resp.hourly['precipitation_probability_' + m] = [18, 15, 20];
+  resp.hourly['cloud_cover_' + m] = [10, 12, 8];
+  resp.hourly['temperature_2m_' + m] = [26, 27, 28];
+  resp.hourly['apparent_temperature_' + m] = [26, 27, 28];
+  resp.hourly['wind_speed_10m_' + m] = [10, 12, 14];
+  resp.hourly['wind_gusts_10m_' + m] = [20, 22, 24];
+  resp.hourly['wind_direction_10m_' + m] = [350, 355, 5];
+  resp.hourly['uv_index_' + m] = [7, 8, 8];
+  resp.hourly['weather_code_' + m] = [1, 1, 2];
+  resp.daily['precipitation_sum_' + m] = [0];
+  resp.daily['weather_code_' + m] = [1];
+});
+const c = Modelo.consenso(resp, MODS);
+const mmTotal = c.hourly.precipitation.reduce((a,b) => a + b, 0);
+if (mmTotal > 0.01) {
+  falhas++;
+  console.log(`  ✗ chuva fantasma: ${mmTotal.toFixed(2)} mm de quatro modelos que dão 0 mm`);
+  console.log('    (a probabilidade está a ser contada como milímetros)');
+} else console.log('  ✓ quatro modelos a 0 mm dão 0 mm, apesar de 18% de probabilidade');
+const probMedia = c.hourly.precipitation_probability[0];
+if (Math.abs(probMedia - 18) > 0.01) { falhas++; console.log(`  ✗ probabilidade deu ${probMedia}, devia dar 18`); }
+else console.log('  ✓ a probabilidade continua a ser lida como percentagem');
+// a direcção não pode ser mediada entre modelos
+if (c.hourly.wind_direction_10m[0] !== 350) { falhas++; console.log('  ✗ direcção devia vir de um modelo só'); }
+else console.log('  ✓ a direcção vem de um modelo só, sem média entre modelos');
+
 console.log('\n== o que a revisão apanhou ==');
 // direcção é circular: a média de 350 e 10 tem de dar ~0, não 180
 const dirs = Modelo._mediaDir ? Modelo._mediaDir([350,10]) : null;

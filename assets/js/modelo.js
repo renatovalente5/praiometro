@@ -362,6 +362,86 @@
     }
   }
 
+  /* Junta as colunas dos vários modelos numa só série.
+     A média só se aplica ao que é contínuo. A direcção do vento NÃO se pode
+     mediar — a média de 350° e 10° dá 180°, o oposto do que se quer — por isso
+     usa-se um modelo só. E o código de tempo é uma categoria, não um número:
+     usa-se o máximo, que faz sobressair a trovoada (95/96/99) e erra do lado
+     seguro num veto. */
+  var CONTINUAS = ['temperature_2m', 'apparent_temperature', 'wind_speed_10m',
+                   'wind_gusts_10m', 'cloud_cover', 'precipitation', 'precipitation_probability',
+                   'uv_index'];
+
+  function consenso(resposta, modelos) {
+    var h = resposta.hourly, n = (h.time || []).length, saida = { time: h.time };
+
+    /* Correspondência EXACTA pelo sufixo do modelo, nunca por prefixo.
+       `precipitation_probability_icon_seamless` começa por `precipitation_`, e
+       com a correspondência por prefixo a chuva em milímetros era mediada
+       junto com a probabilidade em percentagem: 18% entrava na conta como
+       18 mm e o dia levava um veto de «chuva a sério» com os quatro modelos a
+       dar 0,00 mm. Foi um utilizador que apanhou isto, ao reparar que o site
+       dizia chuva e céu limpo ao mesmo tempo. */
+    function colunas(base) {
+      var c = [];
+      if (h[base]) c.push(base);
+      modelos.forEach(function (m) { if (h[base + '_' + m]) c.push(base + '_' + m); });
+      return c;
+    }
+    CONTINUAS.forEach(function (base) {
+      var cols = colunas(base);
+      if (!cols.length) return;
+      var out = new Array(n);
+      for (var i = 0; i < n; i++) {
+        var soma = 0, cont = 0;
+        for (var j = 0; j < cols.length; j++) {
+          var v = h[cols[j]][i];
+          if (v != null) { soma += v; cont++; }
+        }
+        out[i] = cont ? soma / cont : null;
+      }
+      saida[base] = out;
+    });
+    var dir = colunas('wind_direction_10m');
+    saida.wind_direction_10m = dir.length ? h[dir[0]] : null;
+    var cod = colunas('weather_code');
+    if (cod.length) {
+      var oc = new Array(n);
+      for (var i2 = 0; i2 < n; i2++) {
+        var m = null;
+        for (var j2 = 0; j2 < cod.length; j2++) {
+          var v2 = h[cod[j2]][i2];
+          if (v2 != null && (m == null || v2 > m)) m = v2;
+        }
+        oc[i2] = m;
+      }
+      saida.weather_code = oc;
+    }
+    /* o diário vem por modelo; a chuva acumulada pela média, o código pelo pior */
+    var dl = resposta.daily || {}, nd = (dl.time || []).length, sd = { time: dl.time };
+    function colsD(base) {
+      var c = [];
+      if (dl[base]) c.push(base);
+      modelos.forEach(function (m) { if (dl[base + '_' + m]) c.push(base + '_' + m); });
+      return c;
+    }
+    var cp = colsD('precipitation_sum');
+    sd.precipitation_sum = new Array(nd);
+    for (var i3 = 0; i3 < nd; i3++) {
+      var s3 = 0, c3 = 0;
+      cp.forEach(function (k) { var v = dl[k][i3]; if (v != null) { s3 += v; c3++; } });
+      sd.precipitation_sum[i3] = c3 ? s3 / c3 : null;
+    }
+    var cw = colsD('weather_code');
+    sd.weather_code = new Array(nd);
+    for (var i4 = 0; i4 < nd; i4++) {
+      var m4 = null;
+      cw.forEach(function (k) { var v = dl[k][i4]; if (v != null && (m4 == null || v > m4)) m4 = v; });
+      sd.weather_code[i4] = m4;
+    }
+    return { hourly: saida, daily: sd };
+  }
+
   /* ------------------------------------------------- agregação dos dados */
 
   /**
@@ -422,6 +502,7 @@
     agregar: agregar,
     beaufort: beaufort,
     percentil: percentil,
+    consenso: consenso,
     _mediaDir: mediaDir,
     palavrasOndas: palavrasOndas,
     PESOS: PESOS,

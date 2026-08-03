@@ -107,6 +107,11 @@ gratuito, só a taxa do PayPal/Stripe), **Buy Me a Coffee** (5 %), ou **Stripe
 Payment Links** (1,5 % + 0,25 € em cartões europeus). Nenhuma exige código no
 site — basta um link, o que mantém a página sem terceiros.
 
+**Não actives «tiers» nem recompensas.** Assim que deres alguma coisa em troca —
+nem que seja um distintivo — deixa de ser donativo e passa a prestação de
+serviços: abertura de actividade, factura por cada operação e IVA. Ver a secção
+legal abaixo; é a diferença entre não ter obrigação nenhuma e ter todas.
+
 ### A seguir: medir antes de decidir
 
 Neste momento **não há forma de saber quantas pessoas usam isto** — o GitHub
@@ -149,16 +154,116 @@ botão que se liga.
 
 ---
 
+## O que a lei portuguesa exige de cada caminho
+
+Tudo verificado nas fontes oficiais (Diário da República, Portal das Finanças,
+CNPD, DGC). Onde há dúvida real, está assinalada — não vale a pena fingir
+certezas nesta matéria.
+
+### Donativos: não é IRS, é Imposto do Selo
+
+Um donativo genuíno não é rendimento. Cai no [art. 1.º do Código do Imposto do
+Selo](https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/selo/Pages/selo1.aspx),
+que abrange expressamente valores monetários depositados em contas bancárias.
+
+- Taxa de **10 %** (verba 1.2 da Tabela Geral).
+- **Não sujeitos os "donativos conforme os usos sociais... até ao montante de
+  500 €"** (art. 1.º n.º 5 d)). Um café de 3 € não é tributado.
+- **Não é preciso abrir actividade** para donativos puros e ocasionais.
+
+**Mas há uma armadilha, e é grande.** O art. 1.º n.º 2 do CIS diz que não é
+donativo o que estiver sujeito a IVA. Ou seja:
+
+| | Donativo verdadeiro | Contrapartida |
+|---|---|---|
+| O que dás em troca | **Nada** | Acesso sem publicidade, distintivo, conteúdo exclusivo, acesso antecipado… |
+| Imposto | Selo, 10 % acima de 500 € | IRS categoria B + IVA |
+| Abrir actividade | Não | **Sim** |
+| Facturar | Não | **Sim, por cada operação** |
+
+Os «tiers» do Ko-fi e do Buy Me a Coffee que dão *qualquer* benefício são
+contrapartida, por muito que a plataforma lhes chame *support*. **Se fores por
+donativos, que sejam donativos a sério: um botão, sem recompensas.**
+
+### Publicidade: obriga a mais do que parece
+
+- Rendimento de **categoria B**, com **abertura de actividade obrigatória**.
+- Atenção ao código: a **CAE Rev.4 entrou em vigor a 1 de janeiro de 2025**
+  ([DL 9/2025](https://data.dre.pt/eli/dec-lei/9/2025/02/12/p/dre/pt/pdf)) e o
+  antigo *63120 — Portais Web* **deixou de existir**. Os candidatos agora são
+  63910, 63920, 63100 ou 73120. A escolha mexe no coeficiente do regime
+  simplificado (0,35 vs 0,75) — vale a pena falar com um contabilista.
+- Quem te paga é a **Google Ireland**: factura **sem IVA**, com menção de
+  autoliquidação. Podes emitir gratuitamente no Portal das Finanças.
+- **Registo no VIES e declaração recapitulativa são obrigatórios desde o
+  primeiro euro** — não há limiar. A AT é explícita nisto no
+  [Ofício-Circulado 30115/2009](https://www.occ.pt/fotos/editor2/OficioCirc%2030115.pdf).
+  É o erro mais comum de quem começa com AdSense.
+
+### Subscrições: é um salto de categoria
+
+- **Facturação certificada** ([DL 28/2019](https://data.dre.pt/eli/dec-lei/28/2019/02/15/p/dre/pt/pdf)):
+  obrigatória acima de 50 000 €/ano **ou sempre que uses um programa de
+  facturação**. Abaixo dos 50 000 €, a via limpa é emitir no Portal das Finanças
+  — assim que ligas o Stripe a emitir facturas, cais na obrigação.
+- **IVA**: até **10 000 €** de serviços a consumidores de outros países da UE
+  pagas em Portugal; acima disso, registo no **OSS**. A isenção geral de IVA
+  subiu para **15 000 €** desde 1 de julho de 2025 (DL 35/2025).
+- **Direito de livre resolução de 14 dias** ([DL 24/2014](https://data.dre.pt/eli/dec-lei/24/2014/02/14/p/dre/pt/pdf)).
+  Há uma excepção para conteúdos digitais, mas exige **três coisas cumulativas**:
+  consentimento prévio e expresso para começar já, reconhecimento explícito de
+  que isso faz perder o direito, e confirmação em suporte duradouro. Sem as três,
+  a pessoa cancela e é reembolsada. E se não informares do direito, o prazo
+  estende-se a **12 meses**.
+- **Livro de Reclamações electrónico: obrigatório**, mesmo sendo só online
+  ([DL 156/2005 com a redacção do DL 74/2017](https://data.dre.pt/eli/dec-lei/74/2017/06/21/p/dre/pt/pdf)).
+  Tens de divulgar o acesso à plataforma em local visível e responder em 15 dias
+  úteis. Coima de 250 € a 3500 €.
+- **Resolução alternativa de litígios**: a entidade residual é o
+  [CNIACC](https://www.cniacc.pt/pt), e tens de a indicar no site.
+  **Não incluas a plataforma ODR europeia** — foi desligada a 20 de julho de 2025
+  pelo [Regulamento (UE) 2024/3228](https://eur-lex.europa.eu/legal-content/PT/TXT/?uri=OJ:L_202403228),
+  e continua em metade dos sites portugueses por copiar-colar.
+
+### Cookies: é a publicidade que traz o banner
+
+Hoje o site é **completamente sem cookies** e por isso não precisa de banner
+nenhum. Isso acaba no dia em que houver anúncios.
+
+- A [Lei 41/2004, art. 5.º](https://data.dre.pt/eli/lei/46/2012/08/29/p/dre/pt/pdf)
+  exige **consentimento prévio** — opt-in a sério, com bloqueio efectivo antes de
+  a pessoa aceitar.
+- A [CNPD](https://www.cnpd.pt/media/x2zdus50/nota-informativa-cnpd_cookies_20210625.pdf)
+  é clara: o dono do site é responsável por **todos** os cookies que deixa
+  colocar, incluindo os de terceiros e **incluindo os de analítica**.
+- Desde **16 de janeiro de 2024**, a Google exige uma **CMP certificada e
+  integrada no IAB TCF v2.2** para servir anúncios personalizados a tráfego do
+  EEE. Sem isso, só anúncios não personalizados — que rendem bastante menos, o
+  que piora ainda mais as contas lá de cima.
+
+### Três pontos que exigem contabilista
+
+1. A nova redacção do art. 59.º do CIVA (julho de 2025) criou uma contradição
+   literal sobre se os isentos do art. 53.º continuam obrigados à declaração
+   recapitulativa. O entendimento corrente diz que sim.
+2. Registar-se por CAE ou pelo código 1519 da tabela do art. 151.º muda o
+   coeficiente de 0,35 para 0,75 — e há litígio sobre o assunto.
+3. Territorialidade do Imposto do Selo sobre donativos vindos do estrangeiro para
+   uma conta portuguesa (art. 4.º n.ºs 3 e 4 do CIS).
+
+---
+
 ## Contas que terias de criar
 
 Só quando decidires avançar — nada disto é preciso hoje:
 
-| Para quê | Onde | Custo |
-|---|---|---|
-| Donativos | Ko-fi ou Stripe | 0 € (comissão por transacção) |
-| Estatísticas + futuro AdSense | Registador de domínio + Cloudflare | 10-15 €/ano |
-| Publicidade | Google AdSense | 0 €, mas exige domínio próprio e aprovação |
-| Uso comercial da previsão | Open-Meteo (plano Standard) | 29 €/mês ou 319 €/ano |
+| Para quê | Onde | Custo | Obrigação legal que traz |
+|---|---|---|---|
+| Donativos | Ko-fi ou Stripe | 0 € (comissão por transacção) | Nenhuma, se forem donativos puros. Modelo 1 do Imposto do Selo acima de 500 € por donativo |
+| Estatísticas + futuro AdSense | Registador + Cloudflare | 10-15 €/ano | Nenhuma (analítica da Cloudflare é sem cookies) |
+| Publicidade | Google AdSense | 0 €, mas exige domínio próprio | Actividade aberta, VIES **desde o 1.º euro**, CMP certificada TCF, banner de cookies |
+| Uso comercial da previsão | Open-Meteo Standard | 29 €/mês ou 319 €/ano | — |
+| Subscrições | Stripe + Supabase | comissão | Facturação, IVA/OSS acima de 10 000 €, livre resolução, Livro de Reclamações, CNIACC |
 
 ---
 

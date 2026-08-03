@@ -88,21 +88,46 @@ Além disso calcula-se o vento **de manhã (11h–15h)** e **de tarde (15h–19h
 separado. Quando a tarde tem 7 km/h ou mais do que a manhã, o site di-lo: «de
 manhã 12 km/h, à tarde 26 km/h — vale a pena ir cedo».
 
+### As escalas são curvas, não escadas
+
+As cinco tabelas abaixo dão os pontos por onde a curva de cada factor passa.
+**Entre dois valores da tabela, os pontos são interpolados** — a nota varia a
+pouco e pouco em vez de cair de uma vez.
+
+Isto não era assim até 3 de Agosto de 2026: cada linha era um patamar fixo, e
+ao passar a fronteira a nota dava um salto. Media-se **8 pontos de queda entre
+19 e 20 km/h de vento**, e **5 pontos entre 24,9 °C e 25,0 °C de sensação** —
+este segundo invisível, porque o ecrã mostra os dois valores como «25 °C». Duas
+praias com tempo praticamente igual apareciam a 77 e a 64 pontos.
+
+Com a interpolação, o maior salto por unidade passou a:
+
+| Factor | Antes | Agora |
+|---|---:|---:|
+| Vento (por km/h) | 8,0 | 1,8 |
+| Sol (por ponto de %) | 8,0 | 0,4 |
+| Calor (por 0,1 °C) | 6,0 | 0,3 |
+| Água (por 0,1 °C) | 4,0 | 0,3 |
+| Chuva (por ponto de %) | 3,0 | 0,2 |
+
+A calibração é a mesma: em 358 dias reais de 60 praias, a nota mudou 2,35
+pontos em média, e 94 % dos dias ficaram a 5 pontos ou menos da nota antiga.
+
 ### Vento (34 pontos)
 
 | Vento médio | Pontos | O que se sente |
 |---|---:|---|
 | ≤ 8 km/h | 34 | Sem vento nenhum |
-| 9–12 km/h | 31 | A toalha fica quieta |
-| 13–16 km/h | 27 | Brisa agradável |
-| 17–19 km/h | 23 | Venta um pouco |
-| 20–25 km/h | 15 | Começa a levantar areia |
-| 26–32 km/h | 7 | Nortada instalada |
-| 33–40 km/h | 2 | Areia na cara |
-| > 40 km/h | 0 | Impraticável |
+| 10 km/h | 31 | A toalha fica quieta |
+| 14 km/h | 27 | Brisa agradável |
+| 17,5 km/h | 23 | Venta um pouco |
+| 22 km/h | 15 | Começa a levantar areia |
+| 30 km/h | 7 | Nortada instalada |
+| 36 km/h | 2 | Areia na cara |
+| ≥ 42 km/h | 0 | Impraticável |
 
-Os degraus do topo existem para premiar o dia calmo: com tudo o resto igual,
-6 km/h dá 94 pontos e 22 km/h dá 75. São 19 pontos de diferença só no vento.
+O planalto do topo existe para premiar o dia calmo: com tudo o resto igual,
+6 km/h dá 93 pontos e 22 km/h dá 74. São 19 pontos de diferença só no vento.
 
 Os cortes não são inventados. **7 m/s (25 km/h)** é o limiar da definição
 operacional de nortada usada em Portugal (vento de 315°–45° com ≥ 7 m/s). E o
@@ -116,11 +141,16 @@ meteorologia portuguesa e a física eólica — caem na mesma banda dos 20–25 
 
 | Nebulosidade média | Pontos |
 |---|---:|
-| 0–20 % | 26 |
-| 21–40 % | 23 |
-| 41–60 % | 17 |
-| 61–80 % | 9 |
-| 81–100 % | 4 |
+| ≤ 20 % | 26 |
+| 30 % | 23 |
+| 50 % | 17 |
+| 70 % | 9 |
+| ≥ 90 % | 4 |
+
+Acima de **60 % de nuvens** o dia não pode ser verde, por regra própria: é um
+dia mais tapado do que aberto. Enquanto a escala era uma escada, isto vinha de
+graça do corte dos 40 % do factor limitante; com a curva contínua passou a
+estar escrito à parte.
 
 ### Temperatura do ar — sensação (18 pontos)
 
@@ -130,10 +160,10 @@ do vento e da humidade.
 | Sensação máxima | Pontos |
 |---|---:|
 | 25–31 °C | 18 |
-| 22–25 ou 31–34 °C | 13 |
-| 19–22 ou 34–37 °C | 7 |
-| 16–19 ou 37–40 °C | 3 |
-| < 16 ou > 40 °C | 0 |
+| 23,5 ou 32,5 °C | 13 |
+| 20,5 ou 35,5 °C | 7 |
+| 17,5 ou 38,5 °C | 3 |
+| ≤ 15,5 ou ≥ 40,5 °C | 0 |
 
 ### Temperatura da água (14 pontos)
 
@@ -149,21 +179,21 @@ portuguesa:
 | Água | Pontos | O que se diz na praia |
 |---|---:|---|
 | ≥ 22 °C | 14 | Está boa |
-| 20–22 °C | 11 | Dá bem |
-| 18–20 °C | 8 | Fresca, entra-se aos poucos |
-| 16–18 °C | 4 | Fria |
-| 14–16 °C | 2 | Muito fria |
-| < 14 °C | 0 | Gelada |
+| 21 °C | 11 | Dá bem |
+| 18,5 °C | 8 | Fresca, entra-se aos poucos |
+| 17 °C | 4 | Fria |
+| 15 °C | 2 | Muito fria |
+| ≤ 13 °C | 0 | Gelada |
 
 ### Chuva (8 pontos)
 
 | Probabilidade máxima | Pontos |
 |---|---:|
-| < 10 % | 8 |
-| 10–25 % | 6 |
-| 26–45 % | 3 |
-| 46–70 % | 1 |
-| > 70 % | 0 |
+| ≤ 8 % | 8 |
+| 17,5 % | 6 |
+| 35 % | 3 |
+| 57,5 % | 1 |
+| ≥ 70 % | 0 |
 
 ## O factor limitante
 
@@ -181,6 +211,15 @@ Por isso, além da soma:
 A regra aplica-se ao sol, ao vento, ao calor e à chuva — o que determina se se
 consegue **estar** na areia. **Não se aplica à água**: o mar gelado impede o
 banho, não impede o dia de praia.
+
+Com as escadas, este corte dos 40 % disparava em patamares inteiros: a banda dos
+19–22 °C de sensação valia 7/18 = 0,389 e mandava para amarelo toda a banda, e a
+dos 26–45 % de chuva valia 3/8 = 0,375 e fazia o mesmo. Com as curvas, o corte
+passa a dar-se no ponto exacto — 20,5 °C no calor, 35 % na chuva — e os dias que
+antes ficavam apenas do lado errado do patamar deixam de ser travados. Em 358
+dias reais isso deu **36 dias de amarelo para verde** e **15 de verde para
+amarelo** (estes por causa da regra dos 60 % de nuvens, agora explícita). Se o
+corte dos 40 % se quiser tão apertado como antes, é este número que se afina.
 
 ## Vetos
 

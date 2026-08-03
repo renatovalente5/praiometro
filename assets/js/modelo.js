@@ -24,59 +24,75 @@
 
   /* --------------------------------------------------- tabelas de pontos */
 
-  /* Vento médio, km/h a 10 m. O degrau grande está nos 20-25 km/h: é aí que
-     começa o transporte de areia por saltação (~19 km/h, convertido da
-     velocidade de atrito) e é aí que a nortada é definida (25 km/h). */
+  /* ------- as curvas dos factores -------
+     Estas cinco funções eram escadas: cada patamar devolvia um valor fixo, e
+     ao passar a fronteira a nota caía de uma vez. Media-se 8 pontos de queda
+     entre 19 e 20 km/h de vento, e 5 pontos entre 24,9 °C e 25,0 °C — este
+     último invisível, porque o ecrã mostra os dois como «25 °C». Duas praias
+     lado a lado apareciam a 77 e a 64 por causa de 1 km/h.
+
+     Agora é a MESMA calibração, mas interpolada: as tabelas abaixo são os
+     pontos por onde a curva passa, e entre eles a nota varia a pouco e pouco.
+     Os valores das tabelas são os dos patamares antigos, colocados no ponto
+     que os representa — daí a nota de um dia típico não se mexer, e só as
+     fronteiras deixarem de ser precipícios. */
+  function interpolar(tabela, x) {
+    if (x <= tabela[0][0]) return tabela[0][1];
+    var ultimo = tabela[tabela.length - 1];
+    if (x >= ultimo[0]) return ultimo[1];
+    for (var i = 1; i < tabela.length; i++) {
+      var a = tabela[i - 1], b = tabela[i];
+      if (x <= b[0]) {
+        /* x === a[0] dá t = 0 e devolve a[1] exacto: os pontos da tabela são
+           valores calibrados e não podem sair alterados por aritmética. */
+        var t = (x - a[0]) / (b[0] - a[0]);
+        return a[1] + t * (b[1] - a[1]);
+      }
+    }
+    return ultimo[1];
+  }
+
+  /* Vento médio, km/h a 10 m. A descida mais acentuada continua a ser nos
+     20-25 km/h: é aí que começa o transporte de areia por saltação (~19 km/h,
+     convertido da velocidade de atrito) e é aí que a nortada é definida
+     (25 km/h). Até aos 8 km/h é planalto: mar chão, toalha imóvel — o dia que
+     se procura, e não há prémio a dar acima disso. */
+  var CURVA_VENTO = [[0, 34], [8, 34], [10, 31], [14, 27], [17.5, 23],
+                     [22, 15], [30, 7], [36, 2], [42, 0]];
   function pontosVento(v) {
     if (v == null) return null;
-    if (v <= 8) return 34;   /* mar chão, toalha imóvel — o dia que se procura */
-    if (v <= 12) return 31;
-    if (v <= 16) return 27;
-    if (v <= 19) return 23;
-    if (v <= 25) return 15;  /* começa a levantar areia */
-    if (v <= 32) return 7;   /* nortada instalada */
-    if (v <= 40) return 2;
-    return 0;
+    return interpolar(CURVA_VENTO, v);
   }
 
+  var CURVA_CEU = [[0, 26], [20, 26], [30, 23], [50, 17], [70, 9], [90, 4], [100, 4]];
   function pontosCeu(n) {
     if (n == null) return null;
-    if (n <= 20) return 26;
-    if (n <= 40) return 23;
-    if (n <= 60) return 17;
-    if (n <= 80) return 9;
-    return 4;
+    return interpolar(CURVA_CEU, n);
   }
 
-  /* Temperatura APARENTE, não a do termómetro: é a que inclui vento e humidade. */
+  /* Temperatura APARENTE, não a do termómetro: é a que inclui vento e humidade.
+     Curva com dois lados: 25-31 °C é o planalto, e cai para os dois extremos —
+     16 °C tem veto próprio («frio a mais»), e acima de 40 °C também não é dia
+     de areia. */
+  var CURVA_AR = [[15.5, 0], [17.5, 3], [20.5, 7], [23.5, 13], [25, 18],
+                  [31, 18], [32.5, 13], [35.5, 7], [38.5, 3], [40.5, 0]];
   function pontosAr(t) {
     if (t == null) return null;
-    if (t >= 25 && t <= 31) return 18;
-    if ((t >= 22 && t < 25) || (t > 31 && t <= 34)) return 13;
-    if ((t >= 19 && t < 22) || (t > 34 && t <= 37)) return 7;
-    if ((t >= 16 && t < 19) || (t > 37 && t <= 40)) return 3;
-    return 0;
+    return interpolar(CURVA_AR, t);
   }
 
   /* A escala portuguesa. O Atlântico continental anda nos 17-20 °C em Agosto;
      uma escala mediterrânica marcava o país inteiro a vermelho todo o ano. */
+  var CURVA_AGUA = [[13, 0], [15, 2], [17, 4], [18.5, 8], [21, 11], [22, 14], [30, 14]];
   function pontosAgua(t) {
     if (t == null) return null;
-    if (t >= 22) return 14;
-    if (t >= 20) return 11;
-    if (t >= 18) return 8;
-    if (t >= 16) return 4;
-    if (t >= 14) return 2;
-    return 0;
+    return interpolar(CURVA_AGUA, t);
   }
 
+  var CURVA_CHUVA = [[0, 8], [8, 8], [17.5, 6], [35, 3], [57.5, 1], [70, 0], [100, 0]];
   function pontosChuva(p) {
     if (p == null) return null;
-    if (p < 10) return 8;
-    if (p <= 25) return 6;
-    if (p <= 45) return 3;
-    if (p <= 70) return 1;
-    return 0;
+    return interpolar(CURVA_CHUVA, p);
   }
 
   /* ------------------------------------------------------------ palavras */
@@ -294,11 +310,16 @@
     else if (pior_racio < 0.08) cor = 'vermelho';
     else {
       cor = nota >= 70 ? 'verde' : (nota >= 45 ? 'amarelo' : 'vermelho');
-      /* Um dia com o céu mais tapado do que aberto (>60% de nuvens) não é um
-         dia de praia a sério, por muito que o resto some. Medido em Carcavelos:
-         72% de nuvens com tudo o resto bom dava 71 pontos e «Dia de praia».
-         O corte em 0,40 é exactamente o degrau dos 60% de nebulosidade. */
+      /* Um factor muito fraco não pode ser mascarado pelos outros: com tudo o
+         resto bom, a soma chega a 70 e o dia aparecia como «Dia de praia». */
       if (cor === 'verde' && pior_racio < 0.40) cor = 'amarelo';
+      /* O céu tem regra própria, e agora tem de ser dita: um dia mais tapado
+         do que aberto (>60% de nuvens) não é dia de praia a sério. Isto vinha
+         de graça do corte em 0,40 enquanto a escala do céu era uma escada com
+         degrau nos 60% — com a curva contínua, 0,40 só apanha os 67% para
+         cima, e os 61-66% passavam a verde. Medido em Carcavelos: 72% de
+         nuvens com tudo o resto bom dava 71 pontos e «Dia de praia». */
+      if (cor === 'verde' && d.ceu != null && d.ceu > 60) cor = 'amarelo';
     }
 
     /* ------- a frase: sai do factor que mais pontos perdeu ------- */

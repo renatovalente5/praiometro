@@ -237,12 +237,14 @@
      `return=representation` obriga a resposta a trazer as linhas apagadas, e
      zero linhas passa a ser erro — que é o que manda isto para a fila.
 
-     O `praia_id` é uma coordenada com uma vírgula, e a vírgula é um carácter
-     reservado nos filtros do PostgREST: percent-encode não basta, porque o
-     servidor descodifica antes de interpretar. As aspas são a forma
-     documentada de passar o valor inteiro, e são retiradas do lado de lá. */
+     O VALOR VAI SEM ASPAS. Já foi com aspas duplas, por se supor que a vírgula
+     das coordenadas era carácter reservado e precisava delas. Medido contra a
+     base de dados real, com sessão de utilizador: o PostgREST NÃO as retira,
+     procura um valor que inclui os caracteres `"` e não encontra linha nenhuma
+     — 200 com `[]`, ou seja nunca apagava nada. Sem aspas apaga e devolve a
+     linha. Para o operador `eq` a vírgula não precisa de tratamento. */
   function apagarNuvem(praiaId) {
-    return pedir('favoritos?praia_id=eq.' + encodeURIComponent('"' + praiaId + '"'), {
+    return pedir('favoritos?praia_id=eq.' + encodeURIComponent(praiaId), {
       method: 'DELETE',
       headers: { 'Prefer': 'return=representation' }
     }).then(function (linhas) {

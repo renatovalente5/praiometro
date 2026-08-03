@@ -347,6 +347,11 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
   /* No telemóvel a tira sangra até às margens, para se ver que rola. */
   margin: 0 calc(var(--gutter) * -1); padding-inline: var(--gutter);
   scroll-snap-type: x proximity;
+  /* O encosto tem de ser na goteira, não na borda do ecrã: sem isto o
+     `scroll-snap-align: start` alinhava o primeiro chip com o início do
+     snapport e rolava a goteira toda para fora, deixando-o rente ao vidro e
+     desalinhado do «AS TUAS PRAIAS» que está por cima. */
+  scroll-padding-inline: var(--gutter);
 }
 .favoritos__lista::-webkit-scrollbar { height: 10px; }
 .favoritos__lista::-webkit-scrollbar-track { background: transparent; }
@@ -395,9 +400,31 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
   /* Como na tira dos favoritos, mas aqui são 2px do anel MAIS os 2px que o
      `translateY(-2px)` do hover levanta o cartão. Daí .3rem (4,8px) em cima. */
   padding-block: .3rem;
-  scrollbar-width: none; scroll-snap-type: x proximity;
+  /* E a MESMA folga é precisa aos lados, que era o que faltava. O primeiro
+     cartão encosta ao início da tira (`scroll-snap-align: start`) e, com
+     `padding-inline: 0`, o `overflow-x` cortava-lhe os 2px do anel do lado
+     esquerdo: no telemóvel via-se o contorno do dia escolhido rente e reto à
+     esquerda e redondo à direita. A margem negativa devolve o alinhamento com
+     o cartão do veredicto. */
+  padding-inline: 3px; margin-inline: -3px;
+  /* Sem isto o padding acima não serve de nada: `scroll-snap-align: start`
+     alinha o cartão com o início do snapport, e o snapport ia até à borda —
+     o browser rolava os mesmos 3px (medido: `scrollLeft` a 3) e o anel voltava
+     a ficar rente. O `scroll-padding` encolhe o snapport e o encosto passa a
+     ser na folga. */
+  scroll-padding-inline: 3px;
+  /* Como na tira dos favoritos: no telemóvel os 6 dias não cabem — sobram uns
+     124px em 390px — e sem barra nada dizia que havia mais para o lado. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--tinta-3) transparent;
+  scroll-snap-type: x proximity;
 }
-.dias::-webkit-scrollbar { display: none; }
+.dias::-webkit-scrollbar { height: 10px; }
+.dias::-webkit-scrollbar-track { background: transparent; }
+.dias::-webkit-scrollbar-thumb {
+  background: var(--tinta-3); border-radius: 999px;
+  border: 3px solid transparent; background-clip: content-box;
+}
 .dia {
   scroll-snap-align: start;
   display: flex; flex-direction: column; align-items: center; gap: .35rem;

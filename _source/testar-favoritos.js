@@ -160,6 +160,38 @@ F.fundir([]);
 ok(visto.length === 3 && !visto[2],
    'a fusão da conta avisa, mas sem «mudança» — é o que impede o app.js de voltar a subir tudo');
 
+/* Isto é o bug de dois aparelhos: apagar no computador não tirava do telemóvel,
+   porque a fusão é uma UNIÃO e voltava a juntar a cópia local. */
+console.log('\n== a conta manda depois da primeira fusão (dois aparelhos) ==');
+localStorage.clear(); F = recarregar();
+var pa = praia('Praia A', 41.1, -8.6), pb = praia('Praia B', 40.2, -8.7), pc = praia('Praia C', 37.1, -8.9);
+var ida = F.id(pa), idb = F.id(pb), idc = F.id(pc);
+
+F.alternar(pa); F.alternar(pb);                     /* o telemóvel tem A e B */
+var so_b = [{ id: idb, n: 'Praia B', t: 2 }];       /* no computador apagou-se a A */
+var r1 = F.fundir(so_b);
+ok(r1.lista.length === 2, 'a primeira sincronização junta, e não perde o que estava sem conta');
+
+var r2 = F.substituir(so_b, []);
+ok(r2.lista.length === 1 && r2.lista[0].id === idb,
+   'a partir da segunda, a praia apagada na conta desaparece deste aparelho');
+ok(JSON.parse(localStorage.getItem(CHAVE)).length === 1, 'e fica gravado, não é só no ecrã');
+
+/* O mesmo mecanismo tem de deixar passar as ADIÇÕES feitas noutro aparelho. */
+var b_e_c = [{ id: idb, n: 'Praia B', t: 2 }, { id: idc, n: 'Praia C', t: 3 }];
+var r3 = F.substituir(b_e_c, []);
+ok(r3.lista.length === 2 && r3.lista.some(function (x) { return x.id === idc; }),
+   'uma praia marcada noutro aparelho aparece aqui');
+
+/* E não pode comer o que ainda está na fila para subir. */
+F.alternar(pa);                                      /* marcada aqui, sem rede */
+var r4 = F.substituir(b_e_c, [ida]);
+ok(r4.lista.some(function (x) { return x.id === ida; }),
+   'o que está na fila para subir é protegido: não conta como apagado');
+var r5 = F.substituir(b_e_c, []);
+ok(!r5.lista.some(function (x) { return x.id === ida; }),
+   'mas sem estar na fila nem na conta, sai');
+
 console.log('\n' + '='.repeat(50));
 console.log(falhas ? '✗ ' + falhas + ' de ' + feitos + ' falharam' : '✓ TODOS OS ' + feitos + ' TESTES PASSARAM');
 console.log('='.repeat(50));

@@ -107,6 +107,34 @@
       return { lista: itens.slice(), deixados: deixados };
     },
 
+    /* A união acima só está certa UMA vez por conta e por aparelho: na primeira
+       sincronização, para não perder o que já estava marcado sem conta. Depois
+       disso é ela que impedia as remoções de viajar — apagar uma praia no
+       computador não a tirava do telemóvel, porque a união do telemóvel voltava
+       a juntar a cópia local, e o passo de subida ainda a punha outra vez na
+       conta, desfazendo a remoção nos dois lados.
+
+       A partir da segunda vez, quem manda é a conta. `protegidos` são os ids
+       que ainda estão na fila para subir: esses não estão na conta por ainda
+       não terem chegado lá, e não podem ser confundidos com apagados. */
+    substituir: function (novos, protegidos) {
+      var manter = {};
+      (protegidos || []).forEach(function (id) { manter[id] = 1; });
+      var vistos = {}, todos = [];
+      function juntar(x) {
+        if (!x || !x.id || vistos[x.id]) return;
+        vistos[x.id] = 1;
+        todos.push({ id: x.id, n: x.n, t: x.t || 0 });
+      }
+      (novos || []).forEach(juntar);
+      itens.forEach(function (x) { if (manter[x.id]) juntar(x); });
+      todos.sort(function (a, b) { return b.t - a.t; });
+      var deixados = todos.slice(LIMITE);
+      itens = todos.slice(0, LIMITE);
+      gravar();
+      return { lista: itens.slice(), deixados: deixados };
+    },
+
     /* Guardar e repor a lista que existia antes de entrar na conta. Sem isto,
        num computador partilhado, as praias da conta de quem entrou ficavam no
        aparelho depois de terminar sessão — e a pessoa seguinte carregava-as

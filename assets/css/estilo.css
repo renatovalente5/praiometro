@@ -91,6 +91,11 @@ a { color: inherit; }
 .salta:focus { left: 0; }
 
 :focus-visible { outline: 3px solid var(--mar); outline-offset: 3px; border-radius: 6px; }
+/* O resultado tem `tabindex="-1"` só para o app.js lhe poder dar o foco depois
+   de a previsão chegar — não se chega lá com o Tab. Um contorno de 3px em volta
+   de meia página não diz a ninguém onde está o foco; só parecia um erro. O
+   destino do foco continua a ser anunciado pelo `aria-labelledby`. */
+.resultado:focus, .resultado:focus-visible { outline: none; }
 
 /* ===================================================== CÉU DE FUNDO ==== */
 /* O fundo muda de cor com o veredicto — é o primeiro sinal, antes de se ler
@@ -197,6 +202,58 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
 .conta__botao--perigo { color: var(--vermelho); }
 .conta__botao--perigo:hover { border-color: var(--vermelho); }
 .conta__botao[disabled] { opacity: .6; cursor: default; }
+
+/* ---------------------------------------------------- painéis (Perfil) - */
+/* `<dialog>` nativo e não uma div: traz de graça o fecho com Escape, o foco
+   preso lá dentro enquanto está aberto, o resto da página inerte para leitores
+   de ecrã, e o `::backdrop`. Nada disso é de graça numa div. */
+.painel {
+  width: min(30rem, calc(100vw - 2 * var(--gutter)));
+  max-height: min(85svh, 44rem);
+  padding: 0; border: 1px solid var(--borda); border-radius: var(--raio-g);
+  background: var(--carta); color: var(--tinta); box-shadow: var(--sombra);
+  overflow: hidden;
+  /* O markup vive dentro do <header>, ao lado do avatar a que pertence, e o
+     header é centrado: sem isto o painel herdava o centrado. */
+  text-align: left;
+}
+.painel::backdrop { background: rgba(16, 34, 46, .45); backdrop-filter: blur(2px); }
+.painel__topo {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .9rem 1rem; border-bottom: 1px solid var(--borda);
+  position: sticky; top: 0; background: var(--carta); z-index: 1;
+}
+.painel__titulo { font-size: 1.05rem; font-weight: 800; letter-spacing: -.01em; }
+.painel__x {
+  flex: none; width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer;
+  background: var(--carta-2); border: 1px solid var(--borda); border-radius: 50%; color: var(--tinta);
+}
+.painel__x:hover { border-color: var(--tinta-3); }
+.painel__x svg { width: 18px; height: 18px; }
+/* O corpo é que rola, não a página por baixo. */
+.painel__corpo { padding: 1rem; display: grid; gap: 1rem; overflow-y: auto; max-height: inherit; }
+.painel__bloco { display: grid; gap: .4rem; }
+.painel__sub {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--tinta-3);
+}
+.painel__nota { font-size: .85rem; color: var(--tinta-2); line-height: 1.5; }
+.painel__nota a { color: var(--mar); }
+.painel__linha { font-size: .95rem; font-weight: 600; }
+.painel__bloco--perigo {
+  border: 1px solid var(--borda); border-left: 3px solid var(--vermelho);
+  border-radius: 0 var(--raio) var(--raio) 0; padding: .8rem; background: var(--carta-2);
+}
+.painel--curto { width: min(24rem, calc(100vw - 2 * var(--gutter))); }
+.painel--curto .painel__titulo { margin-bottom: .5rem; }
+/* Em coluna no telemóvel: lado a lado, «Apagar para sempre» ficava com metade
+   da largura e o texto a partir-se. */
+.painel__accoes { display: grid; gap: .5rem; margin-top: .3rem; }
+.painel__accoes .conta__botao { text-align: center; padding: .6rem; }
+@media (min-width: 26rem) {
+  .painel__accoes { grid-auto-flow: column; justify-content: end; }
+  .painel__accoes .conta__botao { padding: .6rem 1rem; }
+}
 .marca {
   display: inline-flex; align-items: center; gap: .55rem;
   font-size: clamp(1.7rem, 6vw, 2.6rem); font-weight: 800; letter-spacing: -.02em;
@@ -480,7 +537,18 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 /* =========================================================== VAZIO ==== */
 .vazio { max-width: 640px; margin: 1.4rem auto 0; padding: 0 var(--gutter); text-align: center; }
 .vazio__texto { color: var(--tinta-2); }
+/* No telemóvel quebra, e são duas linhas. A partir de 36rem passa a `nowrap`,
+   para as cinco ficarem sempre na mesma linha e nunca sobrar uma praia sozinha
+   na linha de baixo por causa de dois pixéis.
+
+   36rem e não menos: medidas as cinco dão 474px, e a caixa a essa largura tem
+   530px — sobram 56px (12%). Aos 34rem sobravam só 26px, e a fonte não é a
+   mesma em todos os sistemas: o Windows cai no Segoe UI, que é mais largo, e
+   uma lista que aqui cabe podia lá transbordar. */
 .vazio__sugestoes { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: center; margin-top: 1rem; }
+@media (min-width: 36rem) {
+  .vazio__sugestoes { flex-wrap: nowrap; }
+}
 .atalho {
   border: 1px solid var(--borda); background: var(--carta); border-radius: 999px;
   padding: .45rem .9rem; cursor: pointer; font-size: .92rem; font-weight: 600;

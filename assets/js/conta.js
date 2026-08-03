@@ -165,6 +165,9 @@
 
   function sair() {
     var t = sessao && sessao.access_token;
+    /* Sair devolve o aparelho ao estado de antes de entrar, e a lista que volta
+       é a local: se entrar outra vez, tem de haver fusão de novo. */
+    try { localStorage.removeItem(CHAVE_FUNDIDO); } catch (e) { }
     guardarSessao(null);
     if (!t) return Promise.resolve();
     return fetch(URL_BASE + '/auth/v1/logout?scope=local', {
@@ -279,6 +282,22 @@
     if (!Object.keys(fora).length) return;
     gravarPend(pendentes().filter(function (x) { return !(x.op === 'del' && fora[x.id]); }));
   }
+  /* ------------------------------------------- primeira fusão por aparelho */
+  /* A união entre a lista do aparelho e a da conta serve para não perder o que
+     alguém marcou antes de entrar. Mas só pode acontecer UMA vez por conta e
+     por aparelho: se acontecesse em todas as sincronizações, uma praia apagada
+     noutro aparelho voltava sempre a ser juntada aqui. Guarda-se o id da conta
+     e não um simples «sim», para que entrar com outra conta volte a fundir. */
+  var CHAVE_FUNDIDO = 'pm:fundido';
+  function jaFundiu() {
+    if (!sessao || !sessao.id) return false;
+    try { return localStorage.getItem(CHAVE_FUNDIDO) === sessao.id; } catch (e) { return false; }
+  }
+  function marcarFundido() {
+    if (!sessao || !sessao.id) return;
+    try { localStorage.setItem(CHAVE_FUNDIDO, sessao.id); } catch (e) { }
+  }
+
   function drenar() {
     var v = pendentes();
     if (!v.length || !sessao) return Promise.resolve([]);
@@ -330,6 +349,8 @@
     pendentes: pendentes,
     adiar: adiar,
     esquecerRemocoes: esquecerRemocoes,
+    jaFundiu: jaFundiu,
+    marcarFundido: marcarFundido,
     drenar: drenar,
     apagarConta: apagarConta,
     aoMudar: function (f) { ouvintes.push(f); }

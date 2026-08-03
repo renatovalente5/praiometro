@@ -22,9 +22,20 @@
   var diaEscolhido = 0;
 
   /* Praias conhecidas para arrancar, para o ecrã inicial não estar vazio.
-     Escolhidas por serem conhecidas de norte a sul, não por serem as melhores. */
-  var ATALHOS = ['Praia de Carcavelos', 'Praia da Rocha', 'Praia de Matosinhos',
-                 'Praia da Nazaré', 'Praia de Odeceixe-Mar', 'Praia do Guincho'];
+     Escolhidas por serem conhecidas, não por serem as melhores, e postas por
+     ORDEM GEOGRÁFICA, de norte para sul — a latitude está ao lado para se ver
+     que a ordem é essa e não outra.
+
+     São cinco e não mais: no computador têm de caber todas numa linha, e o
+     `nowrap` do CSS não deixa a lista quebrar. Quem acrescentar uma praia aqui
+     tem de confirmar que continua a caber — sobretudo com nomes compridos. */
+  var ATALHOS = [
+    'Praia de Matosinhos',   /* 41,18 — Porto */
+    'Praia da Barra',        /* 40,64 — Aveiro */
+    'Praia da Nazaré',       /* 39,60 — Leiria */
+    'Praia de Carcavelos',   /* 38,68 — Lisboa */
+    'Praia da Rocha'         /* 37,12 — Algarve */
+  ];
 
   /* ------------------------------------------------------------ ícones */
   /* Cada veredicto tem uma FORMA diferente, não só uma cor: sol, sol com
@@ -338,7 +349,12 @@
          numa rede móvel, e roubar o foco a quem já está a escrever noutro
          sítio é pior do que não o mover. */
       if (!automatico && (doc.activeElement === focoAoPedir || doc.activeElement === doc.body)) {
-        el('resultado').focus();
+        /* `preventScroll` porque mover o foco é para orientar quem usa teclado
+           ou leitor de ecrã, não para levar a página a passear: sem isto o
+           browser rolava até ao resultado a cada praia escolhida, e quem
+           escolheu a partir da caixa de procura ou da tira de favoritos —
+           ambas acima do resultado — perdia de vista onde estava. */
+        el('resultado').focus({ preventScroll: true });
       }
       try {
         localStorage.setItem('pm:praia', JSON.stringify({ id: F.id(praia), n: praia.n }));
@@ -653,19 +669,80 @@
     C.sair().then(function () { fecharSessao('Sessão terminada.'); });
   });
 
+  /* ------------------------------------------------------------- perfil */
+
+  /* Quem abriu o painel, para lhe devolver o foco ao fechar: um `<dialog>`
+     devolve-o sozinho, mas só quando é ele a fechar-se — e aqui há dois
+     encadeados, e um deles termina com a sessão fechada e o avatar já
+     desaparecido do ecrã. */
+  var focoAntesDoPainel = null;
+
+  function abrirPainel(id) {
+    var d = el(id);
+    focoAntesDoPainel = doc.activeElement;
+    if (typeof d.showModal === 'function') d.showModal();
+    else d.setAttribute('open', '');          /* sem <dialog>: fica inline, mas abre */
+  }
+  function fecharPainel(id) {
+    var d = el(id);
+    if (typeof d.close === 'function' && d.open) d.close();
+    else d.removeAttribute('open');
+  }
+
+  function desenharPerfil() {
+    var quem = C.quem();
+    if (!quem) return;
+    var nome = quem.nome || quem.email || '';
+    el('perfil-nome').textContent = nome;
+    el('perfil-email').textContent = quem.email && quem.email !== nome ? quem.email : '';
+    var n = F.lista().length;
+    el('perfil-quantas').textContent = n === 0 ? 'Nenhuma praia guardada'
+      : (n === 1 ? '1 praia guardada' : n + ' praias guardadas');
+  }
+
+  el('conta-perfil').addEventListener('click', function () {
+    el('conta-menu').open = false;
+    desenharPerfil();
+    abrirPainel('perfil');
+  });
+  el('perfil-fechar').addEventListener('click', function () { fecharPainel('perfil'); });
+  /* Clicar fora, no backdrop: o clique cai no próprio <dialog>, porque o corpo
+     está num filho. Sem isto só se fechava pelo X ou pelo Escape. */
+  el('perfil').addEventListener('click', function (e) {
+    if (e.target === this) fecharPainel('perfil');
+  });
+  el('perfil').addEventListener('close', function () {
+    if (focoAntesDoPainel && doc.contains(focoAntesDoPainel)) focoAntesDoPainel.focus();
+  });
+
   /* Apagar é irreversível, e o texto tem de dizer o que apaga mesmo — a versão
-     anterior falava só das praias e a operação apaga a conta inteira. */
+     anterior falava só das praias e a operação apaga a conta inteira. A
+     confirmação é um painel e não o `confirm()` do browser: o nativo aparece
+     desenraizado da página, no telemóvel dá-se-lhe «OK» sem ler, e em algumas
+     situações o browser simplesmente não o mostra. */
   el('conta-apagar').addEventListener('click', function () {
-    if (!confirm('Isto apaga a tua conta: o email, a ligação ao Google e as praias guardadas na conta. '
-               + 'Não há forma de recuperar. As praias guardadas neste aparelho ficam.\n\nQueres continuar?')) return;
-    var b = this;
-    b.disabled = true;
+    abrirPainel('confirmar');
+  });
+  el('confirmar-nao').addEventListener('click', function () { fecharPainel('confirmar'); });
+  el('confirmar').addEventListener('click', function (e) {
+    if (e.target === this) fecharPainel('confirmar');
+  });
+
+  el('confirmar-sim').addEventListener('click', function () {
+    var b = this, nao = el('confirmar-nao'), texto = el('confirmar-texto');
+    b.disabled = nao.disabled = true;
+    b.textContent = 'A apagar…';
     C.apagarConta().then(function () {
-      b.disabled = false;
+      fecharPainel('confirmar');
+      fecharPainel('perfil');
       fecharSessao('Conta apagada.');
     }).catch(function () {
-      b.disabled = false;
-      alert('Não conseguimos apagar agora. Tenta outra vez daqui a pouco.');
+      /* A falha fica dentro do painel: um `alert()` por cima de um diálogo é
+         um empilhamento que ninguém percebe, e o painel é onde a pessoa está. */
+      texto.textContent = 'Não conseguimos apagar agora. Tenta outra vez daqui a pouco.';
+    }).then(function () {
+      b.disabled = nao.disabled = false;
+      b.textContent = 'Apagar para sempre';
     });
   });
 
@@ -708,9 +785,23 @@
       var nuvem = naConta.filter(function (x) { return !porApagar[x.praia_id]; });
       /* A fusão lê a lista DENTRO do then, e não antes do pedido: uma estrela
          marcada durante a ida-e-volta à rede seria escrita por cima. */
-      var r = F.fundir((nuvem || []).map(function (x) {
+      var daConta = (nuvem || []).map(function (x) {
         return { id: x.praia_id, n: x.nome, t: Date.parse(x.criado_em) || 1 };
-      }));
+      });
+      /* Da primeira vez nesta conta e neste aparelho, junta — é o que salva as
+         praias marcadas antes de entrar. Daí para a frente manda a conta, senão
+         uma praia apagada noutro aparelho era ressuscitada aqui pela união e
+         voltava a subir. O que está na fila para subir é protegido: ainda não
+         chegou à conta, e não é o mesmo que ter sido apagado. */
+      var porSubir = C.pendentes().filter(function (o) { return o.op === 'add'; })
+                                  .map(function (o) { return o.id; });
+      var r;
+      if (C.jaFundiu()) {
+        r = F.substituir(daConta, porSubir);
+      } else {
+        r = F.fundir(daConta);
+        C.marcarFundido();
+      }
       desenharEstrela();
       desenharFavoritos();
       coresDosFavoritos();

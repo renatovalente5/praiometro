@@ -47,14 +47,70 @@
           <span class="conta__inicial" id="conta-inicial" aria-hidden="true"></span>
           <span class="visually-hidden">A tua conta</span>
         </summary>
+        <!-- Só o essencial e nada de irreversível: apagar a conta estava aqui,
+             a um clique de distância do avatar, ao lado de «Terminar sessão» e
+             parecido com ele. Passou para dentro do Perfil. -->
         <div class="conta__corpo">
           <p class="conta__quem"><strong id="conta-nome"></strong><span id="conta-email"></span></p>
-          <p class="conta__nota">As tuas praias ficam guardadas na conta e aparecem em qualquer aparelho.</p>
+          <button class="conta__botao" id="conta-perfil" type="button">Perfil</button>
           <button class="conta__botao" id="conta-sair" type="button">Terminar sessão</button>
-          <button class="conta__botao conta__botao--perigo" id="conta-apagar" type="button">Apagar a conta e os dados</button>
         </div>
       </details>
     </div>
+
+    <!-- ================================================ PERFIL ========= -->
+    <dialog class="painel" id="perfil" aria-labelledby="perfil-t">
+      <div class="painel__topo">
+        <h2 class="painel__titulo" id="perfil-t">Perfil</h2>
+        <button class="painel__x" id="perfil-fechar" type="button" aria-label="Fechar o perfil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="painel__corpo">
+        <section class="painel__bloco">
+          <h3 class="painel__sub">Conta</h3>
+          <p class="conta__quem"><strong id="perfil-nome"></strong><span id="perfil-email"></span></p>
+          <p class="painel__nota">As tuas praias ficam guardadas na conta e aparecem em qualquer aparelho
+            onde entres com este email.</p>
+        </section>
+
+        <section class="painel__bloco">
+          <h3 class="painel__sub">As tuas praias</h3>
+          <p class="painel__linha"><span id="perfil-quantas">—</span></p>
+          <p class="painel__nota">O limite são 15.</p>
+        </section>
+
+        <section class="painel__bloco">
+          <h3 class="painel__sub">Privacidade</h3>
+          <p class="painel__nota">Não há cookies nem publicidade, e não seguimos ninguém entre sites.
+            O que guardamos e porquê está na <a href="privacidade.html">política de privacidade</a>.</p>
+        </section>
+
+        <!-- Zona separada, com moldura própria: a diferença entre «Terminar
+             sessão» e «apagar tudo para sempre» tem de se ver antes do clique. -->
+        <section class="painel__bloco painel__bloco--perigo">
+          <h3 class="painel__sub">Apagar a conta</h3>
+          <p class="painel__nota">Apaga o email, a ligação ao Google e as praias guardadas na conta.
+            Não há forma de recuperar. As praias guardadas neste aparelho ficam.</p>
+          <button class="conta__botao conta__botao--perigo" id="conta-apagar" type="button">Apagar a conta e os dados</button>
+        </section>
+      </div>
+    </dialog>
+
+    <!-- ============================================ CONFIRMAÇÃO ======== -->
+    <dialog class="painel painel--curto" id="confirmar" aria-labelledby="confirmar-t">
+      <div class="painel__corpo">
+        <h2 class="painel__titulo" id="confirmar-t">Apagar a conta e os dados?</h2>
+        <p class="painel__nota" id="confirmar-texto">Isto apaga o email, a ligação ao Google e as praias
+          guardadas na conta. <strong>Não há forma de recuperar.</strong> As praias guardadas neste
+          aparelho ficam.</p>
+        <div class="painel__accoes">
+          <button class="conta__botao" id="confirmar-nao" type="button">Cancelar</button>
+          <button class="conta__botao conta__botao--perigo" id="confirmar-sim" type="button">Apagar para sempre</button>
+        </div>
+      </div>
+    </dialog>
 
     <h1 class="marca">
       <span class="marca__icone" aria-hidden="true">

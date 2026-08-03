@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Bateria de verificação do Praiómetro."""
 import json, os, socket, socketserver, sys, threading, http.server, time
-RAIZ='/Users/renatovalente/Websites/PraiaHoje'
+RAIZ=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(RAIZ,'_source'))
 from cdp import Chrome
 def livre():

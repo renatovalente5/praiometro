@@ -29,7 +29,7 @@ function recarregar() {
 
 /* A chave é prefixada porque renatovalente5.github.io é uma origem
    partilhada por todos os sites do Renato. */
-var CHAVE = 'vdp:favoritos';
+var CHAVE = 'pm:favoritos';
 var praia = function (n, la, lo) { return { n: n, la: la, lo: lo, m: 1 }; };
 var F = recarregar();
 

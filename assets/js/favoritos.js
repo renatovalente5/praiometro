@@ -17,7 +17,7 @@
      partilham UMA origem e portanto UM localStorage: uma chave chamada
      «favoritos» seria lida e escrita por todos os outros projectos que lá
      vivem. Enquanto não houver domínio próprio, é isto que os separa. */
-  var CHAVE = 'vdp:favoritos';
+  var CHAVE = 'pm:favoritos';
   /* 15 e não mais: as cores da tira vêm todas num pedido só, e cada praia
      custa ~8 KB nesse pedido. Com 30 eram 246 KB medidos, para uma tira que
      ninguém percorre até ao fim. */

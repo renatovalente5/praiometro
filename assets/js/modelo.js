@@ -296,7 +296,7 @@
       cor = nota >= 70 ? 'verde' : (nota >= 45 ? 'amarelo' : 'vermelho');
       /* Um dia com o céu mais tapado do que aberto (>60% de nuvens) não é um
          dia de praia a sério, por muito que o resto some. Medido em Carcavelos:
-         72% de nuvens com tudo o resto bom dava 71 pontos e «Vai dar praia».
+         72% de nuvens com tudo o resto bom dava 71 pontos e «Dia de praia».
          O corte em 0,40 é exactamente o degrau dos 60% de nebulosidade. */
       if (cor === 'verde' && pior_racio < 0.40) cor = 'amarelo';
     }

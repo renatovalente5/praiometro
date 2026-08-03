@@ -1,5 +1,5 @@
 /* =============================================================
-   VAI DAR PRAIA? — aplicação
+   PRAIÓMETRO — aplicação
    =============================================================
    Site estático: não há servidor nenhum. Tudo o que acontece aqui acontece no
    browser de quem visita, e as duas APIs da Open-Meteo são públicas, sem chave
@@ -38,7 +38,7 @@
   /* «Hoje não» num cartão de sexta-feira é simplesmente falso — e é também o
      que o leitor de ecrã lê em voz alta. A palavra passa a depender do dia. */
   var PALAVRAS = {
-    verde:    { hoje: 'Vai dar praia',  outro: 'Vai dar praia' },
+    verde:    { hoje: 'Dia de praia',   outro: 'Dia de praia' },
     amarelo:  { hoje: 'Assim-assim',    outro: 'Assim-assim' },
     vermelho: { hoje: 'Hoje não',       outro: 'Não vale a pena' }
   };
@@ -293,14 +293,14 @@
   function buscar(url) {
     var agora = new Date().getTime();
     try {
-      var c = JSON.parse(sessionStorage.getItem('vdp:c:' + url) || 'null');
+      var c = JSON.parse(sessionStorage.getItem('pm:c:' + url) || 'null');
       if (c && agora - c.t < TTL) return Promise.resolve(c.d);
     } catch (e) { }
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error(r.status);
       return r.json();
     }).then(function (d) {
-      try { sessionStorage.setItem('vdp:c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
+      try { sessionStorage.setItem('pm:c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
       return d;
     });
   }
@@ -341,7 +341,7 @@
         el('resultado').focus();
       }
       try {
-        localStorage.setItem('vdp:praia', JSON.stringify({ id: F.id(praia), n: praia.n }));
+        localStorage.setItem('pm:praia', JSON.stringify({ id: F.id(praia), n: praia.n }));
         history.replaceState(null, '', '#' + endereco(praia));
       } catch (e) { }
     }).catch(function (e) {
@@ -807,7 +807,7 @@
       var p = doEndereco((location.hash || '').slice(1));
       if (!p) {
         try {
-          var g = JSON.parse(localStorage.getItem('vdp:praia') || '{}');
+          var g = JSON.parse(localStorage.getItem('pm:praia') || '{}');
           p = (g.id && PRAIAS.find(function (x) { return F.id(x) === g.id; }))
               || (g.n && PRAIAS.find(function (x) { return x.n === g.n; })) || null;
         } catch (e) { }

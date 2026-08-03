@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Bateria de verificação do «Vai dar praia?»."""
+"""Bateria de verificação do Praiómetro."""
 import json, os, socket, socketserver, sys, threading, http.server, time
 RAIZ='/Users/renatovalente/Websites/PraiaHoje'
 sys.path.insert(0, os.path.join(RAIZ,'_source'))
@@ -134,7 +134,7 @@ try:
     d=json.loads(c.js("""JSON.stringify({
       pressed:document.getElementById('v-estrela').getAttribute('aria-pressed'),
       chips:document.querySelectorAll('.fav').length,
-      guardado:localStorage.getItem('vdp:favoritos'),
+      guardado:localStorage.getItem('pm:favoritos'),
       seccao:!document.getElementById('favoritos').hidden})"""))
     ok = d['pressed']=='true' and d['chips']==1 and not d['seccao'] is False
     print('  marcar %-22s %s  chips=%d' % (nome[:22], '✓' if ok else '✗', d['chips']))
@@ -167,7 +167,7 @@ try:
     d3=json.loads(c.js("""JSON.stringify({
       pressed:document.getElementById('v-estrela').getAttribute('aria-pressed'),
       escondida:document.getElementById('favoritos').hidden,
-      guardado:localStorage.getItem('vdp:favoritos')})"""))
+      guardado:localStorage.getItem('pm:favoritos')})"""))
     ok3 = d3['pressed']=='false' and d3['escondida'] and d3['guardado']=='[]'
     print('  desmarcar                    %s  %s' % ('✓' if ok3 else '✗', json.dumps(d3)))
     if not ok3: erro('desmarcar favorito: %s'%d3)
@@ -189,7 +189,7 @@ try:
     if d['entrar']!=d['disponivel']: erro('botão Entrar visível=%s mas Google pronto=%s'%(d['entrar'],d['disponivel']))
 
     # com sessão falsa: a interface tem de trocar por completo
-    c.js("""localStorage.setItem('vdp:sessao', JSON.stringify({
+    c.js("""localStorage.setItem('pm:sessao', JSON.stringify({
       access_token:'x', refresh_token:'y', expira: 4102444800000,
       id:'00000000-0000-0000-0000-000000000009', email:'a@b.pt', nome:'Zé Teste', foto:''}))""")
     c.abrir('http://127.0.0.1:%d/'%PORTA, espera=3.0)
@@ -204,7 +204,7 @@ try:
     if not ok2: erro('interface da conta com sessão: %s'%d2)
     # fila das operações que a rede não deixou cumprir
     d4=json.loads(c.js("""(function(){
-      localStorage.removeItem('vdp:pendentes');
+      localStorage.removeItem('pm:pendentes');
       window.Conta.adiar({op:'del', id:'40.1000,-8.1000', n:'A'});
       window.Conta.adiar({op:'add', id:'41.2000,-8.2000', n:'B'});
       var antes = window.Conta.pendentes().length;
@@ -217,7 +217,7 @@ try:
     ok4 = d4['antes']==2 and d4['depois']==2 and d4['duplicadas']==1 and d4['opFinal']=='add'
     print('  fila de operações por cumprir %s  %s' % ('✓' if ok4 else '✗', json.dumps(d4)))
     if not ok4: erro('fila de pendentes: %s'%d4)
-    c.js("localStorage.removeItem('vdp:pendentes')")
+    c.js("localStorage.removeItem('pm:pendentes')")
 
     # o menu é um <details>: tem de fechar ao carregar fora e com Escape
     c.js("document.getElementById('conta-menu').open = true"); time.sleep(.3)
@@ -283,7 +283,7 @@ for w,h,mob,rot in [(375,812,True,'telemóvel'),(1280,900,False,'computador')]:
         print('  %-11s %s contraste=%d %s' % (rot, '✓' if ok else '✗', len(con), json.dumps(d)))
         if con: erro('privacidade %s contraste: %s'%(rot,con))
         if not ok: erro('privacidade %s: %s'%(rot,d))
-        if d['pendentes']: print('     ⚠ %d bloco(s) por preencher (identificação do responsável)'%d['pendentes'])
+        if d['pendentes']: erro('privacidade: %d bloco(s) ainda por preencher'%d['pendentes'])
     finally: c.fechar()
 
 print('\n== 7. sem JavaScript ==')

@@ -26,8 +26,8 @@
 
   /* Prefixadas: renatovalente5.github.io é uma origem só, partilhada com todos
      os outros sites que lá vivem, e portanto um localStorage só. */
-  var CHAVE_SESSAO = 'vdp:sessao';
-  var CHAVE_VERIF = 'vdp:pkce';
+  var CHAVE_SESSAO = 'pm:sessao';
+  var CHAVE_VERIF = 'pm:pkce';
   var sessao = null;
   var ouvintes = [];
 
@@ -233,7 +233,7 @@
      de uma remoção é visível: a praia que a pessoa tirou volta na fusão
      seguinte, porque continua na conta. Fica aqui à espera da próxima
      oportunidade — e a fusão sabe ignorar o que está marcado para apagar. */
-  var CHAVE_PEND = 'vdp:pendentes';
+  var CHAVE_PEND = 'pm:pendentes';
 
   function pendentes() {
     try {

@@ -1,4 +1,4 @@
-# Vai dar praia?
+# Praiómetro
 
 Uma pergunta, uma resposta: **vale a pena ir à praia hoje?**
 
@@ -7,7 +7,7 @@ se hoje e nos próximos cinco dias vale a pena ir. Verde é bom, amarelo é
 assim-assim, vermelho fica para outro dia. Se quiseres perceber porquê, abres o
 detalhe e vês cada número traduzido para português corrente.
 
-**→ [renatovalente5.github.io/vai-dar-praia](https://renatovalente5.github.io/vai-dar-praia/)**
+**→ [renatovalente5.github.io/praiometro](https://renatovalente5.github.io/praiometro/)**
 
 ## Porque é que isto não é mais um site de meteorologia
 

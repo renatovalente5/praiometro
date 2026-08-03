@@ -447,12 +447,6 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .comofunciona__corpo strong { color: var(--tinta); }
 .comofunciona__mais a { color: var(--mar); }
 
-.rodape__aviso {
-  font-size: .86rem; color: var(--tinta-2); background: var(--carta-2);
-  border-left: 3px solid var(--vermelho); border-radius: 0 var(--raio) var(--raio) 0;
-  padding: .8rem 1rem; margin-bottom: 1rem;
-}
-.rodape__aviso strong { color: var(--tinta); }
 .rodape__fontes { font-size: .8rem; color: var(--tinta-3); text-align: center; }
 .rodape__fontes a { color: inherit; }
 

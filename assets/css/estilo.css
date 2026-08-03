@@ -74,6 +74,11 @@ ul { list-style: none; padding: 0; }
 button, input { font: inherit; color: inherit; }
 a { color: inherit; }
 
+/* Qualquer regra de autor com `display` vence o `display:none` que o browser
+   dá ao atributo hidden — foi assim que o botão «Entrar» ficou visível ao lado
+   do avatar de quem já tinha entrado. */
+[hidden] { display: none !important; }
+
 .visually-hidden {
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
@@ -117,7 +122,81 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
 }
 
 /* ======================================================== CABEÇALHO ==== */
-.topo { padding: clamp(1.6rem, 5vw, 3rem) var(--gutter) 1rem; text-align: center; }
+.topo { padding: clamp(1rem, 3.5vw, 2rem) var(--gutter) 1rem; text-align: center; }
+
+/* ============================================================ CONTA ==== */
+/* Linha própria e não sobreposta ao cabeçalho: em 375 px a «Entrar» tapava o
+   ponto de interrogação do título. A altura fica reservada desde o início,
+   mesmo antes de se saber se há sessão, para a página não saltar. */
+.conta {
+  position: relative; z-index: 5; display: flex; justify-content: flex-end;
+  align-items: center; min-height: 38px; margin-bottom: .5rem; text-align: left;
+}
+.conta--vazia { min-height: 0; margin-bottom: 0; }
+
+/* Atribuição obrigatória pela licença da Open-Meteo, junto aos números. */
+.detalhe__credito { font-size: .78rem; color: var(--tinta-3); margin-top: .5rem; }
+.detalhe__credito abbr { text-decoration: none; border-bottom: 1px dotted currentColor; }
+
+/* ====================================================== PÁGINA DE TEXTO = */
+.texto {
+  max-width: 40rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 3rem) var(--gutter) 4rem;
+  line-height: 1.65;
+}
+.texto h1 { font-size: clamp(1.7rem, 6vw, 2.4rem); font-weight: 800; letter-spacing: -.02em; }
+.texto h2 {
+  font-size: clamp(1.05rem, 3.6vw, 1.25rem); font-weight: 700; margin-top: 2rem; margin-bottom: .4rem;
+}
+.texto p, .texto ul { margin-bottom: .85rem; color: var(--tinta-2); }
+/* O reset global tira os marcadores a todas as listas; aqui são precisos. */
+.texto ul { padding-left: 1.2rem; list-style: disc; }
+.texto li { margin-bottom: .3rem; }
+.texto strong { color: var(--tinta); }
+.texto__lead {
+  font-size: 1.05rem; color: var(--tinta) !important; margin: .8rem 0 1.6rem;
+  padding: .9rem 1rem; background: var(--carta); border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+.texto__voltar { font-weight: 600; }
+.texto__data { font-size: .85rem; color: var(--tinta-3) !important; margin-top: 2rem; }
+.texto__pendente {
+  padding: .7rem .9rem; border-radius: var(--raio);
+  background: var(--amarelo-luz); color: var(--amarelo) !important; font-weight: 600;
+}
+.conta__entrar {
+  display: inline-flex; align-items: center; gap: .45rem; cursor: pointer;
+  font: inherit; font-size: .85rem; font-weight: 600; color: var(--tinta);
+  background: var(--carta); border: 1px solid var(--borda); border-radius: 999px;
+  padding: .42rem .85rem; box-shadow: var(--sombra);
+}
+.conta__entrar:hover { border-color: var(--mar); }
+.conta__entrar[disabled] { opacity: .6; cursor: default; }
+.conta__entrar svg { flex: none; }
+
+.conta__menu > summary { list-style: none; cursor: pointer; display: inline-flex; }
+.conta__menu > summary::-webkit-details-marker { display: none; }
+.conta__inicial {
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--mar); color: #fff; font-weight: 800; font-size: 1rem;
+  border: 2px solid var(--carta); box-shadow: var(--sombra);
+}
+.conta__corpo {
+  position: absolute; top: calc(100% + .5rem); right: 0; width: min(17rem, calc(100vw - 2 * var(--gutter)));
+  background: var(--carta); border: 1px solid var(--borda); border-radius: var(--raio);
+  box-shadow: var(--sombra); padding: .9rem; display: grid; gap: .5rem;
+}
+.conta__quem { display: grid; gap: .1rem; font-size: .88rem; word-break: break-word; }
+.conta__quem span { color: var(--tinta-3); font-size: .82rem; }
+.conta__nota { font-size: .8rem; color: var(--tinta-2); line-height: 1.45; }
+.conta__botao {
+  font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; text-align: left;
+  padding: .5rem .6rem; border-radius: var(--raio);
+  background: var(--carta-2); border: 1px solid var(--borda); color: var(--tinta);
+}
+.conta__botao:hover { border-color: var(--tinta-3); }
+.conta__botao--perigo { color: var(--vermelho); }
+.conta__botao--perigo:hover { border-color: var(--vermelho); }
+.conta__botao[disabled] { opacity: .6; cursor: default; }
 .marca {
   display: inline-flex; align-items: center; gap: .55rem;
   font-size: clamp(1.7rem, 6vw, 2.6rem); font-weight: 800; letter-spacing: -.02em;
@@ -185,6 +264,10 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
   background: var(--cor-actual, var(--tinta-3));
 }
 .veredicto__topo { display: flex; flex-direction: column; gap: .1rem; margin-bottom: 1rem; }
+/* A estrela vive no canto e não entra na coluna: reservar-lhe largura ao lado
+   do nome partia a data em duas linhas num telemóvel de 375 px. Só o nome se
+   afasta dela — a data vem na linha de baixo, já fora do seu caminho. */
+.veredicto__praia { padding: 0 2.2rem; }
 .veredicto__praia { font-weight: 700; font-size: clamp(1.15rem, 4vw, 1.45rem); letter-spacing: -.01em; }
 /* Sem text-transform: capitalize — em português dava «2 De Agosto». A
    primeira letra é posta no JavaScript. */
@@ -211,6 +294,72 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
   margin-top: .9rem; padding: .6rem .8rem; border-radius: var(--raio);
   background: var(--amarelo-luz); color: var(--amarelo); font-size: .88rem; font-weight: 600;
 }
+
+/* ---------------------------------------------------------- a estrela */
+.estrela {
+  position: absolute; top: calc(5px + .5rem); right: .5rem; z-index: 1;
+  width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
+  background: none; border: 0; border-radius: 50%;
+  color: var(--tinta-3); transition: color var(--t), transform var(--t);
+}
+.estrela svg { width: 25px; height: 25px; }
+/* O nome acessível vem do aria-label, que diz a praia e o que o botão faz.
+   Este texto fica cá como rede, para leitores que ignorem o aria-label. */
+.estrela__texto {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+.estrela:hover { color: var(--tinta); }
+/* Marcada muda de COR e de FORMA — a estrela passa a cheia. A cor sozinha
+   nunca chega (WCAG 1.4.1). */
+/* #c07f00 dá 3,34:1 em branco; o dourado mais bonito, #d99400, ficava-se por
+   2,56:1 e a 1.4.11 pede 3:1 a um controlo que mostra estado. */
+.estrela[aria-pressed="true"] { color: #c07f00; }
+.estrela[aria-pressed="true"] svg { fill: currentColor; }
+@media (prefers-color-scheme: dark) { .estrela[aria-pressed="true"] { color: #f5b83d; } }
+.estrela:active { transform: scale(.9); }
+@media (prefers-reduced-motion: reduce) { .estrela { transition: none; } .estrela:active { transform: none; } }
+
+/* ====================================================== AS TUAS PRAIAS = */
+.favoritos { max-width: 640px; margin: 1.1rem auto 0; padding: 0 var(--gutter); }
+.favoritos__titulo {
+  font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--tinta-3); margin-bottom: .5rem;
+}
+.favoritos__lista {
+  list-style: none; display: flex; gap: .45rem; overflow-x: auto;
+  padding-bottom: .25rem; scrollbar-width: none;
+  /* No telemóvel a tira sangra até às margens, para se ver que rola. */
+  margin: 0 calc(var(--gutter) * -1); padding-inline: var(--gutter);
+  scroll-snap-type: x proximity;
+}
+.favoritos__lista::-webkit-scrollbar { display: none; }
+.fav {
+  scroll-snap-align: start;
+  display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap;
+  padding: .42rem .8rem .42rem .55rem; cursor: pointer; font: inherit;
+  font-size: .88rem; font-weight: 600; color: var(--tinta);
+  background: var(--carta); border: 1px solid var(--borda); border-radius: 999px;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.fav:hover { border-color: var(--fav-cor, var(--mar)); }
+.fav[aria-current="true"] {
+  border-color: var(--fav-cor, var(--mar)); box-shadow: 0 0 0 2px var(--fav-cor, var(--mar));
+}
+.fav__ponto {
+  width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: var(--fav-fundo, var(--carta-2)); color: var(--fav-cor, var(--tinta-3));
+}
+.fav__ponto svg { width: 68%; height: 68%; }
+.favoritos__aviso { margin-top: .5rem; font-size: .85rem; color: var(--amarelo); font-weight: 600; }
+.fav__rio {
+  font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--mar); border: 1px solid currentColor; border-radius: 999px;
+  padding: 0 .4em; flex: none;
+}
+.fav--verde    { --fav-cor: var(--verde);    --fav-fundo: var(--verde-luz); }
+.fav--amarelo  { --fav-cor: var(--amarelo);  --fav-fundo: var(--amarelo-luz); }
+.fav--vermelho { --fav-cor: var(--vermelho); --fav-fundo: var(--vermelho-luz); }
 
 body[data-cor="verde"]    { --cor-actual: var(--verde);    --cor-fundo: var(--verde-luz); }
 body[data-cor="amarelo"]  { --cor-actual: var(--amarelo);  --cor-fundo: var(--amarelo-luz); }

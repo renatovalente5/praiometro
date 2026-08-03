@@ -1,3 +1,7 @@
 # ambiente local
 .claude/
 _source/osm-praias.json
+
+# segredos — nunca no repositório
+*.env
+sb.env

@@ -42,8 +42,27 @@ O vento é o factor mais pesado do modelo, e leva **mais do triplo** do que o
 HCI:Beach lhe dá. Não é um palpite: é a diferença entre um índice validado no
 Mediterrâneo e nas Caraíbas e um país onde a nortada é o assunto de Agosto.
 
-Nas praias de rio não há dados de mar: os 16 pontos da água são redistribuídos
-proporcionalmente pelos outros factores.
+Nas praias de rio não há dados de mar: a nota passa a ser a proporção dos pontos
+obtidos sobre os 86 pontos que restam, o que equivale a redistribuir os 14 da
+água proporcionalmente pelos outros factores.
+
+**Consequência que é preciso conhecer.** A escala da água é absoluta e o
+Atlântico raramente chega ao topo dela: em Agosto uma praia do noroeste anda nos
+18 °C, que valem 8 dos 14 pontos. Uma praia de rio não carrega esse arrasto.
+Medido com tempo exactamente igual (céu 15 %, vento 12 km/h, 27 °C, sem chuva):
+
+| | Nota |
+|---|---|
+| Praia de mar, água a 18,5 °C | 91 |
+| Praia de mar, água a 22,5 °C (Algarve) | 97 |
+| Praia de rio | **97** |
+
+São **6 pontos** de diferença entre mar e rio no mesmo dia, e chegam para virar
+um amarelo em verde perto do corte dos 70. A nota de uma praia de rio responde
+bem à pergunta «este dia presta nesta praia?», mas **não é directamente
+comparável** com a de uma praia de mar. Por isso as praias de rio aparecem
+marcadas com «rio» na pesquisa e na tira de favoritos, que é onde as duas
+apareceriam lado a lado.
 
 ### Janela horária
 

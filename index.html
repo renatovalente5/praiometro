@@ -32,6 +32,30 @@
   </div>
 
   <header class="topo">
+    <!-- A caixa fica sempre, com altura reservada; o que está lá dentro é que
+         só aparece quando se sabe se há sessão, para não piscar «Entrar» a
+         quem já entrou nem empurrar a página quando decide. -->
+    <div class="conta" id="conta">
+      <button class="conta__entrar" id="conta-entrar" type="button" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.6Z"/><path fill="#34A853" d="M12 24c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v3C3.7 21.5 7.6 24 12 24Z"/><path fill="#FBBC05" d="M5.6 14.7a7.2 7.2 0 0 1 0-4.6v-3H1.8a12 12 0 0 0 0 10.6l3.8-3Z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.2 15.1 0 12 0 7.6 0 3.7 2.5 1.8 6.2l3.8 2.9C6.5 6.7 9 4.8 12 4.8Z"/></svg>
+        Entrar
+      </button>
+      <details class="conta__menu" id="conta-menu" hidden>
+        <summary>
+          <!-- A inicial, e não a fotografia do Google: carregá-la seria contar
+               ao Google cada abertura da página. -->
+          <span class="conta__inicial" id="conta-inicial" aria-hidden="true"></span>
+          <span class="visually-hidden">A tua conta</span>
+        </summary>
+        <div class="conta__corpo">
+          <p class="conta__quem"><strong id="conta-nome"></strong><span id="conta-email"></span></p>
+          <p class="conta__nota">As tuas praias ficam guardadas na conta e aparecem em qualquer aparelho.</p>
+          <button class="conta__botao" id="conta-sair" type="button">Terminar sessão</button>
+          <button class="conta__botao conta__botao--perigo" id="conta-apagar" type="button">Apagar a conta e os dados</button>
+        </div>
+      </details>
+    </div>
+
     <h1 class="marca">
       <span class="marca__icone" aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="6" fill="currentColor"/><path d="M2 24c3 0 3-2 6-2s3 2 6 2 3-2 6-2 3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
@@ -59,15 +83,32 @@
       <p class="procura__estado" id="procura-estado" role="status" aria-live="polite"></p>
     </section>
 
+    <!-- ================================================== AS TUAS PRAIAS -->
+    <!-- Fica sempre visível, também com uma praia aberta: o que se quer dos
+         favoritos é saltar entre as nossas praias sem voltar a escrever. -->
+    <section class="favoritos" id="favoritos" aria-labelledby="favoritos-t" hidden>
+      <h2 class="favoritos__titulo" id="favoritos-t">As tuas praias</h2>
+      <ul class="favoritos__lista" id="favoritos-lista"></ul>
+      <p class="favoritos__aviso" id="favoritos-aviso" role="status" hidden></p>
+    </section>
+
     <!-- ================================================== RESULTADO -->
-    <section class="resultado" id="resultado" aria-labelledby="resultado-t" hidden>
+    <section class="resultado" id="resultado" aria-labelledby="resultado-t" tabindex="-1" hidden>
       <h2 class="visually-hidden" id="resultado-t">Previsão</h2>
 
       <!-- veredicto do dia escolhido -->
-      <article class="veredicto" id="veredicto" aria-live="polite">
+      <!-- É o painel do dia escolhido na tira de baixo. O aria-labelledby é
+           actualizado pelo JavaScript sempre que se muda de dia. -->
+      <article class="veredicto" id="veredicto" role="tabpanel" aria-labelledby="dia-0" aria-live="polite">
         <div class="veredicto__topo">
-          <p class="veredicto__praia" id="v-praia"></p>
-          <p class="veredicto__dia" id="v-dia"></p>
+          <div class="veredicto__ident">
+            <p class="veredicto__praia" id="v-praia"></p>
+            <p class="veredicto__dia" id="v-dia"></p>
+          </div>
+          <button class="estrela" id="v-estrela" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z"/></svg>
+            <span class="estrela__texto" id="v-estrela-texto">Guardar</span>
+          </button>
         </div>
         <div class="veredicto__selo" id="v-selo">
           <span class="selo__icone" id="v-icone" aria-hidden="true"></span>
@@ -139,11 +180,14 @@
     </p>
     <p class="rodape__fontes">
       Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
-      praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+      praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
+      <a href="privacidade.html">Privacidade</a>
     </p>
   </footer>
 
   <script src="assets/js/modelo.js"></script>
+  <script src="assets/js/favoritos.js"></script>
+  <script src="assets/js/conta.js"></script>
   <script src="assets/js/app.js" defer></script>
 </body>
 </html>

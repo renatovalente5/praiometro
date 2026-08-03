@@ -110,7 +110,107 @@ try:
     else: print('  ✓ rodapé explica:', rodape[:70])
 finally: c.fechar()
 
-print('\n== 4. sem JavaScript ==')
+print('\n== 4. favoritos ==')
+c=novo(375,812,True)
+try:
+    # marca a praia de um atalho e confirma que aparece na tira
+    c.js("document.querySelector('.atalho').click()"); time.sleep(5.0)
+    nome=c.js("document.getElementById('v-praia').textContent")
+    c.js("document.getElementById('v-estrela').click()"); time.sleep(.4)
+    d=json.loads(c.js("""JSON.stringify({
+      pressed:document.getElementById('v-estrela').getAttribute('aria-pressed'),
+      chips:document.querySelectorAll('.fav').length,
+      guardado:localStorage.getItem('favoritos'),
+      seccao:!document.getElementById('favoritos').hidden})"""))
+    ok = d['pressed']=='true' and d['chips']==1 and not d['seccao'] is False
+    print('  marcar %-22s %s  chips=%d' % (nome[:22], '✓' if ok else '✗', d['chips']))
+    if not ok: erro('marcar favorito: %s'%d)
+    # a chave é a coordenada, não o nome — há 50 nomes repetidos no ficheiro
+    if ',' not in (d['guardado'] or ''): erro('favorito guardado sem coordenada: %s'%d['guardado'])
+
+    # a cor do chip TEM de ser a mesma que a praia aberta dá
+    cor_chip=c.js("(document.querySelector('.fav').className.match(/fav--(\\w+)/)||[])[1]||''")
+    cor_pag=c.js("document.body.getAttribute('data-cor')")
+    print('  cor do chip = cor da página  %s  (%s / %s)' % ('✓' if cor_chip==cor_pag else '✗', cor_chip, cor_pag))
+    if cor_chip!=cor_pag: erro('chip diz %s e a praia aberta diz %s'%(cor_chip,cor_pag))
+
+    # sobrevive a recarregar, e a tira pinta-se com UM par de pedidos
+    c.js("performance.clearResourceTimings()")
+    c.abrir('http://127.0.0.1:%d/'%PORTA, espera=6.0)
+    d2=json.loads(c.js("""JSON.stringify({
+      chips:document.querySelectorAll('.fav').length,
+      com_cor:document.querySelectorAll('.fav[class*=fav--]').length,
+      com_forma:document.querySelectorAll('.fav__ponto svg').length,
+      pedidos:performance.getEntriesByType('resource').filter(function(r){return r.name.indexOf('open-meteo')>0}).length})"""))
+    ok2 = d2['chips']==1 and d2['com_cor']==1 and d2['com_forma']==1
+    print('  depois de recarregar         %s  %s' % ('✓' if ok2 else '✗', json.dumps(d2)))
+    if not ok2: erro('favoritos depois de recarregar: %s'%d2)
+    # cor sozinha não chega (WCAG 1.4.1): cada chip leva também a forma
+    if d2['com_cor']!=d2['com_forma']: erro('há chips com cor e sem forma')
+
+    # desmarcar limpa tudo
+    c.js("document.getElementById('v-estrela').click()"); time.sleep(.4)
+    d3=json.loads(c.js("""JSON.stringify({
+      pressed:document.getElementById('v-estrela').getAttribute('aria-pressed'),
+      escondida:document.getElementById('favoritos').hidden,
+      guardado:localStorage.getItem('favoritos')})"""))
+    ok3 = d3['pressed']=='false' and d3['escondida'] and d3['guardado']=='[]'
+    print('  desmarcar                    %s  %s' % ('✓' if ok3 else '✗', json.dumps(d3)))
+    if not ok3: erro('desmarcar favorito: %s'%d3)
+finally: c.fechar()
+
+print('\n== 5. conta ==')
+c=novo(375,812,True)
+try:
+    d=json.loads(c.js("""JSON.stringify({
+      entrar:!document.getElementById('conta-entrar').hidden,
+      menu:!document.getElementById('conta-menu').hidden,
+      disponivel:window.Conta.disponivel(),
+      sessao:window.Conta.activa(),
+      pedidos:performance.getEntriesByType('resource').filter(function(r){return r.name.indexOf('supabase')>0}).length})"""))
+    # sem sessão o site não pode falar com o Supabase: quem só vê a praia fica anónimo
+    ok = d['pedidos']==0 and not d['sessao'] and not d['menu'] and d['entrar']==d['disponivel']
+    print('  sem sessão                   %s  %s' % ('✓' if ok else '✗', json.dumps(d)))
+    if d['pedidos']: erro('sem sessão houve %d pedidos ao Supabase'%d['pedidos'])
+    if d['entrar']!=d['disponivel']: erro('botão Entrar visível=%s mas Google pronto=%s'%(d['entrar'],d['disponivel']))
+
+    # com sessão falsa: a interface tem de trocar por completo
+    c.js("""localStorage.setItem('sessao', JSON.stringify({
+      access_token:'x', refresh_token:'y', expira: 4102444800000,
+      id:'00000000-0000-0000-0000-000000000009', email:'a@b.pt', nome:'Zé Teste', foto:''}))""")
+    c.abrir('http://127.0.0.1:%d/'%PORTA, espera=3.0)
+    d2=json.loads(c.js("""JSON.stringify({
+      entrar:getComputedStyle(document.getElementById('conta-entrar')).display!=='none',
+      menu:getComputedStyle(document.getElementById('conta-menu')).display!=='none',
+      inicial:document.getElementById('conta-inicial').textContent,
+      nome:document.getElementById('conta-nome').textContent})"""))
+    ok2 = (not d2['entrar']) and d2['menu'] and d2['inicial']=='Z'
+    print('  com sessão                   %s  %s' % ('✓' if ok2 else '✗', json.dumps(d2, ensure_ascii=False)))
+    if d2['entrar']: erro('«Entrar» continua visível com sessão aberta (regra [hidden] em falta?)')
+    if not ok2: erro('interface da conta com sessão: %s'%d2)
+    c.js("localStorage.clear()")
+finally: c.fechar()
+
+print('\n== 6. página de privacidade ==')
+for w,h,mob,rot in [(375,812,True,'telemóvel'),(1280,900,False,'computador')]:
+    c=Chrome(porta=livre())
+    try:
+        c.cmd('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mob)
+        c.abrir('http://127.0.0.1:%d/privacidade.html'%PORTA, espera=1.6)
+        con=json.loads(c.js(CONTRASTE))
+        d=json.loads(c.js("""JSON.stringify({
+          transbordo:document.documentElement.scrollWidth+'/'+innerWidth,
+          h2:document.querySelectorAll('h2').length,
+          pendentes:document.querySelectorAll('.texto__pendente').length,
+          volta:!!document.querySelector('.texto__voltar a')})"""))
+        ok = d['transbordo'].split('/')[0]==d['transbordo'].split('/')[1] and d['volta'] and not con
+        print('  %-11s %s contraste=%d %s' % (rot, '✓' if ok else '✗', len(con), json.dumps(d)))
+        if con: erro('privacidade %s contraste: %s'%(rot,con))
+        if not ok: erro('privacidade %s: %s'%(rot,d))
+        if d['pendentes']: print('     ⚠ %d bloco(s) por preencher (identificação do responsável)'%d['pendentes'])
+    finally: c.fechar()
+
+print('\n== 7. sem JavaScript ==')
 c=Chrome(porta=livre())
 try:
     c.cmd('Emulation.setScriptExecutionDisabled', value=True)

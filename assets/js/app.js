@@ -129,33 +129,46 @@
     return res.slice(0, 8).map(function (x) { return x.p; });
   }
 
+  /* Um listbox só pode conter `option`, e uma `option` não pode conter nada
+     interactivo — tinha aqui um <button> dentro de cada uma. Num combobox as
+     opções não se percorrem com o Tab: o foco fica na caixa de escrita e é o
+     aria-activedescendant que diz ao leitor de ecrã qual está marcada. */
   function mostrarSugestoes(arr, titulo) {
     if (!arr.length) { esconderSugestoes(); return; }
-    lista.innerHTML = (titulo ? '<li class="sugestao sugestao--titulo" aria-disabled="true"><span class="sugestao__meta">' + esc(titulo) + '</span></li>' : '') +
+    lista.innerHTML =
+      (titulo ? '<li class="sugestao sugestao--titulo" role="presentation"><span class="sugestao__meta">' + esc(titulo) + '</span></li>' : '') +
       arr.map(function (p, i) {
-        return '<li role="option" id="sug-' + i + '" aria-selected="false">' +
-          '<button class="sugestao" type="button" data-i="' + PRAIAS.indexOf(p) + '">' +
+        return '<li class="sugestao" role="option" id="sug-' + i + '" aria-selected="false"' +
+          ' data-i="' + PRAIAS.indexOf(p) + '">' +
           '<span class="sugestao__nome">' + esc(p.n) + '</span>' +
           (p.m ? '' : '<span class="sugestao__rio">rio</span>') +
           '<span class="sugestao__meta">' + esc(p.c ? p.c + ' · ' + p.r : p.r) +
             (p.d != null ? ' · ' + num(p.d) + ' km' : '') + '</span>' +
-          '</button></li>';
+          '</li>';
       }).join('');
     lista.hidden = false;
     caixa.setAttribute('aria-expanded', 'true');
+    desmarcar();
+  }
+  /* Apontar para uma opção que já não existe é pior do que não apontar para
+     nenhuma: o leitor de ecrã fica a anunciar um id fantasma. */
+  function desmarcar() {
     marcado = -1;
+    caixa.removeAttribute('aria-activedescendant');
   }
   function esconderSugestoes() {
     lista.hidden = true; lista.innerHTML = '';
     caixa.setAttribute('aria-expanded', 'false');
-    marcado = -1;
+    desmarcar();
   }
 
   caixa.addEventListener('input', function () {
     var r = procurar(caixa.value);
     if (caixa.value.trim().length >= 2 && !r.length) {
-      lista.innerHTML = '<li class="sugestao" aria-disabled="true">Não encontrámos nenhuma praia com esse nome.</li>';
+      lista.innerHTML = '<li class="sugestao" role="presentation">Não encontrámos nenhuma praia com esse nome.</li>';
       lista.hidden = false;
+      caixa.setAttribute('aria-expanded', 'true');
+      desmarcar();
     } else {
       mostrarSugestoes(r);
     }
@@ -170,13 +183,20 @@
       if (marcado < 0) marcado = opcoes.length - 1;
       if (marcado >= opcoes.length) marcado = 0;
       opcoes.forEach(function (o, i) {
-        o.parentElement.setAttribute('aria-selected', i === marcado ? 'true' : 'false');
+        o.setAttribute('aria-selected', i === marcado ? 'true' : 'false');
       });
-      caixa.setAttribute('aria-activedescendant', 'sug-' + marcado);
+      caixa.setAttribute('aria-activedescendant', opcoes[marcado].id);
+      opcoes[marcado].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Home' || e.key === 'End') {
+      if (!opcoes.length) return;
+      e.preventDefault();
+      marcado = e.key === 'Home' ? 0 : opcoes.length - 1;
+      opcoes.forEach(function (o, i) { o.setAttribute('aria-selected', i === marcado ? 'true' : 'false'); });
+      caixa.setAttribute('aria-activedescendant', opcoes[marcado].id);
       opcoes[marcado].scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
-      if (marcado >= 0 && opcoes[marcado]) { e.preventDefault(); opcoes[marcado].click(); }
-      else if (opcoes.length) { e.preventDefault(); opcoes[0].click(); }
+      if (marcado >= 0 && opcoes[marcado]) { e.preventDefault(); escolher(PRAIAS[+opcoes[marcado].dataset.i]); }
+      else if (opcoes.length) { e.preventDefault(); escolher(PRAIAS[+opcoes[0].dataset.i]); }
     } else if (e.key === 'Escape') {
       esconderSugestoes();
     }
@@ -235,24 +255,57 @@
      Custa 26 KB em vez de 8, num único pedido. */
   var MODELOS = ['ecmwf_ifs025', 'icon_seamless', 'gfs_seamless', 'ukmo_seamless'];
 
-  function urlTempo(p) {
+  /* Um só construtor para uma praia ou para muitas. A Open-Meteo aceita
+     coordenadas separadas por vírgula e devolve um array pela mesma ordem —
+     verificado nas duas APIs. Interessa que seja o MESMO construtor: se a
+     tira de favoritos pedisse menos variáveis do que a página, a bolinha
+     podia dizer verde e a praia aberta dizer amarelo. */
+  function urlTempo(pontos, dias) {
+    var a = [].concat(pontos);
     return 'https://api.open-meteo.com/v1/forecast'
-      + '?latitude=' + p.la + '&longitude=' + p.lo
+      + '?latitude=' + a.map(function (p) { return p.la; }).join(',')
+      + '&longitude=' + a.map(function (p) { return p.lo; }).join(',')
       + '&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,'
       + 'wind_direction_10m,cloud_cover,precipitation,precipitation_probability,uv_index,weather_code'
       + '&daily=weather_code,precipitation_sum'
-      + '&timezone=auto&forecast_days=6'
+      + '&timezone=auto&forecast_days=' + (dias || 6)
       + '&models=' + MODELOS.join(',');
   }
 
-  function urlMar(p) {
+  function urlMar(pontos, dias) {
+    var a = [].concat(pontos);
     return 'https://marine-api.open-meteo.com/v1/marine'
-      + '?latitude=' + p.la + '&longitude=' + p.lo
+      + '?latitude=' + a.map(function (p) { return p.la; }).join(',')
+      + '&longitude=' + a.map(function (p) { return p.lo; }).join(',')
       + '&hourly=sea_surface_temperature,wave_height'
-      + '&timezone=auto&forecast_days=6';
+      + '&timezone=auto&forecast_days=' + (dias || 6);
   }
 
-  function escolher(praia) {
+  /* Com uma coordenada a resposta é um objecto, com várias é um array. */
+  function comoArray(x) { return x == null ? [] : (Array.isArray(x) ? x : [x]); }
+
+  /* Guarda a resposta durante meia hora. Sem isto, cada abertura da página
+     eram dois pedidos, e os favoritos passariam a quatro — a Open-Meteo é
+     gratuita e sem chave, mas responde 429 a quem abusa. */
+  var TTL = 30 * 60 * 1000;
+  function buscar(url) {
+    var agora = new Date().getTime();
+    try {
+      var c = JSON.parse(sessionStorage.getItem('c:' + url) || 'null');
+      if (c && agora - c.t < TTL) return Promise.resolve(c.d);
+    } catch (e) { }
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    }).then(function (d) {
+      try { sessionStorage.setItem('c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
+      return d;
+    });
+  }
+
+  /* `automatico` é true quando a praia vem do endereço ou da última visita —
+     aí não se mexe no foco, porque ninguém pediu nada. */
+  function escolher(praia, automatico) {
     praiaActual = praia;
     esconderSugestoes();
     caixa.value = praia.n;
@@ -260,14 +313,11 @@
     estado.textContent = 'A ver como está…';
     el('vazio').hidden = true;
 
-    var pedidos = [fetch(urlTempo(praia)).then(function (r) {
-      if (!r.ok) throw new Error('tempo ' + r.status);
-      return r.json();
-    })];
+    var pedidos = [buscar(urlTempo(praia))];
     /* A API marinha só responde em pontos com mar. Numa praia de rio o pedido
        nem se faz; noutras pode falhar, e isso não pode deitar a página abaixo. */
     pedidos.push(praia.m
-      ? fetch(urlMar(praia)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+      ? buscar(urlMar(praia)).catch(function () { return null; })
       : Promise.resolve(null));
 
     Promise.all(pedidos).then(function (r) {
@@ -275,10 +325,17 @@
       veredictos = dias.map(M.classificarDia);
       diaEscolhido = 0;
       estado.textContent = '';
+      /* Já sabemos a cor de hoje desta praia: a tira de favoritos aproveita-a
+         em vez de a voltar a pedir. */
+      if (veredictos[0]) coresFav[F.id(praia)] = veredictos[0].cor;
       desenhar();
+      /* Sem isto o foco ficava no <body> depois de escolher: quem anda de
+         teclado tinha de percorrer a página toda outra vez para chegar ao
+         resultado que acabou de pedir. */
+      if (!automatico) el('resultado').focus();
       try {
-        localStorage.setItem('praia', JSON.stringify({ n: praia.n }));
-        history.replaceState(null, '', '#' + encodeURIComponent(praia.n));
+        localStorage.setItem('praia', JSON.stringify({ id: F.id(praia), n: praia.n }));
+        history.replaceState(null, '', '#' + endereco(praia));
       } catch (e) { }
     }).catch(function (e) {
       estado.textContent = 'Não conseguimos ir buscar a previsão. Tenta outra vez daqui a pouco.';
@@ -298,7 +355,12 @@
   function desenharDias() {
     el('dias').innerHTML = dias.map(function (d, i) {
       var v = veredictos[i];
+      /* tabindex a saltar de um para o outro («roving»): o Tab entra na tira
+         uma vez e sai; lá dentro anda-se com as setas, que é o que a WAI-ARIA
+         manda num tablist e o que qualquer pessoa espera de uma tira de dias. */
       return '<button class="dia dia--' + v.cor + '" type="button" role="tab" data-i="' + i + '"' +
+        ' id="dia-' + i + '" aria-controls="veredicto"' +
+        ' tabindex="' + (i === diaEscolhido ? '0' : '-1') + '"' +
         ' aria-selected="' + (i === diaEscolhido) + '"' +
         ' aria-label="' + esc(nomeDia(d.dia, i) + ', ' + palavra(v.cor, i) +
           (v.nota == null ? '' : ', nota ' + v.nota + ' em 100')) + '">' +
@@ -317,11 +379,32 @@
     desenhar();
   });
 
+  el('dias').addEventListener('keydown', function (e) {
+    var n = dias.length;
+    if (!n) return;
+    var novo = null;
+    if (e.key === 'ArrowRight') novo = (diaEscolhido + 1) % n;
+    else if (e.key === 'ArrowLeft') novo = (diaEscolhido - 1 + n) % n;
+    else if (e.key === 'Home') novo = 0;
+    else if (e.key === 'End') novo = n - 1;
+    if (novo === null) return;
+    e.preventDefault();
+    diaEscolhido = novo;
+    desenhar();
+    /* Depois de redesenhar, o botão é outro: o foco tem de o seguir, senão
+       fica no <body> e a seguinte seta não faz nada. */
+    var b = el('dias').querySelector('.dia[data-i="' + novo + '"]');
+    if (b) { b.focus(); b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+  });
+
   function desenharVeredicto() {
     var d = dias[diaEscolhido], v = veredictos[diaEscolhido];
     doc.body.setAttribute('data-cor', v.cor);
+    el('veredicto').setAttribute('aria-labelledby', 'dia-' + diaEscolhido);
     el('v-praia').textContent = praiaActual.n;
     el('v-praia').setAttribute('title', praiaActual.c ? praiaActual.c + ', ' + praiaActual.r : praiaActual.r);
+    desenharEstrela();
+    desenharFavoritos();
     el('v-dia').textContent = dataLonga(d.dia, diaEscolhido);
     el('v-icone').innerHTML = ICONES[v.cor];
     el('v-palavra').textContent = palavra(v.cor, diaEscolhido);
@@ -409,10 +492,194 @@
     if (!d.mar) rodape += ' Esta é uma praia de rio: não há dados de temperatura da água nem de ondulação.';
     else if (d.agua == null) rodape += ' Não há dados de mar para este ponto.';
 
-    el('detalhe-corpo').innerHTML = linhas + '<p class="detalhe__rodape">' + esc(rodape) + '</p>';
+    /* A licença da Open-Meteo exige o link «junto ao local onde os dados são
+       mostrados», e a documentação marinha exige também referência ao DWD.
+       Só no rodapé da página não cumpria. */
+    var credito = '<p class="detalhe__credito">Dados de '
+      + '<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>'
+      + (d.mar && d.agua != null ? ', com dados marinhos do <abbr title="Deutscher Wetterdienst">DWD</abbr>' : '')
+      + '.</p>';
+
+    el('detalhe-corpo').innerHTML = linhas + '<p class="detalhe__rodape">' + esc(rodape) + '</p>' + credito;
   }
 
+  /* ---------------------------------------------------------- favoritos */
+
+  var F = window.Favoritos;
+  var coresFav = {};        /* id da praia -> cor de hoje, durante esta visita */
+  var LEGENDA = { verde: 'hoje vai dar praia', amarelo: 'hoje assim-assim', vermelho: 'hoje não vale a pena' };
+
+  /* Nome curto para o chip: «Praia de Matosinhos» não cabe seis vezes numa
+     tira de telemóvel, e quem a guardou sabe bem qual é. */
+  function curto(n) {
+    return n.replace(/^Praia (Fluvial )?(da |de |do |dos |das )?/, '').replace(/^Prainha d[ao] /, '');
+  }
+
+  function desenharEstrela() {
+    var b = el('v-estrela');
+    if (!praiaActual) return;
+    var marcada = F.tem(praiaActual);
+    b.setAttribute('aria-pressed', marcada ? 'true' : 'false');
+    el('v-estrela-texto').textContent = marcada ? 'Guardada' : 'Guardar';
+    b.setAttribute('aria-label', (marcada ? 'Remover ' : 'Guardar ') + praiaActual.n +
+      (marcada ? ' das tuas praias' : ' nas tuas praias'));
+  }
+
+  el('v-estrela').addEventListener('click', function () {
+    if (!praiaActual) return;
+    var r = F.alternar(praiaActual);
+    var av = el('favoritos-aviso');
+    av.hidden = r !== 'cheio';
+    if (r === 'cheio') av.textContent = 'Já tens ' + F.limite + ' praias guardadas. Tira uma da lista para guardares esta.';
+    desenharEstrela();
+    desenharFavoritos();
+  });
+
+  function desenharFavoritos() {
+    var arr = PRAIAS.length ? F.resolver(PRAIAS) : [];
+    el('favoritos').hidden = !arr.length;
+    if (!arr.length) return;
+    el('favoritos-lista').innerHTML = arr.map(function (p) {
+      var k = F.id(p), cor = coresFav[k];
+      var aqui = praiaActual && F.id(praiaActual) === k;
+      return '<li>' +
+        '<button class="fav' + (cor ? ' fav--' + cor : '') + '" type="button" data-id="' + esc(k) + '"' +
+        (aqui ? ' aria-current="true"' : '') +
+        ' aria-label="' + esc(p.n + (p.m ? '' : ', praia de rio') + (cor ? ', ' + LEGENDA[cor] : '')) + '">' +
+        /* A cor sozinha não chega (WCAG 1.4.1): cada veredicto tem a mesma
+           FORMA que tem no cartão grande — sol, sol com nuvem, chuva. */
+        '<span class="fav__ponto" aria-hidden="true">' + (cor ? ICONES[cor] : '') + '</span>' +
+        '<span class="fav__nome">' + esc(curto(p.n)) + '</span>' +
+        /* Numa praia de rio não entra a temperatura da água, e por isso a nota
+           sai ~6 pontos acima da de uma praia de mar com o mesmo tempo. Lado a
+           lado numa tira, isso enganaria sem esta marca. */
+        (p.m ? '' : '<span class="fav__rio" aria-hidden="true">rio</span>') +
+        '</button></li>';
+    }).join('');
+  }
+
+  el('favoritos-lista').addEventListener('click', function (e) {
+    var b = e.target.closest('.fav');
+    if (!b) return;
+    var p = PRAIAS.find(function (x) { return F.id(x) === b.dataset.id; });
+    if (p) escolher(p);
+  });
+
+  /* Todas as cores em falta num único par de pedidos, em vez de um par por
+     praia: a Open-Meteo aceita várias coordenadas de uma vez. */
+  function coresDosFavoritos() {
+    var arr = PRAIAS.length ? F.resolver(PRAIAS) : [];
+    var falta = arr.filter(function (p) { return !coresFav[F.id(p)]; });
+    if (!falta.length) return;
+    var mar = falta.filter(function (p) { return p.m; });
+
+    Promise.all([
+      buscar(urlTempo(falta, 1)).catch(function () { return null; }),
+      mar.length ? buscar(urlMar(mar, 1)).catch(function () { return null; }) : Promise.resolve(null)
+    ]).then(function (r) {
+      var tempo = comoArray(r[0]), marinho = comoArray(r[1]);
+      if (!tempo.length) return;
+      var porMar = {};
+      mar.forEach(function (p, i) { porMar[F.id(p)] = marinho[i] || null; });
+      falta.forEach(function (p, i) {
+        if (!tempo[i]) return;
+        try {
+          var d = M.agregar(M.consenso(tempo[i], MODELOS), porMar[F.id(p)], p);
+          if (d && d[0]) coresFav[F.id(p)] = M.classificarDia(d[0]).cor;
+        } catch (e) { }
+      });
+      desenharFavoritos();
+    });
+  }
+
+  /* -------------------------------------------------------------- conta */
+
+  var C = window.Conta;
+
+  function desenharConta() {
+    var quem = C.quem();
+    el('conta-entrar').hidden = !!quem || !C.disponivel();
+    /* Sem nada para mostrar, não se reserva a altura: só faz sentido guardá-la
+       para o caso em que algo vai mesmo aparecer. */
+    el('conta').classList.toggle('conta--vazia', !quem && !C.disponivel());
+    el('conta-menu').hidden = !quem;
+    if (!quem) { el('conta-menu').open = false; return; }
+    var nome = quem.nome || quem.email || '';
+    el('conta-inicial').textContent = (nome.trim()[0] || '?').toUpperCase();
+    el('conta-nome').textContent = nome;
+    el('conta-email').textContent = quem.email && quem.email !== nome ? quem.email : '';
+    el('conta-menu').querySelector('summary').setAttribute('aria-label', 'A tua conta: ' + nome);
+  }
+
+  el('conta-entrar').addEventListener('click', function () {
+    this.disabled = true;
+    C.entrar().catch(function () {
+      el('conta-entrar').disabled = false;
+      estado.textContent = 'Não conseguimos abrir a entrada com o Google. Tenta outra vez.';
+    });
+  });
+
+  el('conta-sair').addEventListener('click', function () {
+    C.sair().then(function () { desenharConta(); });
+  });
+
+  /* Apagar é irreversível: pergunta-se primeiro, e diz-se o que desaparece. */
+  el('conta-apagar').addEventListener('click', function () {
+    if (!confirm('Isto apaga as praias guardadas na tua conta e termina a sessão. As praias deste aparelho ficam. Queres continuar?')) return;
+    var b = this;
+    b.disabled = true;
+    C.apagarConta().then(function () {
+      desenharConta();
+      b.disabled = false;
+    }).catch(function () {
+      b.disabled = false;
+      alert('Não conseguimos apagar agora. Tenta outra vez daqui a pouco.');
+    });
+  });
+
+  /* Entrar não substitui: junta. Quem marcou praias no telemóvel sem conta
+     não as pode perder por ter entrado no computador. */
+  function sincronizar() {
+    if (!C.activa()) return Promise.resolve();
+    var locais = F.lista();
+    return C.lerNuvem().then(function (nuvem) {
+      var uniao = locais.concat((nuvem || []).map(function (x) { return { id: x.praia_id, n: x.nome }; }));
+      F.substituir(uniao);
+      desenharFavoritos();
+      coresDosFavoritos();
+      /* Sobe o que só existia aqui. */
+      var naNuvem = {};
+      (nuvem || []).forEach(function (x) { naNuvem[x.praia_id] = 1; });
+      var subir = F.lista().filter(function (x) { return !naNuvem[x.id]; });
+      return subir.length ? C.juntarNuvem(subir) : null;
+    });
+  }
+
+  /* Daqui para a frente, cada estrela vai também para a conta. */
+  F.aoMudar(function (itens, mudanca) {
+    if (!mudanca || !C.activa()) return;
+    var p = mudanca.tipo === 'marcada'
+      ? C.juntarNuvem([{ id: mudanca.id, n: mudanca.n }])
+      : C.apagarNuvem(mudanca.id);
+    p.catch(function () { });   /* falhar a sincronizar não pode partir a estrela */
+  });
+
   /* ------------------------------------------------------------ arranque */
+
+  /* O nome não identifica uma praia: há quatro «Praia dos Pescadores». O link
+     partilhado continua legível, mas leva a coordenada quando é preciso. */
+  function endereco(p) {
+    var repetido = PRAIAS.filter(function (x) { return x.n === p.n; }).length > 1;
+    return encodeURIComponent(p.n) + (repetido ? '@' + F.id(p) : '');
+  }
+  function doEndereco(h) {
+    if (!h) return null;
+    var k = h.lastIndexOf('@');
+    var nome = decodeURIComponent(k > 0 ? h.slice(0, k) : h);
+    var coord = k > 0 ? h.slice(k + 1) : '';
+    return PRAIAS.find(function (x) { return x.n === nome && (!coord || F.id(x) === coord); })
+        || PRAIAS.find(function (x) { return x.n === nome; }) || null;
+  }
 
   function atalhos() {
     var caixaA = el('atalhos');
@@ -431,15 +698,26 @@
     .then(function (d) {
       PRAIAS = d;
       atalhos();
+      desenharFavoritos();
+      /* Se viemos do Google, primeiro fecha-se a sessão e junta-se a lista;
+         só depois se pedem as cores, para não as pedir duas vezes. */
+      C.tratarRegresso()
+        .catch(function (e) {
+          estado.textContent = 'Não conseguimos concluir a entrada. Tenta outra vez.';
+          return null;
+        })
+        .then(function () { desenharConta(); return sincronizar().catch(function () { }); })
+        .then(function () { coresDosFavoritos(); });
       /* Volta à última praia: quem abre isto abre-o quase sempre para a mesma. */
-      var quero = decodeURIComponent((location.hash || '').slice(1));
-      if (!quero) {
-        try { quero = (JSON.parse(localStorage.getItem('praia') || '{}')).n || ''; } catch (e) { }
+      var p = doEndereco((location.hash || '').slice(1));
+      if (!p) {
+        try {
+          var g = JSON.parse(localStorage.getItem('praia') || '{}');
+          p = (g.id && PRAIAS.find(function (x) { return F.id(x) === g.id; }))
+              || (g.n && PRAIAS.find(function (x) { return x.n === g.n; })) || null;
+        } catch (e) { }
       }
-      if (quero) {
-        var p = PRAIAS.find(function (x) { return x.n === quero; });
-        if (p) escolher(p);
-      }
+      if (p) escolher(p, true);
     })
     .catch(function () {
       estado.textContent = 'Não conseguimos carregar a lista de praias.';

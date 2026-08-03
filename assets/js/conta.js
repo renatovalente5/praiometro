@@ -24,8 +24,10 @@
      uma página de erro do Supabase. Passa a true quando estiver criado. */
   var GOOGLE_PRONTO = false;
 
-  var CHAVE_SESSAO = 'sessao';
-  var CHAVE_VERIF = 'pkce';
+  /* Prefixadas: renatovalente5.github.io é uma origem só, partilhada com todos
+     os outros sites que lá vivem, e portanto um localStorage só. */
+  var CHAVE_SESSAO = 'vdp:sessao';
+  var CHAVE_VERIF = 'vdp:pkce';
   var sessao = null;
   var ouvintes = [];
 
@@ -84,7 +86,11 @@
       body: JSON.stringify(corpo)
     }).then(function (r) {
       return r.json().then(function (d) {
-        if (!r.ok) throw new Error(d.error_description || d.msg || d.error || ('HTTP ' + r.status));
+        if (!r.ok) {
+          var e = new Error(d.error_description || d.msg || d.error || ('HTTP ' + r.status));
+          e.estado = r.status;   /* quem apanha precisa de saber se foi recusa ou rede */
+          throw e;
+        }
         return d;
       });
     });
@@ -94,22 +100,57 @@
   function token() {
     if (!sessao) return Promise.reject(new Error('sem sessão'));
     if (new Date().getTime() < sessao.expira) return Promise.resolve(sessao.access_token);
-    return pedirToken({ refresh_token: sessao.refresh_token }, 'refresh_token')
-      .then(function (d) {
+
+    function renovar(refresh) {
+      return pedirToken({ refresh_token: refresh }, 'refresh_token').then(function (d) {
         var s = daResposta(d);
         /* A resposta da renovação nem sempre traz o utilizador outra vez. */
         if (s && !s.id) { s.id = sessao.id; s.email = sessao.email; s.nome = sessao.nome; s.foto = sessao.foto; }
         guardarSessao(s);
         return s.access_token;
-      })
-      .catch(function (e) { guardarSessao(null); throw e; });
+      });
+    }
+
+    return renovar(sessao.refresh_token).catch(function (e) {
+      /* Outro separador pode ter renovado entretanto e rodado o token: a nossa
+         cópia em memória ficou velha, mas a boa está no localStorage. */
+      var guardada = lerSessao();
+      if (guardada && sessao && guardada.refresh_token !== sessao.refresh_token) {
+        sessao = guardada;
+        return renovar(guardada.refresh_token).catch(function (e2) { return desistir(e2); });
+      }
+      return desistir(e);
+    });
+
+    /* Só se apaga a sessão quando o servidor DIZ que o token não presta. Uma
+       falha de rede — wifi de hotel, avião, túnel — não pode obrigar a pessoa
+       a entrar outra vez: o refresh token dela continua bom. */
+    function desistir(e) {
+      if (e && e.estado >= 400 && e.estado < 500) guardarSessao(null);
+      throw e;
+    }
   }
 
   /* ------------------------------------------------------------ entrar */
 
   function entrar() {
+    /* crypto.subtle só existe em contexto seguro. Em http:// que não seja
+       localhost — testar no telemóvel por http://192.168.1.x, um portal
+       cativo — a chamada atirava de forma SÍNCRONA, escapava ao .catch de quem
+       chamou, e o botão ficava morto sem explicação. */
+    if (!(window.crypto && crypto.subtle && window.TextEncoder)) {
+      return Promise.reject(new Error('contexto-inseguro'));
+    }
     var verificador = aleatorio(48);
-    try { sessionStorage.setItem(CHAVE_VERIF, verificador); } catch (e) { }
+    /* Sem o verificador não há regresso possível: mais vale não sair da página
+       do que mandar a pessoa ao Google para voltar a um erro. Acontece no iOS
+       com «Bloquear todos os cookies» e em webviews de aplicações. */
+    try {
+      sessionStorage.setItem(CHAVE_VERIF, verificador);
+      if (sessionStorage.getItem(CHAVE_VERIF) !== verificador) throw new Error('não gravou');
+    } catch (e) {
+      return Promise.reject(new Error('armazenamento-bloqueado'));
+    }
     return sha256(verificador).then(function (desafio) {
       var volta = location.origin + location.pathname;
       location.href = URL_BASE + '/auth/v1/authorize'
@@ -209,7 +250,11 @@
   sessao = lerSessao();
 
   window.Conta = {
-    disponivel: function () { return GOOGLE_PRONTO; },
+    /* Não basta o cliente OAuth existir: sem contexto seguro o PKCE não é
+       sequer possível, e mais vale não mostrar o botão do que mostrá-lo morto. */
+    disponivel: function () {
+      return GOOGLE_PRONTO && !!(window.crypto && crypto.subtle && window.TextEncoder);
+    },
     activa: function () { return !!sessao; },
     quem: function () { return sessao ? { id: sessao.id, email: sessao.email, nome: sessao.nome, foto: sessao.foto } : null; },
     entrar: entrar,

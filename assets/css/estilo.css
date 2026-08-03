@@ -461,8 +461,28 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
   .dias { grid-auto-columns: 1fr; overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  /* `animation-duration: .01ms` sem travar as repetições transforma uma
+     animação infinita — como o `pulsa` do botão do alfinete — num pisca a
+     60 Hz. É o oposto do que quem liga esta preferência está a pedir, e para
+     quem tem sensibilidade vestibular ou fotossensibilidade chega a ser
+     perigoso. As repetições têm de ser travadas também. */
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
   .ceu { transition: none; }
+  .procura__perto[aria-busy="true"] { animation: none; opacity: .6; }
+}
+
+/* No modo de contraste elevado do Windows o sistema força todas as cores de
+   contorno para a mesma, e a selecção do dia e do favorito actual — que só se
+   marcam por border-color + box-shadow — ficavam iguais a todos os outros.
+   O outline é das poucas coisas que sobrevive. */
+@media (forced-colors: active) {
+  .dia[aria-selected="true"],
+  .fav[aria-current="true"] { outline: 3px solid Highlight; outline-offset: 2px; }
+  .estrela[aria-pressed="true"] svg { fill: Highlight; stroke: Highlight; }
 }
 
 /* Um veto de segurança — trovoada, rajadas, mar muito cavado — não pode ser

@@ -164,12 +164,14 @@
 
   caixa.addEventListener('input', function () {
     var r = procurar(caixa.value);
+    /* «Não encontrámos» num <li role=presentation> dentro do listbox não é
+       anunciado por leitor nenhum, e dizer aria-expanded="true" sobre uma lista
+       sem opções é mentira. A mensagem vai para a região que já é live. */
     if (caixa.value.trim().length >= 2 && !r.length) {
-      lista.innerHTML = '<li class="sugestao" role="presentation">Não encontrámos nenhuma praia com esse nome.</li>';
-      lista.hidden = false;
-      caixa.setAttribute('aria-expanded', 'true');
-      desmarcar();
+      esconderSugestoes();
+      estado.textContent = 'Não encontrámos nenhuma praia com esse nome.';
     } else {
+      estado.textContent = r.length ? r.length + (r.length === 1 ? ' praia encontrada' : ' praias encontradas') : '';
       mostrarSugestoes(r);
     }
   });
@@ -291,14 +293,14 @@
   function buscar(url) {
     var agora = new Date().getTime();
     try {
-      var c = JSON.parse(sessionStorage.getItem('c:' + url) || 'null');
+      var c = JSON.parse(sessionStorage.getItem('vdp:c:' + url) || 'null');
       if (c && agora - c.t < TTL) return Promise.resolve(c.d);
     } catch (e) { }
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error(r.status);
       return r.json();
     }).then(function (d) {
-      try { sessionStorage.setItem('c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
+      try { sessionStorage.setItem('vdp:c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
       return d;
     });
   }
@@ -307,6 +309,7 @@
      aí não se mexe no foco, porque ninguém pediu nada. */
   function escolher(praia, automatico) {
     praiaActual = praia;
+    var focoAoPedir = doc.activeElement;
     esconderSugestoes();
     caixa.value = praia.n;
     caixa.blur();
@@ -331,10 +334,14 @@
       desenhar();
       /* Sem isto o foco ficava no <body> depois de escolher: quem anda de
          teclado tinha de percorrer a página toda outra vez para chegar ao
-         resultado que acabou de pedir. */
-      if (!automatico) el('resultado').focus();
+         resultado que acabou de pedir. Mas a resposta pode demorar segundos
+         numa rede móvel, e roubar o foco a quem já está a escrever noutro
+         sítio é pior do que não o mover. */
+      if (!automatico && (doc.activeElement === focoAoPedir || doc.activeElement === doc.body)) {
+        el('resultado').focus();
+      }
       try {
-        localStorage.setItem('praia', JSON.stringify({ id: F.id(praia), n: praia.n }));
+        localStorage.setItem('vdp:praia', JSON.stringify({ id: F.id(praia), n: praia.n }));
         history.replaceState(null, '', '#' + endereco(praia));
       } catch (e) { }
     }).catch(function (e) {
@@ -521,18 +528,22 @@
     var marcada = F.tem(praiaActual);
     b.setAttribute('aria-pressed', marcada ? 'true' : 'false');
     el('v-estrela-texto').textContent = marcada ? 'Guardada' : 'Guardar';
-    b.setAttribute('aria-label', (marcada ? 'Remover ' : 'Guardar ') + praiaActual.n +
-      (marcada ? ' das tuas praias' : ' nas tuas praias'));
+    /* O rótulo nomeia o OBJECTO, não a acção. Com «Remover…» mais
+       aria-pressed="true" o leitor de ecrã dizia «Remover Carcavelos das tuas
+       praias, botão, premido» — e ninguém percebe se acabou de guardar ou de
+       apagar. Fixo no objecto, lê-se «Guardar Carcavelos…, premido». */
+    b.setAttribute('aria-label', 'Guardar ' + praiaActual.n + ' nas tuas praias');
   }
 
   el('v-estrela').addEventListener('click', function () {
     if (!praiaActual) return;
     var r = F.alternar(praiaActual);
-    var av = el('favoritos-aviso');
-    av.hidden = r !== 'cheio';
-    if (r === 'cheio') av.textContent = 'Já tens ' + F.limite + ' praias guardadas. Tira uma da lista para guardares esta.';
-    desenharEstrela();
-    desenharFavoritos();
+    /* Quando dá 'cheio' nada muda, e portanto o F.aoMudar não dispara: sem esta
+       mensagem quem não vê carregava na estrela e não recebia retorno nenhum. */
+    avisar(r === 'cheio'
+      ? 'Já tens ' + F.limite + ' praias guardadas. Tira uma da lista para guardares esta.'
+      : '');
+    if (r === 'cheio') { desenharEstrela(); desenharFavoritos(); }
   });
 
   function desenharFavoritos() {
@@ -613,56 +624,123 @@
 
   el('conta-entrar').addEventListener('click', function () {
     this.disabled = true;
-    C.entrar().catch(function () {
+    /* Antes de sair da página, guarda a lista que existe agora: é ela que
+       volta se a pessoa terminar sessão neste aparelho. */
+    F.guardarAntesDeEntrar();
+    C.entrar().catch(function (e) {
       el('conta-entrar').disabled = false;
-      estado.textContent = 'Não conseguimos abrir a entrada com o Google. Tenta outra vez.';
+      estado.textContent = e && e.message === 'armazenamento-bloqueado'
+        ? 'O teu browser está a bloquear o armazenamento e sem ele não é possível entrar. Experimenta fora da navegação privada.'
+        : 'Não conseguimos abrir a entrada com o Google. Tenta outra vez.';
     });
   });
 
+  /* Depois de terminar sessão, o aparelho não pode ficar com as praias da
+     conta: num computador partilhado, a pessoa seguinte carregava-as para a
+     conta dela sem nunca as ter marcado. */
+  function fecharSessao(msg) {
+    F.reporDeAntesDeEntrar();
+    desenharConta();
+    desenharEstrela();
+    desenharFavoritos();
+    coresDosFavoritos();
+    estado.textContent = msg;
+    var alvo = C.disponivel() ? el('conta-entrar') : el('procura');
+    if (alvo) alvo.focus();
+  }
+
   el('conta-sair').addEventListener('click', function () {
-    C.sair().then(function () { desenharConta(); });
+    C.sair().then(function () { fecharSessao('Sessão terminada.'); });
   });
 
-  /* Apagar é irreversível: pergunta-se primeiro, e diz-se o que desaparece. */
+  /* Apagar é irreversível, e o texto tem de dizer o que apaga mesmo — a versão
+     anterior falava só das praias e a operação apaga a conta inteira. */
   el('conta-apagar').addEventListener('click', function () {
-    if (!confirm('Isto apaga as praias guardadas na tua conta e termina a sessão. As praias deste aparelho ficam. Queres continuar?')) return;
+    if (!confirm('Isto apaga a tua conta: o email, a ligação ao Google e as praias guardadas na conta. '
+               + 'Não há forma de recuperar. As praias guardadas neste aparelho ficam.\n\nQueres continuar?')) return;
     var b = this;
     b.disabled = true;
     C.apagarConta().then(function () {
-      desenharConta();
       b.disabled = false;
+      fecharSessao('Conta apagada.');
     }).catch(function () {
       b.disabled = false;
       alert('Não conseguimos apagar agora. Tenta outra vez daqui a pouco.');
     });
   });
 
+  /* Um <details> não fecha sozinho: sem isto o menu da conta ficava aberto por
+     cima da página até se voltar a carregar no avatar. */
+  doc.addEventListener('click', function (e) {
+    if (!e.target.closest('#conta')) el('conta-menu').open = false;
+  });
+  doc.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var m = el('conta-menu');
+    if (!m.open) return;
+    m.open = false;
+    m.querySelector('summary').focus();
+  });
+
+  function avisar(texto) {
+    var av = el('favoritos-aviso');
+    av.textContent = texto || '';
+    av.hidden = !texto;
+  }
+
   /* Entrar não substitui: junta. Quem marcou praias no telemóvel sem conta
      não as pode perder por ter entrado no computador. */
   function sincronizar() {
     if (!C.activa()) return Promise.resolve();
-    var locais = F.lista();
     return C.lerNuvem().then(function (nuvem) {
-      var uniao = locais.concat((nuvem || []).map(function (x) { return { id: x.praia_id, n: x.nome }; }));
-      F.substituir(uniao);
+      /* A fusão lê a lista DENTRO do then, e não antes do pedido: uma estrela
+         marcada durante a ida-e-volta à rede seria escrita por cima. */
+      var r = F.fundir((nuvem || []).map(function (x) {
+        return { id: x.praia_id, n: x.nome, t: Date.parse(x.criado_em) || 1 };
+      }));
+      desenharEstrela();
       desenharFavoritos();
       coresDosFavoritos();
-      /* Sobe o que só existia aqui. */
+
+      if (r.deixados.length) {
+        avisar('Tens mais de ' + F.limite + ' praias entre este aparelho e a tua conta. '
+             + 'Ficaram de fora as ' + r.deixados.length + ' mais antigas.');
+      }
+
+      /* Sobe o que só existia aqui, sem passar do limite do lado de lá. */
       var naNuvem = {};
       (nuvem || []).forEach(function (x) { naNuvem[x.praia_id] = 1; });
-      var subir = F.lista().filter(function (x) { return !naNuvem[x.id]; });
-      return subir.length ? C.juntarNuvem(subir) : null;
+      var subir = F.lista().filter(function (x) { return !naNuvem[x.id]; })
+                           .slice(0, Math.max(0, F.limite - (nuvem || []).length));
+      if (!subir.length) return null;
+      return C.juntarNuvem(subir).catch(function () {
+        avisar('Guardámos as praias neste aparelho, mas não conseguimos pô-las na tua conta.');
+      });
     });
   }
 
-  /* Daqui para a frente, cada estrela vai também para a conta. */
+  /* Dois papéis diferentes, e antes estavam colados: o desenho tem de acontecer
+     SEMPRE que a lista muda — também quando muda por fusão ou por outro
+     separador — senão a estrela fica a mostrar o estado anterior e o clique
+     seguinte apaga onde a pessoa queria guardar. Subir para a nuvem é que só
+     acontece numa mudança deliberada e com sessão aberta. */
   F.aoMudar(function (itens, mudanca) {
+    desenharEstrela();
+    desenharFavoritos();
     if (!mudanca || !C.activa()) return;
     var p = mudanca.tipo === 'marcada'
       ? C.juntarNuvem([{ id: mudanca.id, n: mudanca.n }])
       : C.apagarNuvem(mudanca.id);
-    p.catch(function () { });   /* falhar a sincronizar não pode partir a estrela */
+    p.catch(function () {
+      avisar(mudanca.tipo === 'marcada'
+        ? 'Guardámos «' + mudanca.n + '» neste aparelho, mas não na tua conta.'
+        : 'Removemos «' + mudanca.n + '» deste aparelho, mas não da tua conta.');
+    });
   });
+
+  /* Sem isto, uma sessão que morre a meio da visita continuava a aparecer como
+     activa no cabeçalho até alguém recarregar a página. */
+  C.aoMudar(function () { desenharConta(); });
 
   /* ------------------------------------------------------------ arranque */
 
@@ -693,26 +771,33 @@
     });
   }
 
+  /* A troca do código do Google não depende da lista de praias para nada, e
+     estava presa ao mesmo .then: se o praias.json falhasse — deploy a meio,
+     cache a devolver 404 em HTML, rede fraca — o código OAuth expirava sem ser
+     trocado e a entrada falhava por uma razão sem relação nenhuma. */
+  var regresso = C.tratarRegresso()
+    .catch(function () {
+      estado.textContent = 'Não conseguimos concluir a entrada. Tenta outra vez.';
+      return null;
+    })
+    .then(function () { desenharConta(); });
+
   fetch('data/praias.json')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       PRAIAS = d;
       atalhos();
       desenharFavoritos();
-      /* Se viemos do Google, primeiro fecha-se a sessão e junta-se a lista;
-         só depois se pedem as cores, para não as pedir duas vezes. */
-      C.tratarRegresso()
-        .catch(function (e) {
-          estado.textContent = 'Não conseguimos concluir a entrada. Tenta outra vez.';
-          return null;
-        })
-        .then(function () { desenharConta(); return sincronizar().catch(function () { }); })
+      /* A troca do código já foi feita no arranque, fora desta cadeia. Aqui só
+         falta juntar as listas, que precisa das praias carregadas. */
+      regresso
+        .then(function () { return sincronizar().catch(function () { }); })
         .then(function () { coresDosFavoritos(); });
       /* Volta à última praia: quem abre isto abre-o quase sempre para a mesma. */
       var p = doEndereco((location.hash || '').slice(1));
       if (!p) {
         try {
-          var g = JSON.parse(localStorage.getItem('praia') || '{}');
+          var g = JSON.parse(localStorage.getItem('vdp:praia') || '{}');
           p = (g.id && PRAIAS.find(function (x) { return F.id(x) === g.id; }))
               || (g.n && PRAIAS.find(function (x) { return x.n === g.n; })) || null;
         } catch (e) { }

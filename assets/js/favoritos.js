@@ -13,7 +13,11 @@
 (function () {
   'use strict';
 
-  var CHAVE = 'favoritos';
+  /* O prefixo não é decoração. Todos os sites em renatovalente5.github.io
+     partilham UMA origem e portanto UM localStorage: uma chave chamada
+     «favoritos» seria lida e escrita por todos os outros projectos que lá
+     vivem. Enquanto não houver domínio próprio, é isto que os separa. */
+  var CHAVE = 'vdp:favoritos';
   /* 15 e não mais: as cores da tira vêm todas num pedido só, e cada praia
      custa ~8 KB nesse pedido. Com 30 eram 246 KB medidos, para uma tira que
      ninguém percorre até ao fim. */
@@ -72,35 +76,88 @@
       itens.forEach(function (x, n) { if (x.id === k) i = n; });
       if (i >= 0) { itens.splice(i, 1); gravar({ tipo: 'removida', id: k, n: p.n }); return 'removida'; }
       if (itens.length >= LIMITE) return 'cheio';
-      itens.unshift({ id: k, n: p.n });
+      itens.unshift({ id: k, n: p.n, t: new Date().getTime() });
       gravar({ tipo: 'marcada', id: k, n: p.n });
       return 'marcada';
     },
 
-    /* Depois de entrar na conta: a lista passa a ser a união do que estava
-       neste aparelho com o que estava guardado na conta. Não se apaga nada
-       de um lado nem do outro — quem marcou uma praia no telemóvel não a quer
-       perder por ter aberto o site no computador. */
-    substituir: function (arr) {
-      var vistos = {};
-      itens = arr.filter(function (x) {
-        if (!x || !x.id || vistos[x.id]) return false;
-        vistos[x.id] = 1; return true;
-      }).slice(0, LIMITE);
+    /* Ao entrar na conta, junta o que está na conta com o que já está neste
+       aparelho. Duas coisas que a primeira versão fazia mal:
+
+       1. Fundia sobre uma cópia da lista tirada ANTES do pedido à rede. Uma
+          estrela marcada durante esses centenas de milissegundos era escrita
+          por cima e desaparecia. Agora funde sobre `itens`, lido agora.
+       2. Cortava aos 15 com os locais sempre à frente, e as praias da conta
+          evaporavam-se do ecrã sem aviso. Agora a ordem é a data em que foram
+          marcadas — as 15 mais recentes ficam, venham de onde vierem — e quem
+          fica de fora é devolvido para se poder dizer à pessoa. */
+    fundir: function (novos) {
+      var vistos = {}, todos = [];
+      function juntar(x) {
+        if (!x || !x.id || vistos[x.id]) return;
+        vistos[x.id] = 1;
+        todos.push({ id: x.id, n: x.n, t: x.t || 0 });
+      }
+      itens.forEach(juntar);
+      (novos || []).forEach(juntar);
+      todos.sort(function (a, b) { return b.t - a.t; });
+      var deixados = todos.slice(LIMITE);
+      itens = todos.slice(0, LIMITE);
       gravar();
-      return itens.slice();
+      return { lista: itens.slice(), deixados: deixados };
+    },
+
+    /* Guardar e repor a lista que existia antes de entrar na conta. Sem isto,
+       num computador partilhado, as praias da conta de quem entrou ficavam no
+       aparelho depois de terminar sessão — e a pessoa seguinte carregava-as
+       para a conta dela sem nunca as ter marcado. */
+    guardarAntesDeEntrar: function () {
+      try { localStorage.setItem(CHAVE + '-antes', JSON.stringify(itens)); } catch (e) { }
+    },
+    reporDeAntesDeEntrar: function () {
+      var antes = null;
+      try {
+        antes = JSON.parse(localStorage.getItem(CHAVE + '-antes') || 'null');
+        localStorage.removeItem(CHAVE + '-antes');
+      } catch (e) { }
+      if (!Array.isArray(antes)) return false;
+      itens = antes.filter(function (x) { return x && typeof x.id === 'string'; }).slice(0, LIMITE);
+      gravar();
+      return true;
     },
 
     /* Resolve os favoritos guardados contra a lista de praias carregada.
        Primeiro pela coordenada; se o ficheiro de praias for regenerado e o
-       ponto tiver andado uns metros, tenta pelo nome antes de desistir. */
+       ponto tiver andado uns metros, tenta pelo nome antes de desistir.
+
+       O recurso ao nome SÓ vale quando o nome é único. Há quatro «Praia dos
+       Pescadores»: apanhar a primeira da lista trocaria calmamente a praia
+       guardada em Aljezur por outra a 300 km, e a pessoa só descobria pela
+       previsão errada. Se o nome for ambíguo, tenta-se a mais próxima da
+       coordenada antiga; se nem isso, desiste-se. */
     resolver: function (praias) {
       var porId = {};
       praias.forEach(function (p) { porId[id(p)] = p; });
       var vivos = [], resolvidas = [];
       itens.forEach(function (f) {
         var p = porId[f.id];
-        if (!p) p = praias.find(function (x) { return x.n === f.n; });
+        if (!p) {
+          var iguais = praias.filter(function (x) { return x.n === f.n; });
+          if (iguais.length === 1) p = iguais[0];
+          else if (iguais.length > 1) {
+            var c = f.id.split(','), la = parseFloat(c[0]), lo = parseFloat(c[1]);
+            if (!isNaN(la) && !isNaN(lo)) {
+              var melhor = null, dist = Infinity;
+              iguais.forEach(function (x) {
+                var d = Math.abs(x.la - la) + Math.abs(x.lo - lo);
+                if (d < dist) { dist = d; melhor = x; }
+              });
+              /* ~0,05° é uns 5 km: mais do que isso já não é «a mesma praia
+                 que andou uns metros», é outra praia com o mesmo nome. */
+              if (melhor && dist < 0.05) p = melhor;
+            }
+          }
+        }
         if (!p) return;                       /* desapareceu: cai fora em silêncio */
         if (id(p) !== f.id) f.id = id(p);     /* recolocada: actualiza a chave */
         vivos.push(f);

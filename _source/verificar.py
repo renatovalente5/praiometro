@@ -87,6 +87,20 @@ try:
     esc=c.js("document.getElementById('v-praia').textContent")
     print('  Enter escolheu:', esc)
     if not esc: erro('Enter não escolheu praia nenhuma')
+
+    # sem resultados: a mensagem tem de ir para a região live, e o aria-expanded
+    # não pode dizer «expandido» sobre uma lista sem opções nenhumas
+    c.js("""var i=document.getElementById('procura'); i.focus();
+            i.value='zzzznaoexiste'; i.dispatchEvent(new Event('input',{bubbles:true}))""")
+    time.sleep(.6)
+    d=json.loads(c.js("""JSON.stringify({
+      estado:document.getElementById('procura-estado').textContent,
+      expandido:document.getElementById('procura').getAttribute('aria-expanded'),
+      listaEscondida:document.getElementById('sugestoes').hidden,
+      ad:document.getElementById('procura').getAttribute('aria-activedescendant')})"""))
+    ok = 'ncontr' in d['estado'] and d['expandido']=='false' and d['listaEscondida'] and not d['ad']
+    print('  sem resultados               %s  %s' % ('✓' if ok else '✗', json.dumps(d, ensure_ascii=False)))
+    if not ok: erro('procura sem resultados: %s'%d)
 finally: c.fechar()
 
 print('\n== 3. praia de rio (sem dados de mar) ==')
@@ -120,7 +134,7 @@ try:
     d=json.loads(c.js("""JSON.stringify({
       pressed:document.getElementById('v-estrela').getAttribute('aria-pressed'),
       chips:document.querySelectorAll('.fav').length,
-      guardado:localStorage.getItem('favoritos'),
+      guardado:localStorage.getItem('vdp:favoritos'),
       seccao:!document.getElementById('favoritos').hidden})"""))
     ok = d['pressed']=='true' and d['chips']==1 and not d['seccao'] is False
     print('  marcar %-22s %s  chips=%d' % (nome[:22], '✓' if ok else '✗', d['chips']))
@@ -153,7 +167,7 @@ try:
     d3=json.loads(c.js("""JSON.stringify({
       pressed:document.getElementById('v-estrela').getAttribute('aria-pressed'),
       escondida:document.getElementById('favoritos').hidden,
-      guardado:localStorage.getItem('favoritos')})"""))
+      guardado:localStorage.getItem('vdp:favoritos')})"""))
     ok3 = d3['pressed']=='false' and d3['escondida'] and d3['guardado']=='[]'
     print('  desmarcar                    %s  %s' % ('✓' if ok3 else '✗', json.dumps(d3)))
     if not ok3: erro('desmarcar favorito: %s'%d3)
@@ -175,7 +189,7 @@ try:
     if d['entrar']!=d['disponivel']: erro('botão Entrar visível=%s mas Google pronto=%s'%(d['entrar'],d['disponivel']))
 
     # com sessão falsa: a interface tem de trocar por completo
-    c.js("""localStorage.setItem('sessao', JSON.stringify({
+    c.js("""localStorage.setItem('vdp:sessao', JSON.stringify({
       access_token:'x', refresh_token:'y', expira: 4102444800000,
       id:'00000000-0000-0000-0000-000000000009', email:'a@b.pt', nome:'Zé Teste', foto:''}))""")
     c.abrir('http://127.0.0.1:%d/'%PORTA, espera=3.0)
@@ -188,7 +202,52 @@ try:
     print('  com sessão                   %s  %s' % ('✓' if ok2 else '✗', json.dumps(d2, ensure_ascii=False)))
     if d2['entrar']: erro('«Entrar» continua visível com sessão aberta (regra [hidden] em falta?)')
     if not ok2: erro('interface da conta com sessão: %s'%d2)
+    # o menu é um <details>: tem de fechar ao carregar fora e com Escape
+    c.js("document.getElementById('conta-menu').open = true"); time.sleep(.3)
+    c.js("document.body.click()"); time.sleep(.3)
+    fora = c.js("document.getElementById('conta-menu').open")
+    c.js("document.getElementById('conta-menu').open = true"); time.sleep(.3)
+    c.cmd('Input.dispatchKeyEvent', type='rawKeyDown', key='Escape', code='Escape', windowsVirtualKeyCode=27, nativeVirtualKeyCode=27)
+    c.cmd('Input.dispatchKeyEvent', type='keyUp', key='Escape', code='Escape', windowsVirtualKeyCode=27, nativeVirtualKeyCode=27)
+    time.sleep(.3)
+    esc = c.js("document.getElementById('conta-menu').open")
+    foco = c.js("document.activeElement.tagName")
+    print('  menu fecha fora/Escape       %s  (fora=%s escape=%s foco=%s)'
+          % ('✓' if (fora in (False,'false') and esc in (False,'false')) else '✗', fora, esc, foco))
+    if fora not in (False,'false'): erro('o menu da conta não fecha ao carregar fora')
+    if esc not in (False,'false'): erro('o menu da conta não fecha com Escape')
+    if foco != 'SUMMARY': erro('Escape fechou o menu mas o foco ficou em %s'%foco)
     c.js("localStorage.clear()")
+finally: c.fechar()
+
+print('\n== 5b. armazenamento bloqueado (modo privado) ==')
+c=novo(375,812,True)
+try:
+    # o Safari em navegação privada atira em setItem; aqui atira em tudo
+    c.js("""(function(){
+      var mau = { getItem:function(){throw new DOMException('x')},
+                  setItem:function(){throw new DOMException('QuotaExceededError')},
+                  removeItem:function(){throw new DOMException('x')},
+                  clear:function(){throw new DOMException('x')} };
+      Object.defineProperty(window,'localStorage',{configurable:true,value:mau});
+      Object.defineProperty(window,'sessionStorage',{configurable:true,value:mau});
+      window.__erros = [];
+      addEventListener('error', function(e){ window.__erros.push(String(e.message)) });
+      addEventListener('unhandledrejection', function(e){ window.__erros.push('promessa: '+e.reason) });
+    })()""")
+    for f in ['assets/js/favoritos.js', 'assets/js/conta.js']:
+        c.js("var s=document.createElement('script');s.src='%s?t='+performance.now();document.head.appendChild(s)"%f)
+        time.sleep(.5)
+    d=json.loads(c.js("""JSON.stringify({
+      favoritos: typeof window.Favoritos === 'object',
+      conta: typeof window.Conta === 'object',
+      lista: (function(){try{return window.Favoritos.lista().length}catch(e){return 'EXCEPCAO'}})(),
+      marcar: (function(){try{return window.Favoritos.alternar({n:'X',la:40,lo:-8})}catch(e){return 'EXCEPCAO'}})(),
+      sessao: (function(){try{return String(window.Conta.activa())}catch(e){return 'EXCEPCAO'}})(),
+      erros: window.__erros})"""))
+    ok = d['favoritos'] and d['conta'] and d['lista']==0 and d['marcar']=='marcada' and not d['erros']
+    print('  tudo a atirar excepções       %s  %s' % ('✓' if ok else '✗', json.dumps(d)))
+    if not ok: erro('armazenamento bloqueado: %s'%d)
 finally: c.fechar()
 
 print('\n== 6. página de privacidade ==')

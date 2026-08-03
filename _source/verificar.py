@@ -202,6 +202,23 @@ try:
     print('  com sessão                   %s  %s' % ('✓' if ok2 else '✗', json.dumps(d2, ensure_ascii=False)))
     if d2['entrar']: erro('«Entrar» continua visível com sessão aberta (regra [hidden] em falta?)')
     if not ok2: erro('interface da conta com sessão: %s'%d2)
+    # fila das operações que a rede não deixou cumprir
+    d4=json.loads(c.js("""(function(){
+      localStorage.removeItem('vdp:pendentes');
+      window.Conta.adiar({op:'del', id:'40.1000,-8.1000', n:'A'});
+      window.Conta.adiar({op:'add', id:'41.2000,-8.2000', n:'B'});
+      var antes = window.Conta.pendentes().length;
+      // a última acção sobre a MESMA praia manda: marcar e desmarcar sem rede
+      window.Conta.adiar({op:'add', id:'40.1000,-8.1000', n:'A'});
+      var v = window.Conta.pendentes();
+      var so = v.filter(function(x){return x.id==='40.1000,-8.1000'});
+      return JSON.stringify({antes:antes, depois:v.length, duplicadas:so.length, opFinal:so[0]&&so[0].op});
+    })()"""))
+    ok4 = d4['antes']==2 and d4['depois']==2 and d4['duplicadas']==1 and d4['opFinal']=='add'
+    print('  fila de operações por cumprir %s  %s' % ('✓' if ok4 else '✗', json.dumps(d4)))
+    if not ok4: erro('fila de pendentes: %s'%d4)
+    c.js("localStorage.removeItem('vdp:pendentes')")
+
     # o menu é um <details>: tem de fechar ao carregar fora e com Escape
     c.js("document.getElementById('conta-menu').open = true"); time.sleep(.3)
     c.js("document.body.click()"); time.sleep(.3)

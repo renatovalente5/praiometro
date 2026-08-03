@@ -227,6 +227,40 @@
   function apagarNuvem(praiaId) {
     return pedir('favoritos?praia_id=eq.' + encodeURIComponent(praiaId), { method: 'DELETE' });
   }
+
+  /* ------------------------------------------------ operações por cumprir */
+  /* Uma escrita na nuvem que falhe não pode simplesmente evaporar-se. No caso
+     de uma remoção é visível: a praia que a pessoa tirou volta na fusão
+     seguinte, porque continua na conta. Fica aqui à espera da próxima
+     oportunidade — e a fusão sabe ignorar o que está marcado para apagar. */
+  var CHAVE_PEND = 'vdp:pendentes';
+
+  function pendentes() {
+    try {
+      var v = JSON.parse(localStorage.getItem(CHAVE_PEND) || '[]');
+      return Array.isArray(v) ? v.filter(function (x) { return x && x.id && x.op; }) : [];
+    } catch (e) { return []; }
+  }
+  function gravarPend(v) {
+    try { localStorage.setItem(CHAVE_PEND, JSON.stringify(v.slice(-50))); } catch (e) { }
+  }
+  /* A última acção sobre uma praia manda: marcar e desmarcar sem rede não pode
+     deixar as duas na fila a lutar uma com a outra. */
+  function adiar(op) {
+    gravarPend(pendentes().filter(function (x) { return x.id !== op.id; }).concat([op]));
+  }
+  function drenar() {
+    var v = pendentes();
+    if (!v.length || !sessao) return Promise.resolve([]);
+    return Promise.all(v.map(function (o) {
+      var p = o.op === 'add' ? juntarNuvem([{ id: o.id, n: o.n }]) : apagarNuvem(o.id);
+      return p.then(function () { return null; }).catch(function () { return o; });
+    })).then(function (r) {
+      var falhados = r.filter(Boolean);
+      gravarPend(falhados);
+      return falhados;
+    });
+  }
   /* Apagar mesmo, incluindo o email e o ID do Google — o art. 17.º do RGPD dá
      direito a isso, e apagar só os favoritos não cumpriria. A linha de
      auth.users exige a chave de serviço, que nunca pode estar num browser,
@@ -263,6 +297,9 @@
     lerNuvem: lerNuvem,
     juntarNuvem: juntarNuvem,
     apagarNuvem: apagarNuvem,
+    pendentes: pendentes,
+    adiar: adiar,
+    drenar: drenar,
     apagarConta: apagarConta,
     aoMudar: function (f) { ouvintes.push(f); }
   };

@@ -692,7 +692,14 @@
      não as pode perder por ter entrado no computador. */
   function sincronizar() {
     if (!C.activa()) return Promise.resolve();
-    return C.lerNuvem().then(function (nuvem) {
+    /* Primeiro cumprem-se as operações que ficaram por fazer da última vez —
+       sobretudo as remoções, senão a praia que a pessoa tirou reaparece. Só
+       depois se lê a conta, que a esta altura já está certa. */
+    return C.drenar().then(function () { return C.lerNuvem(); }).then(function (nuvem) {
+      /* O que ainda estiver por apagar não pode voltar a entrar pela fusão. */
+      var porApagar = {};
+      C.pendentes().forEach(function (o) { if (o.op === 'del') porApagar[o.id] = 1; });
+      nuvem = (nuvem || []).filter(function (x) { return !porApagar[x.praia_id]; });
       /* A fusão lê a lista DENTRO do then, e não antes do pedido: uma estrela
          marcada durante a ida-e-volta à rede seria escrita por cima. */
       var r = F.fundir((nuvem || []).map(function (x) {
@@ -732,9 +739,12 @@
       ? C.juntarNuvem([{ id: mudanca.id, n: mudanca.n }])
       : C.apagarNuvem(mudanca.id);
     p.catch(function () {
+      /* Fica na fila em vez de se perder: tenta-se outra vez no arranque
+         seguinte, e até lá a fusão respeita esta intenção. */
+      C.adiar({ op: mudanca.tipo === 'marcada' ? 'add' : 'del', id: mudanca.id, n: mudanca.n });
       avisar(mudanca.tipo === 'marcada'
-        ? 'Guardámos «' + mudanca.n + '» neste aparelho, mas não na tua conta.'
-        : 'Removemos «' + mudanca.n + '» deste aparelho, mas não da tua conta.');
+        ? 'Guardámos «' + mudanca.n + '» neste aparelho. Vamos pô-la na tua conta assim que houver rede.'
+        : 'Removemos «' + mudanca.n + '» deste aparelho. Tiramo-la da tua conta assim que houver rede.');
     });
   });
 

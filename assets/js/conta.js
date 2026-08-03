@@ -212,7 +212,17 @@
       return fetch(URL_BASE + '/rest/v1/' + caminho, o);
     }).then(function (r) {
       if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + t); });
-      return r.status === 204 ? null : r.json();
+      /* Ler o texto e só depois decidir, em vez de perguntar pelo status. O
+         `return=minimal` do juntarNuvem responde 201 com corpo VAZIO, não 204:
+         a versão anterior tratava só o 204, caía no r.json() e lançava
+         «Unexpected end of JSON input» em TODAS as marcações bem-sucedidas.
+
+         O estrago não era só um erro na consola. O catch punha um `add` na fila
+         de pendentes, o drenar() repetia-o em cada arranque, e se a pessoa
+         entretanto removesse a praia, esse `add` esquecido voltava a metê-la na
+         conta — uma praia removida a reaparecer, sem nada à vista que o
+         explicasse. Medido: INSERT devolve 201 com content-length 0. */
+      return r.text().then(function (t) { return t ? JSON.parse(t) : null; });
     });
   }
 

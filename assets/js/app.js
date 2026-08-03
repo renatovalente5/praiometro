@@ -742,9 +742,9 @@
       /* Fica na fila em vez de se perder: tenta-se outra vez no arranque
          seguinte, e até lá a fusão respeita esta intenção. */
       C.adiar({ op: mudanca.tipo === 'marcada' ? 'add' : 'del', id: mudanca.id, n: mudanca.n });
-      avisar(mudanca.tipo === 'marcada'
-        ? 'Guardámos «' + mudanca.n + '» neste aparelho. Vamos pô-la na tua conta assim que houver rede.'
-        : 'Removemos «' + mudanca.n + '» deste aparelho. Tiramo-la da tua conta assim que houver rede.');
+      /* Sem aviso, de propósito: para quem marca a praia, a estrela já mudou e
+         a praia já está na tira — a sincronização é problema nosso, não dela.
+         A fila em cima é que garante que não se perde. */
     });
   });
 

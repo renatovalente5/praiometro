@@ -334,12 +334,28 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
      a tira corta também em cima e em baixo, não só aos lados. O favorito
      escolhido leva um anel de 2px em `box-shadow`, que fica FORA da caixa —
      sem folga aqui, o topo desse anel aparecia cortado a régua. */
-  padding-block: .25rem; scrollbar-width: none;
+  /* .25rem dos dois lados: a barra de scroll fica ABAIXO da caixa de conteúdo,
+     não dentro dela, e por isso não é preciso somar-lhe a altura aqui. */
+  padding-block: .25rem;
+  /* A barra tem de se ver. Com 15 praias a tira transborda mais de 1300px, e
+     a sangria até às margens não chega para dizer que há mais para o lado.
+     `thin` é para o Firefox; no WebKit, dar altura à barra troca a de
+     sobreposição — que no macOS desaparece quando se está quieto — por uma
+     clássica, que fica sempre à vista. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--tinta-3) transparent;
   /* No telemóvel a tira sangra até às margens, para se ver que rola. */
   margin: 0 calc(var(--gutter) * -1); padding-inline: var(--gutter);
   scroll-snap-type: x proximity;
 }
-.favoritos__lista::-webkit-scrollbar { display: none; }
+.favoritos__lista::-webkit-scrollbar { height: 10px; }
+.favoritos__lista::-webkit-scrollbar-track { background: transparent; }
+.favoritos__lista::-webkit-scrollbar-thumb {
+  background: var(--tinta-3); border-radius: 999px;
+  /* A borda transparente com `background-clip` afina a barra para 4px sem a
+     cortar nas pontas — mais discreta do que os 10px do canal. */
+  border: 3px solid transparent; background-clip: content-box;
+}
 .fav {
   scroll-snap-align: start;
   display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap;

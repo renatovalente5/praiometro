@@ -166,8 +166,13 @@
   function sair() {
     var t = sessao && sessao.access_token;
     /* Sair devolve o aparelho ao estado de antes de entrar, e a lista que volta
-       é a local: se entrar outra vez, tem de haver fusão de novo. */
+       é a local: se entrar outra vez, tem de haver fusão de novo.
+
+       A fila também tem de ir. Ficava lá, e o drenar() da PRÓXIMA conta a
+       entrar neste aparelho cumpria-a — escrevia as intenções de uma pessoa na
+       conta de outra. Num computador partilhado é o que não pode acontecer. */
     try { localStorage.removeItem(CHAVE_FUNDIDO); } catch (e) { }
+    try { localStorage.removeItem(CHAVE_PEND); } catch (e) { }
     guardarSessao(null);
     if (!t) return Promise.resolve();
     return fetch(URL_BASE + '/auth/v1/logout?scope=local', {
@@ -284,6 +289,20 @@
   function adiar(op) {
     gravarPend(pendentes().filter(function (x) { return x.id !== op.id; }).concat([op]));
   }
+  /* Uma escrita que teve êxito torna sem sentido o que estava na fila para a
+     MESMA praia. Sem isto: a marcação falha por falta de rede e fica um 'add'
+     na fila; a pessoa remove a praia e a remoção passa; o 'add' esquecido
+     continua lá, e no arranque seguinte o drenar() volta a inserir a praia na
+     conta. Uma praia removida a reaparecer, outra vez.
+
+     O adiar() já substitui a operação anterior para o mesmo id, mas só é
+     chamado quando FALHA — o caminho do êxito não limpava nada. */
+  function cumprido(id) {
+    if (!id) return;
+    var v = pendentes();
+    var fica = v.filter(function (x) { return x.id !== id; });
+    if (fica.length !== v.length) gravarPend(fica);
+  }
   /* Uma remoção cuja praia já não está na conta está cumprida, venha isso do
      DELETE ter funcionado ou de a linha nunca lá ter estado. Sem isto, agora
      que zero linhas conta como erro, essa remoção ficava na fila a ser tentada
@@ -360,6 +379,7 @@
     apagarNuvem: apagarNuvem,
     pendentes: pendentes,
     adiar: adiar,
+    cumprido: cumprido,
     esquecerRemocoes: esquecerRemocoes,
     jaFundiu: jaFundiu,
     marcarFundido: marcarFundido,

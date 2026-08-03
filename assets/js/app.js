@@ -835,7 +835,13 @@
     var p = mudanca.tipo === 'marcada'
       ? C.juntarNuvem([{ id: mudanca.id, n: mudanca.n }])
       : C.apagarNuvem(mudanca.id);
-    p.catch(function () {
+    p.then(function () {
+      /* Cumprido: o que estivesse na fila para esta praia já não faz sentido.
+         Sem isto, um 'add' que ficou de uma falha de rede sobrevivia a uma
+         remoção bem-sucedida, e o drenar() do arranque seguinte voltava a
+         inserir a praia na conta. */
+      C.cumprido(mudanca.id);
+    }).catch(function () {
       /* Fica na fila em vez de se perder: tenta-se outra vez no arranque
          seguinte, e até lá a fusão respeita esta intenção. */
       C.adiar({ op: mudanca.tipo === 'marcada' ? 'add' : 'del', id: mudanca.id, n: mudanca.n });

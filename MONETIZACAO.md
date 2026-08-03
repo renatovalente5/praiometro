@@ -185,6 +185,37 @@ Os «tiers» do Ko-fi e do Buy Me a Coffee que dão *qualquer* benefício são
 contrapartida, por muito que a plataforma lhes chame *support*. **Se fores por
 donativos, que sejam donativos a sério: um botão, sem recompensas.**
 
+### Publicidade obriga-te a publicar a morada e o NIF
+
+Isto é o que mais custa e quase ninguém antecipa. Hoje o site é gratuito e sem
+publicidade, e por isso **não é um «serviço da sociedade da informação»**: o
+[art. 3.º, n.º 1 do DL 7/2004](https://data.dre.pt/eli/dec-lei/7/2004/01/07/p/dre/pt/pdf)
+define-o como serviço prestado «mediante remuneração **ou pelo menos no âmbito de
+uma actividade económica**». Sem nenhuma das duas, o diploma não se aplica, e é
+por isso que a página de privacidade leva só nome e email.
+
+**Com AdSense isso inverte-se.** O considerando 18 da Directiva 2000/31/CE e o
+acórdão do Tribunal de Justiça **[Papasavvas, C-291/13](https://eur-lex.europa.eu/legal-content/PT/TXT/?uri=CELEX:62013CJ0291)**
+dizem-no sem margem: um site cuja remuneração vem da publicidade exibida **é**
+serviço da sociedade da informação. A partir daí o art. 10.º aplica-se por
+inteiro e obriga a disponibilizar, de forma permanente e de acesso fácil:
+
+- nome;
+- **endereço geográfico** onde estás estabelecido, e email;
+- inscrições em registos públicos, se houver;
+- **número de identificação fiscal**.
+
+Coima de **2 500 € a 50 000 €**, fiscalizada pela ANACOM (art. 37.º, n.º 1, al. a)).
+
+Ou seja: activar o AdSense obriga-te a publicar a tua morada e o teu NIF num site
+público. Se um dia for esse o caminho, vale a pena avaliar constituir ENI com
+morada fiscal distinta da de casa — porque a lei não admite omitir.
+
+**Donativos são zona cinzenta**, e depende de três coisas: se há contrapartida,
+se são pedidos de forma organizada e permanente, e da escala. Donativos sem nada
+em troca e sem plataforma de apoio recorrente não fazem nascer o dever; um
+Patreon com níveis, sim.
+
 ### Publicidade: obriga a mais do que parece
 
 - Rendimento de **categoria B**, com **abertura de actividade obrigatória**.

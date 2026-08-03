@@ -20,9 +20,11 @@
   var URL_BASE = 'https://nfcqzkhivbsqwiyopjca.supabase.co';
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mY3F6a2hpdmJzcXdpeW9wamNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MDU0NTQsImV4cCI6MjEwMTI4MTQ1NH0.8TvdKiBuSHanwLRnirEPu7hDqBRKG_2fnrtHCXebHv8';
 
-  /* Enquanto o cliente OAuth do Google não existir, carregar em «Entrar» daria
-     uma página de erro do Supabase. Passa a true quando estiver criado. */
-  var GOOGLE_PRONTO = false;
+  /* O cliente OAuth existe e a cadeia foi verificada até ao ecrã do Google.
+     Nota: enquanto a aplicação estiver em «modo de testes» no Google Cloud, só
+     entram os emails da lista de utilizadores de teste — para toda a gente
+     poder entrar é preciso carregar em «Publicar aplicação». */
+  var GOOGLE_PRONTO = true;
 
   /* Prefixadas: renatovalente5.github.io é uma origem só, partilhada com todos
      os outros sites que lá vivem, e portanto um localStorage só. */

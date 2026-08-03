@@ -202,6 +202,35 @@ try:
     print('  com sessão                   %s  %s' % ('✓' if ok2 else '✗', json.dumps(d2, ensure_ascii=False)))
     if d2['entrar']: erro('«Entrar» continua visível com sessão aberta (regra [hidden] em falta?)')
     if not ok2: erro('interface da conta com sessão: %s'%d2)
+    # carregar mesmo em «Entrar» e ver onde se aterra. É o mais longe que se vai
+    # sem escrever a palavra-passe de alguém: se o client_id ou o redirect_uri
+    # estiverem errados, o Google devolve um erro em vez do ecrã de entrada.
+    if c.js("window.Conta.disponivel()") in (True, 'true'):
+        try:
+            c.js("localStorage.clear(); sessionStorage.clear()")
+            c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.0)
+            # O verificador é gravado de forma SÍNCRONA, antes da promessa e antes
+            # da navegação: lê-se aqui, na nossa origem. Depois do salto para o
+            # accounts.google.com o sessionStorage já é o deles, não o nosso.
+            verif = c.js("(function(){ window.Conta.entrar(); return sessionStorage.getItem('pm:pkce') || ''; })()")
+            if len(verif or '') < 40:
+                erro('verificador PKCE não ficou em sessionStorage (%d caracteres)'%len(verif or ''))
+            else:
+                print('  verificador PKCE guardado    ✓  %d caracteres' % len(verif))
+            time.sleep(6.0)
+            destino = c.js("location.origin + location.pathname")
+            ok5 = 'accounts.google.com' in (destino or '')
+            print('  «Entrar» chega ao Google     %s  %s' % ('✓' if ok5 else '✗', destino))
+            if not ok5:
+                erro('«Entrar» não chegou ao Google: %s'%destino)
+        except Exception as e:
+            print('  ⚠ não foi possível testar a ida ao Google (rede?):', e)
+        c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.0)
+        c.js("""localStorage.setItem('pm:sessao', JSON.stringify({
+          access_token:'x', refresh_token:'y', expira: 4102444800000,
+          id:'00000000-0000-0000-0000-000000000009', email:'a@b.pt', nome:'Zé Teste', foto:''}))""")
+        c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.5)
+
     # fila das operações que a rede não deixou cumprir
     d4=json.loads(c.js("""(function(){
       localStorage.removeItem('pm:pendentes');

@@ -324,11 +324,17 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
 .favoritos { max-width: 640px; margin: 1.1rem auto 0; padding: 0 var(--gutter); }
 .favoritos__titulo {
   font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--tinta-3); margin-bottom: .5rem;
+  /* .25rem e não .5rem: a tira abaixo ganhou .25rem de `padding-block` para
+     caber o anel do favorito escolhido, e a soma mantém o espaço de antes. */
+  color: var(--tinta-3); margin-bottom: .25rem;
 }
 .favoritos__lista {
   list-style: none; display: flex; gap: .45rem; overflow-x: auto;
-  padding-bottom: .25rem; scrollbar-width: none;
+  /* `overflow-x: auto` obriga o `overflow-y` a passar de `visible` a `auto`:
+     a tira corta também em cima e em baixo, não só aos lados. O favorito
+     escolhido leva um anel de 2px em `box-shadow`, que fica FORA da caixa —
+     sem folga aqui, o topo desse anel aparecia cortado a régua. */
+  padding-block: .25rem; scrollbar-width: none;
   /* No telemóvel a tira sangra até às margens, para se ver que rola. */
   margin: 0 calc(var(--gutter) * -1); padding-inline: var(--gutter);
   scroll-snap-type: x proximity;
@@ -368,7 +374,11 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 /* ============================================================= DIAS ==== */
 .dias {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(4.6rem, 1fr);
-  gap: .5rem; margin-top: 1rem; overflow-x: auto; padding-bottom: .3rem;
+  /* .7rem + .3rem de `padding-block` = o 1rem que aqui estava antes. */
+  gap: .5rem; margin-top: .7rem; overflow-x: auto;
+  /* Como na tira dos favoritos, mas aqui são 2px do anel MAIS os 2px que o
+     `translateY(-2px)` do hover levanta o cartão. Daí .3rem (4,8px) em cima. */
+  padding-block: .3rem;
   scrollbar-width: none; scroll-snap-type: x proximity;
 }
 .dias::-webkit-scrollbar { display: none; }

@@ -695,11 +695,17 @@
     /* Primeiro cumprem-se as operações que ficaram por fazer da última vez —
        sobretudo as remoções, senão a praia que a pessoa tirou reaparece. Só
        depois se lê a conta, que a esta altura já está certa. */
-    return C.drenar().then(function () { return C.lerNuvem(); }).then(function (nuvem) {
+    return C.drenar().then(function () { return C.lerNuvem(); }).then(function (naConta) {
+      naConta = naConta || [];
       /* O que ainda estiver por apagar não pode voltar a entrar pela fusão. */
       var porApagar = {};
       C.pendentes().forEach(function (o) { if (o.op === 'del') porApagar[o.id] = 1; });
-      nuvem = (nuvem || []).filter(function (x) { return !porApagar[x.praia_id]; });
+      /* E o que está por apagar mas já não está na conta está cumprido: sai da
+         fila, senão ficava a ser tentado em cada arranque para sempre. */
+      var estaNaConta = {};
+      naConta.forEach(function (x) { estaNaConta[x.praia_id] = 1; });
+      C.esquecerRemocoes(Object.keys(porApagar).filter(function (id) { return !estaNaConta[id]; }));
+      var nuvem = naConta.filter(function (x) { return !porApagar[x.praia_id]; });
       /* A fusão lê a lista DENTRO do then, e não antes do pedido: uma estrela
          marcada durante a ida-e-volta à rede seria escrita por cima. */
       var r = F.fundir((nuvem || []).map(function (x) {

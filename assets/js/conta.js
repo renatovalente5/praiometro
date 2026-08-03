@@ -226,8 +226,26 @@
       }))
     });
   }
+  /* Um DELETE que não encontra nada responde 204, exactamente como um que
+     apagou — e o 204 aqui passava por sucesso. Era invisível e tinha
+     consequência: nada ia para a fila, e a praia que a pessoa tirou voltava na
+     fusão seguinte, porque continuava na conta.
+
+     `return=representation` obriga a resposta a trazer as linhas apagadas, e
+     zero linhas passa a ser erro — que é o que manda isto para a fila.
+
+     O `praia_id` é uma coordenada com uma vírgula, e a vírgula é um carácter
+     reservado nos filtros do PostgREST: percent-encode não basta, porque o
+     servidor descodifica antes de interpretar. As aspas são a forma
+     documentada de passar o valor inteiro, e são retiradas do lado de lá. */
   function apagarNuvem(praiaId) {
-    return pedir('favoritos?praia_id=eq.' + encodeURIComponent(praiaId), { method: 'DELETE' });
+    return pedir('favoritos?praia_id=eq.' + encodeURIComponent('"' + praiaId + '"'), {
+      method: 'DELETE',
+      headers: { 'Prefer': 'return=representation' }
+    }).then(function (linhas) {
+      if (!linhas || !linhas.length) throw new Error('DELETE sem efeito: 0 linhas apagadas');
+      return linhas;
+    });
   }
 
   /* ------------------------------------------------ operações por cumprir */
@@ -250,6 +268,16 @@
      deixar as duas na fila a lutar uma com a outra. */
   function adiar(op) {
     gravarPend(pendentes().filter(function (x) { return x.id !== op.id; }).concat([op]));
+  }
+  /* Uma remoção cuja praia já não está na conta está cumprida, venha isso do
+     DELETE ter funcionado ou de a linha nunca lá ter estado. Sem isto, agora
+     que zero linhas conta como erro, essa remoção ficava na fila a ser tentada
+     em cada arranque para sempre. */
+  function esquecerRemocoes(idsCumpridos) {
+    var fora = {};
+    (idsCumpridos || []).forEach(function (i) { fora[i] = 1; });
+    if (!Object.keys(fora).length) return;
+    gravarPend(pendentes().filter(function (x) { return !(x.op === 'del' && fora[x.id]); }));
   }
   function drenar() {
     var v = pendentes();
@@ -301,6 +329,7 @@
     apagarNuvem: apagarNuvem,
     pendentes: pendentes,
     adiar: adiar,
+    esquecerRemocoes: esquecerRemocoes,
     drenar: drenar,
     apagarConta: apagarConta,
     aoMudar: function (f) { ouvintes.push(f); }

@@ -352,7 +352,8 @@ for nome in ('robots.txt', 'sitemap.xml', '404.html', '_config.yml'):
         print('  %-18s ✓ existe' % nome)
 
 for pagina, esperado in (('index.html', 'https://praiometro.pt/'),
-                         ('privacidade.html', 'https://praiometro.pt/privacidade.html')):
+                         ('privacidade.html', 'https://praiometro.pt/privacidade.html'),
+                         ('metodologia/index.html', 'https://praiometro.pt/metodologia/')):
     h = _sem_comentarios(pagina)
     m = _re.search(r'<link rel="canonical" href="([^"]+)"', h)
     if not m:
@@ -371,7 +372,7 @@ for pagina, esperado in (('index.html', 'https://praiometro.pt/'),
 
 # Caminhos relativos numa página que vai ser servida a partir de /praia/x/
 # apontam para o sítio errado. Já não pode haver nenhum.
-for pagina in ('index.html', 'privacidade.html', '404.html'):
+for pagina in ('index.html', 'privacidade.html', '404.html', 'metodologia/index.html'):
     maus = _re.findall(r'(?:href|src)="(?!https?:|/|#|mailto:|data:)([^"]+)"', _sem_comentarios(pagina))
     if maus:
         erro('%s com caminhos relativos: %s' % (pagina, maus))
@@ -396,6 +397,7 @@ mapa = _ler('sitemap.xml')
 for loc in _re.findall(r'<loc>([^<]+)</loc>', mapa):
     caminho = loc.replace('https://praiometro.pt', '') or '/'
     alvo = 'index.html' if caminho == '/' else caminho.lstrip('/')
+    if alvo.endswith('/'): alvo += 'index.html'
     if not os.path.exists(os.path.join(RAIZ, alvo)):
         erro('sitemap aponta para %s, que não existe' % loc)
     else:

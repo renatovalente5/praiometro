@@ -1,0 +1,124 @@
+/* =============================================================
+   PÁGINAS DE TEXTO — o que o estilo.css não tem
+   =============================================================
+   Carrega-se DEPOIS do estilo.css e não em vez dele. O `.texto`, os títulos,
+   os parágrafos e as cores já lá estão, testados para contraste; aqui só entra
+   o que uma página de artigo precisa e uma aplicação não: tabelas, índice,
+   âncoras e blocos de fórmula.
+
+   Duplicar o `.texto` num ficheiro à parte era garantir que um dia as duas
+   versões divergiam e ninguém dava por isso.
+   ============================================================= */
+
+/* ------------------------------------------------------------- índice */
+.indice {
+  margin: 1.4rem 0 2.2rem;
+  padding: 1rem 1.2rem;
+  background: var(--carta);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+.indice h2 {
+  font-size: .74rem !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--tinta-3);
+  margin: 0 0 .6rem !important;
+}
+.indice ol {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: decimal;
+  columns: 2;
+  column-gap: 1.6rem;
+}
+.indice li { margin-bottom: .3rem; break-inside: avoid; }
+.indice a { color: var(--mar); text-decoration: none; }
+.indice a:hover { text-decoration: underline; }
+@media (max-width: 30rem) { .indice ol { columns: 1; } }
+
+/* --------------------------------------------------------- âncoras */
+/* O endereço de cada secção é para ser copiado e citado — é isso que uma
+   página de metodologia serve. O # aparece ao passar por cima e some no
+   telemóvel, onde não há «passar por cima» nenhum. */
+.texto h2[id], .texto h3[id] { scroll-margin-top: 1rem; position: relative; }
+.texto h2[id] .lig, .texto h3[id] .lig {
+  position: absolute; left: -1.1rem; top: 0;
+  color: var(--tinta-3); text-decoration: none; opacity: 0;
+  transition: opacity var(--t);
+}
+.texto h2[id]:hover .lig, .texto h3[id]:hover .lig,
+.texto h2[id] .lig:focus, .texto h3[id] .lig:focus { opacity: 1; }
+@media (hover: none) { .texto h2[id] .lig, .texto h3[id] .lig { display: none; } }
+:target { animation: destacar 1.6s ease; }
+@keyframes destacar { 0%, 40% { background: var(--amarelo-luz); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { :target { animation: none; } }
+
+/* --------------------------------------------------------- tabelas */
+/* Envolvidas num .rolo: numa tabela de 4 colunas a 375 px, sem isto, é a
+   PÁGINA que passa a ter barra horizontal — e aí já não é só a tabela que
+   foge, é o texto todo. */
+.rolo { overflow-x: auto; margin: 1rem 0 1.4rem; -webkit-overflow-scrolling: touch; }
+.texto table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 22rem;
+  font-size: .92rem;
+  background: var(--carta);
+}
+.texto caption {
+  caption-side: top;
+  text-align: left;
+  font-size: .85rem;
+  color: var(--tinta-3);
+  padding-bottom: .5rem;
+}
+.texto th, .texto td {
+  padding: .5rem .7rem;
+  border-bottom: 1px solid var(--borda);
+  text-align: left;
+  vertical-align: top;
+}
+.texto thead th {
+  font-weight: 700;
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--tinta-3);
+  border-bottom-width: 2px;
+}
+.texto td.num, .texto th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.texto tbody tr:last-child td { border-bottom: 0; }
+
+/* ------------------------------------------------------- fórmula */
+.formula {
+  margin: 1rem 0 1.4rem;
+  padding: .9rem 1.1rem;
+  background: var(--carta-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .85rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--tinta-2);
+}
+
+/* ------------------------------------------------------- destaques */
+.nota-lado {
+  margin: 1.2rem 0;
+  padding: .8rem 1rem;
+  border-left: 3px solid var(--mar);
+  background: var(--carta);
+  border-radius: 0 var(--raio) var(--raio) 0;
+  font-size: .95rem;
+}
+.nota-lado p:last-child { margin-bottom: 0; }
+.nota-lado strong { color: var(--tinta); }
+
+/* A navegação entre páginas, no topo. Existe porque até hoje a única forma de
+   ir da entrada para outro sítio era o rodapé. */
+.migalhas { font-size: .85rem; color: var(--tinta-3); margin-bottom: .6rem; }
+.migalhas a { color: var(--mar); }

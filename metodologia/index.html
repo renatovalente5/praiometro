@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Como se calcula se está bom para a praia — Praiómetro</title>
+  <meta name="description" content="O modelo por trás do Praiómetro, com os números todos: vento 34 pontos, sol 26, calor 18, água 14, chuva 8. Porque é que o vento pesa mais em Portugal, e o que este modelo não sabe." />
+  <meta name="theme-color" content="#0891b2" />
+  <meta name="color-scheme" content="light dark" />
+
+  <link rel="canonical" href="https://praiometro.pt/metodologia/" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="pt_PT" />
+  <meta property="og:site_name" content="Praiómetro" />
+  <meta property="og:url" content="https://praiometro.pt/metodologia/" />
+  <meta property="og:title" content="Como se calcula se está bom para a praia" />
+  <meta property="og:description" content="Os 100 pontos, os cinco factores, os vetos e os limiares — e porque é que o vento pesa mais em Portugal do que em qualquer índice internacional." />
+  <meta property="og:image" content="https://praiometro.pt/assets/img/og.png" />
+
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/assets/css/estilo.css" />
+  <link rel="stylesheet" href="/assets/css/texto.css" />
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@graph":[
+   {"@type":"WebPage","@id":"https://praiometro.pt/metodologia/#pagina",
+    "url":"https://praiometro.pt/metodologia/",
+    "name":"Como se calcula se está bom para a praia",
+    "inLanguage":"pt-PT",
+    "isPartOf":{"@id":"https://praiometro.pt/#site"},
+    "author":{"@id":"https://praiometro.pt/#autor"},
+    "about":{"@type":"Thing","name":"Previsão de condições balneares em Portugal"}},
+   {"@type":"BreadcrumbList","@id":"https://praiometro.pt/metodologia/#migalhas",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Praiómetro","item":"https://praiometro.pt/"},
+      {"@type":"ListItem","position":2,"name":"Metodologia"}
+    ]}
+  ]}
+  </script>
+</head>
+<body>
+  <main class="texto">
+    <nav class="migalhas" aria-label="Onde estás">
+      <a href="/">Praiómetro</a> › Metodologia
+    </nav>
+
+    <h1>Como se calcula se está bom para a praia</h1>
+
+    <p class="texto__lead">Cada dia leva uma nota de 0 a 100. Esta página tem os números
+    todos — os pesos, os limiares, os vetos e as contas — e também o que o modelo não
+    sabe. Um veredicto que não se consegue explicar não merece confiança.</p>
+
+    <nav class="indice" aria-labelledby="indice-t">
+      <h2 id="indice-t">Nesta página</h2>
+      <ol>
+        <li><a href="#pesos">Os 100 pontos</a></li>
+        <li><a href="#janela">A janela das 11h às 19h</a></li>
+        <li><a href="#direccao">A direcção do vento</a></li>
+        <li><a href="#curvas">Curvas, e não escadas</a></li>
+        <li><a href="#vento">Vento — 34 pontos</a></li>
+        <li><a href="#ceu">Sol e céu — 26 pontos</a></li>
+        <li><a href="#calor">O calor que se sente — 18 pontos</a></li>
+        <li><a href="#agua">Temperatura da água — 14 pontos</a></li>
+        <li><a href="#chuva">Chuva — 8 pontos</a></li>
+        <li><a href="#limitante">O factor limitante</a></li>
+        <li><a href="#vetos">Os vetos</a></li>
+        <li><a href="#cortes">Verde, amarelo, vermelho</a></li>
+        <li><a href="#rio">Praias de rio</a></li>
+        <li><a href="#limitacoes">O que este modelo não sabe</a></li>
+        <li><a href="#fontes">De onde vêm os dados</a></li>
+      </ol>
+    </nav>
+
+    <!-- ============================================================ PESOS -->
+    <h2 id="pesos"><a class="lig" href="#pesos" aria-label="Ligação para esta secção">#</a>Os 100 pontos</h2>
+
+    <p>O esqueleto vem do <strong>HCI:Beach</strong> (<i>Holiday Climate Index: Beach</i>),
+    de Rutty, Scott e Steiger — o índice revisto por pares desenhado especificamente para
+    turismo balnear. A fórmula original é esta:</p>
+
+    <div class="formula">HCI:Beach = 2(TC) + 4(A) + 3(P) + W
+            conforto  céu   chuva  vento
+             20%      40%    30%   10%</div>
+
+    <p>Três coisas nele não servem para Portugal, e é por isso que o Praiómetro não usa o
+    HCI tal e qual:</p>
+
+    <ul>
+      <li><strong>Não tem temperatura da água.</strong> No Mediterrâneo e nas Caraíbas,
+      onde foi validado, a água está sempre boa. Em Portugal continental é o factor que
+      mais gente comenta na praia.</li>
+      <li><strong>O conforto térmico está calibrado para 30–36 °C.</strong> É quente
+      demais para o gosto português e para o clima da costa oeste.</li>
+      <li><strong>Dá ao vento apenas 10 %.</strong> Em Portugal a nortada é, na prática,
+      o que mais dias estraga.</li>
+    </ul>
+
+    <p>Os 100 pontos do Praiómetro repartem-se assim:</p>
+
+    <div class="rolo">
+      <table>
+        <caption>Peso de cada factor na nota final</caption>
+        <thead>
+          <tr><th scope="col">Factor</th><th scope="col" class="num">Peso</th><th scope="col">Porquê</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Vento</th><td class="num"><strong>34</strong></td><td>É o que mais dias estraga em Portugal — e um dia sem vento nenhum nota-se</td></tr>
+          <tr><th scope="row">Sol e céu</th><td class="num">26</td><td>A razão n.º 1 para ir à praia</td></tr>
+          <tr><th scope="row">Calor que se sente</th><td class="num">18</td><td>A sensação térmica, não o número do termómetro</td></tr>
+          <tr><th scope="row">Temperatura da água</th><td class="num">14</td><td>O que decide se se entra no mar</td></tr>
+          <tr><th scope="row">Chuva</th><td class="num">8</td><td>Pouco peso porque a chuva a sério está nos vetos</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O vento leva <strong>mais do triplo</strong> do que o HCI:Beach lhe dá. Não é um
+    palpite: é a diferença entre um índice validado no Mediterrâneo e nas Caraíbas e um
+    país onde a nortada é o assunto de Agosto.</p>
+
+    <!-- =========================================================== JANELA -->
+    <h2 id="janela"><a class="lig" href="#janela" aria-label="Ligação para esta secção">#</a>A janela das 11h às 19h</h2>
+
+    <p>Tudo é calculado entre as <strong>11h e as 19h</strong>, hora local — é quando se
+    vai à praia. Fora dessa janela os dados são ignorados. Dentro dela: o céu pela média,
+    a temperatura do ar pelo máximo, a água pela média, a chuva pela probabilidade máxima
+    e pelo acumulado, a ondulação pelo máximo.</p>
+
+    <p>O <strong>vento é o percentil 75</strong>, e não a média. A média de nove horas
+    achatava exactamente o pico da tarde, que é quando a nortada sopra. Medido no
+    Furadouro: média de 11,2 km/h contra 15,2 no pico. Com a média, o site dizia menos
+    vento do que qualquer outro sítio — e tinha razão quanto à média e nenhuma quanto ao
+    que se sente na areia.</p>
+
+    <p>Calcula-se também o vento <strong>de manhã (11h–15h)</strong> e <strong>de tarde
+    (15h–19h)</strong> em separado. Quando a tarde tem 7 km/h ou mais do que a manhã, o
+    site di-lo — «de manhã 12 km/h, à tarde 26 km/h: vale a pena ir cedo».</p>
+
+    <!-- ======================================================== DIRECÇÃO -->
+    <h2 id="direccao"><a class="lig" href="#direccao" aria-label="Ligação para esta secção">#</a>A direcção do vento é uma média vectorial</h2>
+
+    <p>A direcção é uma grandeza circular, e tratá-la como um número normal dá disparates:
+    a média aritmética de 350° e 10° dá <strong>180°</strong> — sul, exactamente o oposto
+    de norte. A nortada vive em cima dessa descontinuidade.</p>
+
+    <div class="nota-lado">
+      <p>Medido com dados ERA5 de Julho e Agosto entre 2019 e 2025: a média aritmética
+      <strong>perdia 15 % das nortadas na Nazaré e 38 % em Peniche</strong>. A média
+      vectorial não perde nenhuma. Não voltar a trocar por média simples.</p>
+    </div>
+
+    <!-- ========================================================== CURVAS -->
+    <h2 id="curvas"><a class="lig" href="#curvas" aria-label="Ligação para esta secção">#</a>Curvas, e não escadas</h2>
+
+    <p>As tabelas das secções seguintes dão os pontos por onde a curva de cada factor
+    passa. <strong>Entre dois valores da tabela os pontos são interpolados</strong> — a
+    nota varia a pouco e pouco em vez de cair de uma vez.</p>
+
+    <p>Não foi sempre assim. Até 3 de Agosto de 2026 cada linha era um patamar fixo, e ao
+    passar a fronteira a nota dava um salto: <strong>8 pontos de queda entre 19 e 20 km/h
+    de vento</strong>, e <strong>5 pontos entre 24,9 °C e 25,0 °C de sensação</strong> —
+    este segundo invisível, porque o ecrã mostra os dois valores como «25 °C». Duas praias
+    com tempo praticamente igual apareciam a 77 e a 64 pontos.</p>
+
+    <div class="rolo">
+      <table>
+        <caption>Maior salto de pontos por unidade, antes e depois da interpolação</caption>
+        <thead>
+          <tr><th scope="col">Factor</th><th scope="col" class="num">Antes</th><th scope="col" class="num">Agora</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Vento, por km/h</th><td class="num">8,0</td><td class="num">1,8</td></tr>
+          <tr><th scope="row">Sol, por ponto de %</th><td class="num">8,0</td><td class="num">0,4</td></tr>
+          <tr><th scope="row">Calor, por 0,1 °C</th><td class="num">6,0</td><td class="num">0,3</td></tr>
+          <tr><th scope="row">Água, por 0,1 °C</th><td class="num">4,0</td><td class="num">0,3</td></tr>
+          <tr><th scope="row">Chuva, por ponto de %</th><td class="num">3,0</td><td class="num">0,2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A calibração é a mesma: em 358 dias reais de 60 praias, a nota mudou 2,35 pontos em
+    média, e 94 % dos dias ficaram a 5 pontos ou menos da nota antiga.</p>
+
+    <!-- =========================================================== VENTO -->
+    <h2 id="vento"><a class="lig" href="#vento" aria-label="Ligação para esta secção">#</a>Vento — 34 pontos</h2>
+
+    <div class="rolo">
+      <table>
+        <caption>Pontos por velocidade do vento (percentil 75 da janela)</caption>
+        <thead>
+          <tr><th scope="col">Vento</th><th scope="col" class="num">Pontos</th><th scope="col">O que se sente</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">≤ 8 km/h</th><td class="num">34</td><td>Sem vento nenhum</td></tr>
+          <tr><th scope="row">10 km/h</th><td class="num">31</td><td>A toalha fica quieta</td></tr>
+          <tr><th scope="row">14 km/h</th><td class="num">27</td><td>Brisa agradável</td></tr>
+          <tr><th scope="row">17,5 km/h</th><td class="num">23</td><td>Venta um pouco</td></tr>
+          <tr><th scope="row">22 km/h</th><td class="num">15</td><td>Começa a levantar areia</td></tr>
+          <tr><th scope="row">30 km/h</th><td class="num">7</td><td>Nortada instalada</td></tr>
+          <tr><th scope="row">36 km/h</th><td class="num">2</td><td>Areia na cara</td></tr>
+          <tr><th scope="row">≥ 42 km/h</th><td class="num">0</td><td>Impraticável</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O planalto no topo existe para premiar o dia calmo. Com tudo o resto igual, uma
+    praia com <strong>6 km/h dá nota 94, e com 22 km/h dá 75</strong> — 19 pontos de
+    diferença, só no vento.</p>
+
+    <h3 id="limiares">Porque é que o degrau grande está nos 20–25 km/h</h3>
+
+    <p>Os cortes não são inventados, e vêm de <strong>duas linhas independentes que caem
+    na mesma banda</strong>:</p>
+
+    <ul>
+      <li><strong>7 m/s, ou 25 km/h</strong>, é o limiar da definição operacional de
+      nortada usada em Portugal — vento do quadrante 315°–45° com 7 m/s ou mais.</li>
+      <li><strong>≈ 19 km/h</strong> é onde começa o transporte de areia por saltação.
+      Para grão de praia de cerca de 190 µm, o início dá-se a uma velocidade de atrito de
+      ~0,23 m/s; convertido para vento medido a 10 m de altura (com κ = 0,4 e
+      z₀ ≈ 1 mm), dá esse valor.</li>
+    </ul>
+
+    <p>Uma vem da meteorologia portuguesa e a outra da física eólica, e não sabem uma da
+    outra. É por isso que o degrau grande da tabela está ali, e não noutro sítio
+    qualquer.</p>
+
+    <!-- ============================================================= CÉU -->
+    <h2 id="ceu"><a class="lig" href="#ceu" aria-label="Ligação para esta secção">#</a>Sol e céu — 26 pontos</h2>
+
+    <div class="rolo">
+      <table>
+        <caption>Pontos por nebulosidade média na janela</caption>
+        <thead><tr><th scope="col">Nuvens</th><th scope="col" class="num">Pontos</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">≤ 20 %</th><td class="num">26</td></tr>
+          <tr><th scope="row">30 %</th><td class="num">23</td></tr>
+          <tr><th scope="row">50 %</th><td class="num">17</td></tr>
+          <tr><th scope="row">70 %</th><td class="num">9</td></tr>
+          <tr><th scope="row">≥ 90 %</th><td class="num">4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Acima de <strong>60 % de nuvens o dia não pode ser verde</strong>, por regra
+    própria: é um dia mais tapado do que aberto.</p>
+
+    <!-- =========================================================== CALOR -->
+    <h2 id="calor"><a class="lig" href="#calor" aria-label="Ligação para esta secção">#</a>O calor que se sente — 18 pontos</h2>
+
+    <p>Usa-se a <strong>temperatura aparente</strong>, e não a do termómetro: é a que
+    inclui o efeito do vento e da humidade. A escala é simétrica — 40 °C estraga um dia
+    de praia tanto como 16 °C.</p>
+
+    <div class="rolo">
+      <table>
+        <caption>Pontos por sensação térmica máxima na janela</caption>
+        <thead><tr><th scope="col">Sensação</th><th scope="col" class="num">Pontos</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">25 a 31 °C</th><td class="num">18</td></tr>
+          <tr><th scope="row">23,5 ou 32,5 °C</th><td class="num">13</td></tr>
+          <tr><th scope="row">20,5 ou 35,5 °C</th><td class="num">7</td></tr>
+          <tr><th scope="row">17,5 ou 38,5 °C</th><td class="num">3</td></tr>
+          <tr><th scope="row">≤ 15,5 ou ≥ 40,5 °C</th><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ============================================================ ÁGUA -->
+    <h2 id="agua"><a class="lig" href="#agua" aria-label="Ligação para esta secção">#</a>Temperatura da água — 14 pontos</h2>
+
+    <p><strong>É aqui que um modelo estrangeiro se engana em Portugal inteiro.</strong> O
+    Atlântico português anda entre 17 e 20 °C em Agosto, por causa do afloramento
+    costeiro — água fria que sobe do fundo quando a nortada empurra a de superfície para
+    o largo. Medido na API a 2 de Agosto de 2026: Carcavelos 18,1 °C, Nazaré 18,6 °C,
+    Lagos 17,4 °C, Monte Gordo 21,9 °C, Funchal 24,8 °C.</p>
+
+    <p>Um modelo mediterrânico, que pede 24 °C para dar nota positiva, marcaria a costa
+    continental inteira a vermelho todos os dias do ano. A escala aqui é portuguesa:</p>
+
+    <div class="rolo">
+      <table>
+        <caption>Pontos por temperatura média da água na janela</caption>
+        <thead>
+          <tr><th scope="col">Água</th><th scope="col" class="num">Pontos</th><th scope="col">O que se diz na praia</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">≥ 22 °C</th><td class="num">14</td><td>Está boa</td></tr>
+          <tr><th scope="row">21 °C</th><td class="num">11</td><td>Dá bem</td></tr>
+          <tr><th scope="row">18,5 °C</th><td class="num">8</td><td>Fresca, entra-se aos poucos</td></tr>
+          <tr><th scope="row">17 °C</th><td class="num">4</td><td>Fria</td></tr>
+          <tr><th scope="row">15 °C</th><td class="num">2</td><td>Muito fria</td></tr>
+          <tr><th scope="row">≤ 13 °C</th><td class="num">0</td><td>Gelada</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- =========================================================== CHUVA -->
+    <h2 id="chuva"><a class="lig" href="#chuva" aria-label="Ligação para esta secção">#</a>Chuva — 8 pontos</h2>
+
+    <div class="rolo">
+      <table>
+        <caption>Pontos por probabilidade máxima de chuva na janela</caption>
+        <thead><tr><th scope="col">Probabilidade</th><th scope="col" class="num">Pontos</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">≤ 8 %</th><td class="num">8</td></tr>
+          <tr><th scope="row">17,5 %</th><td class="num">6</td></tr>
+          <tr><th scope="row">35 %</th><td class="num">3</td></tr>
+          <tr><th scope="row">57,5 %</th><td class="num">1</td></tr>
+          <tr><th scope="row">≥ 70 %</th><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O peso é baixo de propósito: a chuva a sério não desconta pontos, veta o dia.</p>
+
+    <!-- ======================================================= LIMITANTE -->
+    <h2 id="limitante"><a class="lig" href="#limitante" aria-label="Ligação para esta secção">#</a>O factor limitante</h2>
+
+    <p>Uma soma ponderada tem um defeito conhecido, e é a crítica que a literatura faz aos
+    índices aditivos como o TCI e o HCI: <strong>um factor catastrófico é mascarado pelos
+    outros</strong>. Medido durante o desenvolvimento: 38 km/h de vento dava 60 pontos,
+    porque o sol e a ausência de chuva compensavam. Numa praia, 38 km/h manda toda a gente
+    embora, faça o sol que fizer.</p>
+
+    <p>Por isso, além da soma:</p>
+    <ul>
+      <li>se algum factor ficar abaixo de <strong>8 %</strong> do seu peso, o dia é
+      <strong>vermelho</strong>;</li>
+      <li>se ficar abaixo de <strong>40 %</strong>, o dia <strong>não pode ser
+      verde</strong>.</li>
+    </ul>
+
+    <p>A regra aplica-se ao sol, ao vento, ao calor e à chuva — o que determina se se
+    consegue <em>estar</em> na areia. <strong>Não se aplica à água:</strong> o mar gelado
+    impede o banho, não impede o dia de praia.</p>
+
+    <!-- =========================================================== VETOS -->
+    <h2 id="vetos"><a class="lig" href="#vetos" aria-label="Ligação para esta secção">#</a>Os vetos</h2>
+
+    <p>Estas condições mandam o dia para <strong>vermelho</strong> sozinhas,
+    independentemente da pontuação. Um dia com trovoada não é um dia «médio».</p>
+
+    <div class="rolo">
+      <table>
+        <caption>Condições que vetam o dia</caption>
+        <thead><tr><th scope="col">Condição</th><th scope="col">Nota</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Trovoada prevista na janela</th><td>Aviso de segurança</td></tr>
+          <tr><th scope="row">Chuva acima de 70 % de probabilidade, ou 2 mm acumulados dentro da janela</th><td>Era o acumulado do dia inteiro: 79 % dos vetos vinham de chuva de madrugada e chumbavam tardes de sol</td></tr>
+          <tr><th scope="row">Vento acima de 45 km/h, ou rajadas acima de 65 km/h</th><td>Aviso de segurança</td></tr>
+          <tr><th scope="row">Sensação térmica máxima abaixo de 16 °C</th><td>—</td></tr>
+          <tr><th scope="row">Ondulação máxima acima de 2,5 m</th><td>Aviso de segurança. Só em praias de mar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Os vetos marcados como aviso de segurança são ditos noutro tom e noutra cor: um
+    aviso de trovoada no mesmo amarelo que «a água está fria» é um aviso que ninguém lê. E
+    um dia vetado <strong>deixa de mostrar a nota</strong> — «Nota 94 em 100» ao lado de
+    «Hoje não» destrói a confiança em tudo o resto.</p>
+
+    <!-- ========================================================== CORTES -->
+    <h2 id="cortes"><a class="lig" href="#cortes" aria-label="Ligação para esta secção">#</a>Verde, amarelo, vermelho</h2>
+
+    <div class="rolo">
+      <table>
+        <caption>Da nota ao veredicto</caption>
+        <thead><tr><th scope="col" class="num">Nota</th><th scope="col">Cor</th><th scope="col">Veredicto</th></tr></thead>
+        <tbody>
+          <tr><th scope="row" class="num">≥ 70</th><td>Verde</td><td>Dia de praia</td></tr>
+          <tr><th scope="row" class="num">45 a 69</th><td>Amarelo</td><td>Assim-assim</td></tr>
+          <tr><th scope="row" class="num">&lt; 45</th><td>Vermelho</td><td>Fica para outro dia</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota-lado">
+      <p><strong>Estas cores dizem se vale a pena ir — não se o mar está seguro.</strong>
+      São o mesmo verde, amarelo e vermelho que as bandeiras das praias portuguesas usam
+      para outra coisa completamente diferente. Na praia, a bandeira do nadador-salvador
+      manda sempre.</p>
+    </div>
+
+    <!-- ============================================================= RIO -->
+    <h2 id="rio"><a class="lig" href="#rio" aria-label="Ligação para esta secção">#</a>Praias de rio</h2>
+
+    <p>Numa praia de rio não há dados de mar nenhuns. A nota passa a ser a proporção dos
+    pontos obtidos sobre os <strong>86 pontos</strong> que restam, o que equivale a
+    redistribuir os 14 da água pelos outros factores.</p>
+
+    <p>Isto tem uma consequência que é preciso conhecer. A escala da água é absoluta, e o
+    Atlântico raramente chega ao topo dela: em Agosto uma praia do noroeste anda nos
+    18 °C, que valem 8 dos 14 pontos. Uma praia de rio não carrega esse arrasto. Medido
+    com tempo exactamente igual — céu a 15 %, vento a 12 km/h, 27 °C, sem chuva:</p>
+
+    <div class="rolo">
+      <table>
+        <caption>A mesma meteorologia, três praias diferentes</caption>
+        <thead><tr><th scope="col">Praia</th><th scope="col" class="num">Nota</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">De mar, água a 18,5 °C</th><td class="num">89</td></tr>
+          <tr><th scope="row">De mar, água a 22,5 °C (Algarve)</th><td class="num">95</td></tr>
+          <tr><th scope="row">De rio</th><td class="num"><strong>94</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>São <strong>5 pontos</strong> de diferença entre mar e rio no mesmo dia, e chegam
+    para virar um amarelo em verde perto do corte dos 70. A nota de uma praia de rio
+    responde bem à pergunta «este dia presta nesta praia?», mas <strong>não é directamente
+    comparável</strong> com a de uma praia de mar. Por isso as praias de rio aparecem
+    marcadas com «rio» na pesquisa e na tira de favoritos, que é onde as duas apareceriam
+    lado a lado.</p>
+
+    <!-- ====================================================== LIMITAÇÕES -->
+    <h2 id="limitacoes"><a class="lig" href="#limitacoes" aria-label="Ligação para esta secção">#</a>O que este modelo não sabe</h2>
+
+    <p>Escrito aqui para não se fingir que sabe:</p>
+
+    <ul>
+      <li><strong>Não sabe se o mar está seguro para nadar.</strong> As cores são sobre se
+      vale a pena ir; as bandeiras da praia são sobre segurança e significam outra coisa.</li>
+      <li><strong>Não sabe a qualidade da água.</strong> As análises microbiológicas são
+      da <a href="https://praias.apambiente.pt" target="_blank" rel="noopener">Agência
+      Portuguesa do Ambiente</a>.</li>
+      <li><strong>Não sabe se a praia tem sombra, estacionamento, ou se vai estar
+      cheia.</strong></li>
+      <li><strong>Não conhece a orientação da costa de cada praia.</strong> Um vento de
+      leste numa praia virada a oeste é abrigado; o modelo pontua a velocidade, não o
+      abrigo. A direcção só é usada para dizer o nome «nortada» na explicação.</li>
+      <li><strong>A temperatura da água vem de um modelo global</strong>, com uma malha
+      que não resolve baías pequenas nem a diferença entre a rebentação e o largo.</li>
+      <li><strong>A partir do 4.º ou 5.º dia a previsão perde fiabilidade.</strong> O site
+      di-lo quando isso acontece.</li>
+      <li><strong>As praias de rio</strong> não têm dados de mar nenhuns: nem água, nem
+      ondulação.</li>
+    </ul>
+
+    <!-- ========================================================== FONTES -->
+    <h2 id="fontes"><a class="lig" href="#fontes" aria-label="Ligação para esta secção">#</a>De onde vêm os dados</h2>
+
+    <p>Meteorologia da <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>
+    (CC BY 4.0), com a <strong>média de quatro modelos</strong>: ECMWF, ICON, GFS e UKMO.
+    A dispersão entre modelos não é pequena — medido no Furadouro, no mesmo ponto e na
+    mesma janela: ECMWF 10,8 · ICON 11,2 · KNMI 12,7 · Météo-France 13,5 · UKMO 13,8 ·
+    GFS 16,0 km/h. São <strong>1,6 vezes</strong> entre o mais baixo e o mais alto, e o
+    modelo por omissão calhava no extremo baixo. Dados de mar da Open-Meteo Marine.</p>
+
+    <p>Lista de praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+    (ODbL). Concelhos e distritos da Carta Administrativa Oficial de Portugal, da
+    Direcção-Geral do Território.</p>
+
+    <p class="texto__data">Esta página descreve o modelo tal como está em produção. Os
+    números foram conferidos contra o código antes de serem publicados, e há um teste que
+    falha se os dois deixarem de bater certo.</p>
+
+    <p class="texto__voltar"><a href="/">← Voltar ao Praiómetro: vale a pena ir à praia hoje?</a></p>
+  </main>
+</body>
+</html>

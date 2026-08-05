@@ -53,11 +53,11 @@ Medido com tempo exactamente igual (céu 15 %, vento 12 km/h, 27 °C, sem chuva)
 
 | | Nota |
 |---|---|
-| Praia de mar, água a 18,5 °C | 91 |
-| Praia de mar, água a 22,5 °C (Algarve) | 97 |
-| Praia de rio | **97** |
+| Praia de mar, água a 18,5 °C | 89 |
+| Praia de mar, água a 22,5 °C (Algarve) | 95 |
+| Praia de rio | **94** |
 
-São **6 pontos** de diferença entre mar e rio no mesmo dia, e chegam para virar
+São **5 pontos** de diferença entre mar e rio no mesmo dia, e chegam para virar
 um amarelo em verde perto do corte dos 70. A nota de uma praia de rio responde
 bem à pergunta «este dia presta nesta praia?», mas **não é directamente
 comparável** com a de uma praia de mar. Por isso as praias de rio aparecem
@@ -127,7 +127,7 @@ pontos em média, e 94 % dos dias ficaram a 5 pontos ou menos da nota antiga.
 | ≥ 42 km/h | 0 | Impraticável |
 
 O planalto do topo existe para premiar o dia calmo: com tudo o resto igual,
-6 km/h dá 93 pontos e 22 km/h dá 74. São 19 pontos de diferença só no vento.
+6 km/h dá 94 pontos e 22 km/h dá 75. São 19 pontos de diferença só no vento.
 
 Os cortes não são inventados. **7 m/s (25 km/h)** é o limiar da definição
 operacional de nortada usada em Portugal (vento de 315°–45° com ≥ 7 m/s). E o

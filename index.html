@@ -203,39 +203,33 @@
     </section>
 
     <!-- ================================================ COMO DECIDE -->
-    <!-- Estava no <footer>, colapsado, depois do fim do <main>. São as únicas
-         200 palavras de texto real da página — a seguir a elas o <main> tinha
-         59. Fica dentro do <main>, com um <h2> a sério.
-         QUANDO a página /metodologia/ existir: encurtar isto para um resumo de
-         ~80 palavras com uma ligação para lá, senão a página de entrada, que
-         tem toda a autoridade do domínio, rouba-lhe as próprias pesquisas que
-         ela existe para ganhar. -->
+    <!-- Resumo curto, e o texto longo vive todo em /metodologia/. Não é
+         preguiça: a página de entrada tem toda a autoridade do domínio, e se
+         repetisse aqui as 200 palavras roubava à /metodologia/ exactamente as
+         pesquisas que ela existe para ganhar. Uma coisa dita bem, num sítio. -->
     <section class="comofunciona-zona" aria-labelledby="como-t">
       <h2 class="visually-hidden" id="como-t">Como decidimos se vale a pena ir</h2>
       <details class="comofunciona">
         <summary>Como é que isto decide?</summary>
         <div class="comofunciona__corpo">
-          <p>Cada dia leva uma nota de 0 a 100, a partir de cinco coisas: <strong>vento</strong>
-          (34 pontos), <strong>sol</strong> (26), <strong>calor que se sente</strong> (18),
-          <strong>temperatura da água</strong> (14) e <strong>chuva</strong> (8).</p>
-          <p>O vento é o que pesa mais, porque em Portugal é o que mais dias estraga — a partir
-          dos 20-25 km/h começa a levantar areia, e é aí que se fala de <em>nortada</em>. E um
-          dia mesmo calmo é premiado: com tudo o resto igual, 6 km/h vale mais 19 pontos do que
-          22 km/h.</p>
-          <p>A escala da água é portuguesa, não mediterrânica: no Atlântico, 19 °C é uma
-          temperatura normal de Verão, não é um dia mau.</p>
-          <p>Há condições que sozinhas chumbam o dia, faça o sol que fizer: trovoada, chuva a
-          sério, vento acima de 45 km/h, sensação abaixo de 16 °C, ou mar acima de 2,5 m.</p>
-          <p>O vento é a média de <strong>quatro modelos meteorológicos</strong> (ECMWF, ICON,
-          GFS e UKMO), e o valor mostrado é o da parte ventosa da tarde — não a média do dia
-          inteiro, que esconderia a nortada. Por isso pode ser diferente do que vês noutros
-          sites: uns mostram o máximo do dia, outros as rajadas.</p>
+          <p>Cada dia leva uma nota de 0 a 100. O <strong>vento</strong> pesa 34 pontos,
+          o <strong>sol</strong> 26, o <strong>calor que se sente</strong> 18, a
+          <strong>temperatura da água</strong> 14 e a <strong>chuva</strong> 8. Há
+          condições que sozinhas chumbam o dia — trovoada, chuva a sério, vento acima de
+          45 km/h.</p>
+          <p>O vento é a média de quatro modelos meteorológicos e mede-se na parte ventosa
+          da tarde, não na média do dia inteiro, que esconderia a nortada.</p>
+          <p class="comofunciona__mais"><a href="/metodologia/">Os limiares todos, e o que
+          este modelo não sabe →</a></p>
         </div>
       </details>
     </section>
   </main>
 
   <footer class="rodape">
+    <nav class="rodape__nav" aria-label="Páginas do site">
+      <a href="/metodologia/">Como isto decide</a>
+    </nav>
     <p class="rodape__fontes">
       Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
       praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·

@@ -1,0 +1,139 @@
+# Publica o site.
+# =============================================================
+# Até 5 de Agosto de 2026 quem montava o site era o Jekyll do GitHub Pages, a
+# partir da branch. Passou a ser o _build/gerar.js, e o Pages recebe o
+# resultado como artefacto.
+#
+# Duas razões, e a segunda é a que obriga:
+#
+#  1. O Jekyll protegia-se com uma lista de EXCLUSÕES no _config.yml. Quem
+#     acrescentasse um ficheiro ao repositório publicava-o sem dar por isso —
+#     foi assim que o MODELO.md e o MONETIZACAO.md estiveram na web. O gerador
+#     tem uma lista de PERMISSÕES: o que não está lá não sai.
+#
+#  2. As páginas de praia vão ser geradas a partir de nomes do OpenStreetMap.
+#     Um `{{` num nome basta para o Liquid rebentar — e quando o build do Pages
+#     falha, o site não dá erro nenhum: fica a servir a versão antiga e chega
+#     um email. Nenhum dos 995 nomes tem chavetas hoje, mas o OSM é editado
+#     por pessoas.
+#
+# NÃO há `schedule:` aqui, e é de propósito. Enquanto o site não tiver conteúdo
+# que mude sozinho, um cron diário só republicava bytes idênticos. Quando a
+# pré-renderização diária existir, acrescenta-se — e AÍ é preciso lembrar que o
+# GitHub desactiva workflows agendados em repositórios públicos ao fim de 60
+# dias sem commits, e que um deploy por artefacto não conta como commit.
+#
+# Voltar atrás: mudar a fonte do Pages para a branch main outra vez
+#   gh api -X POST repos/renatovalente5/praiometro/pages \
+#     -f build_type=legacy -f 'source[branch]=main' -f 'source[path]=/'
+# O _config.yml continua no repositório precisamente para esse dia.
+
+name: Publicar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Um deploy de cada vez. `cancel-in-progress: false` porque cancelar um deploy
+# a meio deixa o Pages num estado que ninguém quer depurar; mais vale esperar.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      # O projecto não tem dependências e não vai ter: nada de `npm ci` aqui.
+      - name: Testes que não precisam de browser
+        run: |
+          node _source/testar-modelo.js
+          node _source/testar-favoritos.js
+          node _source/testar-slugs.js
+
+      - name: Montar o _site/
+        run: node _build/gerar.js
+
+      # O gerador já falha sozinho se algo proibido lá for parar. Isto é a
+      # segunda fechadura, e olha para o resultado e não para a intenção.
+      - name: Confirmar que não sai o que não deve
+        run: |
+          for f in MODELO.md MONETIZACAO.md README.md LICENSE _config.yml; do
+            if [ -e "_site/$f" ]; then echo "::error::$f foi parar ao _site/"; exit 1; fi
+          done
+          for d in _source _build .github; do
+            if [ -e "_site/$d" ]; then echo "::error::a pasta $d foi parar ao _site/"; exit 1; fi
+          done
+          test -s _site/CNAME || { echo "::error::_site/CNAME vazio ou em falta"; exit 1; }
+          grep -qx 'praiometro.pt' _site/CNAME || { echo "::error::CNAME errado"; exit 1; }
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5
+
+  # Depois de estar no ar. Não trava a publicação — já foi — mas deixa o
+  # workflow a vermelho, que é o sinal de que alguém tem de olhar.
+  cheirar:
+    needs: publicar
+    runs-on: ubuntu-latest
+    steps:
+      - name: O que tem de dar 200
+        run: |
+          sleep 20
+          for u in / /robots.txt /sitemap.xml /404.html /privacidade.html \
+                   /data/praias.json /assets/css/estilo.css /manifest.webmanifest; do
+            c=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://praiometro.pt$u")
+            echo "  $u -> $c"
+            [ "$c" = "200" ] || { echo "::error::$u devolveu $c"; exit 1; }
+          done
+
+      - name: O que tem de dar 404
+        run: |
+          for u in /MODELO.md /MONETIZACAO.md /README.md /LICENSE \
+                   /_source/verificar.py /_build/gerar.js /_config.yml /nao-existe-xpto; do
+            c=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://praiometro.pt$u")
+            echo "  $u -> $c"
+            [ "$c" = "404" ] || { echo "::error::$u devolveu $c e devia dar 404"; exit 1; }
+          done
+
+      # Tudo com `if`, e nunca `grep -q ... && exit 1`: uma procura que não
+      # encontra devolve 1, e se for o último comando do passo o passo falha
+      # exactamente quando está tudo bem.
+      - name: A privacidade continua fora do Google, e a entrada dentro
+        run: |
+          priv=$(curl -sS --max-time 20 https://praiometro.pt/privacidade.html)
+          entrada=$(curl -sS --max-time 20 https://praiometro.pt/)
+
+          if ! printf '%s' "$priv" | grep -q 'name="robots" content="noindex, follow"'; then
+            echo "::error::a privacidade perdeu o noindex, follow"; exit 1
+          fi
+          if printf '%s' "$entrada" | grep -q 'name="robots"'; then
+            echo "::error::a página de entrada ganhou uma meta robots"; exit 1
+          fi
+          if ! printf '%s' "$entrada" | grep -q 'rel="canonical" href="https://praiometro.pt/"'; then
+            echo "::error::a entrada perdeu o canonical"; exit 1
+          fi
+          echo "  noindex na privacidade, canonical e sem robots na entrada — ok"

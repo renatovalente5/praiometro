@@ -23,10 +23,15 @@
 # GitHub desactiva workflows agendados em repositórios públicos ao fim de 60
 # dias sem commits, e que um deploy por artefacto não conta como commit.
 #
-# Voltar atrás: mudar a fonte do Pages para a branch main outra vez
-#   gh api -X POST repos/renatovalente5/praiometro/pages \
+# VOLTAR ATRÁS, se isto correr mal. É PUT e não POST — o POST cria uma
+# propriedade Pages nova e falha com 409 numa que já existe:
+#
+#   gh api -X PUT repos/renatovalente5/praiometro/pages \
 #     -f build_type=legacy -f 'source[branch]=main' -f 'source[path]=/'
-# O _config.yml continua no repositório precisamente para esse dia.
+#
+# O _config.yml continua no repositório precisamente para esse dia: é ele que
+# volta a esconder o _source/ e a documentação interna quando o Jekyll manda.
+# Confirmar a seguir que /MODELO.md volta a dar 404.
 
 name: Publicar
 
@@ -35,10 +40,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Mínimo em cada sítio: quem constrói só lê o repositório. O `pages: write` e
+# o `id-token: write` vivem só no job que publica — é ele que precisa do JWT
+# OIDC com que o Pages confirma que o deploy vem de uma origem autorizada.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Um deploy de cada vez. `cancel-in-progress: false` porque cancelar um deploy
 # a meio deixa o Pages num estado que ninguém quer depurar; mais vale esperar.
@@ -79,7 +85,9 @@ jobs:
           test -s _site/CNAME || { echo "::error::_site/CNAME vazio ou em falta"; exit 1; }
           grep -qx 'praiometro.pt' _site/CNAME || { echo "::error::CNAME errado"; exit 1; }
 
-      - uses: actions/configure-pages@v6
+      # Sem `configure-pages`: só serve para dar base_url/base_path a
+      # frameworks (Next, Nuxt, Gatsby, SvelteKit). Aqui o site é servido na
+      # raiz de um domínio próprio e não há nada para configurar.
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
@@ -87,6 +95,9 @@ jobs:
   publicar:
     needs: construir
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}

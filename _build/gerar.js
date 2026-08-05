@@ -26,7 +26,12 @@ const SAIDA = path.join(RAIZ, '_site');
 
 /* O que é servido, e mais nada. */
 const ALLOW = [
-  'CNAME',                 /* sem isto o domínio próprio cai e o site volta ao github.io */
+  /* O CNAME é INERTE em modo Actions: o Pages ignora-o e quem define o domínio
+     é a definição em Settings (verificado — a API devolve cname=praiometro.pt
+     e build_type=workflow). Fica na lista à mesma por duas razões: custa 13
+     bytes, e é ele que devolve o domínio de graça no dia em que alguém voltar
+     a publicar pela branch. Não é ele que sustenta o domínio hoje. */
+  'CNAME',
   'index.html',
   'privacidade.html',
   '404.html',
@@ -64,10 +69,11 @@ const conta = { n: 0, bytes: 0 };
 for (const f of ALLOW) { conta.n++; conta.bytes += copiarFicheiro(f); }
 for (const d of ALLOW_PASTAS) copiarPasta(d, conta);
 
-/* Publicado por Action, o Jekyll não chega a correr. O .nojekyll fica como
-   cinto e suspensórios, e para o dia em que alguém volte a publicar pela
-   branch sem se lembrar do resto. */
-fs.writeFileSync(path.join(SAIDA, '.nojekyll'), '');
+/* Aqui escrevia-se um .nojekyll. Foi tirado por não servir para nada, das
+   duas maneiras: publicado por Action o Jekyll não chega a correr, e mesmo
+   que corresse o ficheiro nunca lá chegava — o upload-pages-artifact exclui
+   dotfiles por omissão. Verificado: /.nojekyll dava 404 com ele escrito.
+   Um ficheiro que finge proteger é pior do que ficheiro nenhum. */
 
 /* ------------------------------------------------ o build tem de falhar */
 const saiu = [];
@@ -80,7 +86,7 @@ const saiu = [];
   }
 })(SAIDA, '');
 
-const intrusos = saiu.filter(f => f !== '.nojekyll' && PROIBIDO.test(f));
+const intrusos = saiu.filter(f => PROIBIDO.test(f));
 if (intrusos.length) {
   console.error('NÃO PUBLICAR — foi parar ao _site/ o que não devia:');
   intrusos.forEach(f => console.error('   ' + f));

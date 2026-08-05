@@ -8,14 +8,14 @@
   puser aqui a data de hoje em centenas de URLs todos os dias, o Google aprende
   em duas semanas que o `lastmod` deste site não quer dizer nada — e esse sinal
   não se recupera depois.
+
+  A /privacidade.html saiu daqui de propósito: leva `noindex`. Pedir ao
+  Google que a indexe e proibi-lo na página seria dizer-lhe duas coisas
+  ao contrário, e o Search Console acusa isso como erro.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://praiometro.pt/</loc>
-    <lastmod>2026-08-05</lastmod>
-  </url>
-  <url>
-    <loc>https://praiometro.pt/privacidade.html</loc>
     <lastmod>2026-08-05</lastmod>
   </url>
 </urlset>

@@ -7,8 +7,14 @@
   <meta name="description" content="O que este site guarda, onde, durante quanto tempo, e como apagar tudo." />
   <meta name="theme-color" content="#0891b2" />
   <meta name="color-scheme" content="light dark" />
-  <!-- «index, follow» é o comportamento por omissão; fica por ser explícito. -->
-  <meta name="robots" content="index, follow" />
+  <!-- Fora do Google, a pedido do Renato: quem procura o Praiómetro tem de
+       aterrar na aplicação, não na política. NÃO se faz isto com um redirect
+       para «/» — a política tem de continuar a abrir para quem carrega no
+       link do rodapé, que é o que o RGPD exige e o que o site promete.
+       O `follow` é deliberado: as duas únicas ligações internas que apontam
+       para a aplicação estão nesta página, e com `nofollow` deixavam de contar.
+       Reverter é trocar por «index, follow» e repor a URL no sitemap. -->
+  <meta name="robots" content="noindex, follow" />
   <link rel="canonical" href="https://praiometro.pt/privacidade.html" />
 
   <meta property="og:type" content="article" />
@@ -23,7 +29,7 @@
 </head>
 <body>
   <main class="texto">
-    <p class="texto__voltar"><a href="/">← Voltar</a></p>
+    <p class="texto__voltar"><a href="/">← Voltar ao Praiómetro</a></p>
 
     <h1>Privacidade</h1>
     <p class="texto__lead">Em resumo: se só vieres ver se dá praia, este site não guarda nada
@@ -113,7 +119,7 @@
     actualizada antes da mudança entrar em vigor.</p>
     <p class="texto__data">Última actualização: 3 de agosto de 2026.</p>
 
-    <p class="texto__voltar"><a href="/">← Voltar ao site</a></p>
+    <p class="texto__voltar"><a href="/">← Voltar ao Praiómetro: vale a pena ir à praia hoje?</a></p>
   </main>
 </body>
 </html>

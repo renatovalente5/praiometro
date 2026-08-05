@@ -403,6 +403,32 @@ for loc in _re.findall(r'<loc>([^<]+)</loc>', mapa):
 if 'https://praiometro.pt/sitemap.xml' not in _ler('robots.txt'):
     erro('o robots.txt não indica o sitemap')
 
+# A privacidade está fora do Google de propósito. As duas metades desta decisão
+# têm de andar sempre juntas: `noindex` na página E fora do sitemap. Só uma
+# delas é um sinal contraditório, e o Search Console acusa-o como erro.
+_priv = _sem_comentarios('privacidade.html')
+_m = _re.search(r'<meta name="robots" content="([^"]*)"', _priv)
+_robots = _m.group(1) if _m else ''
+# Por directiva, e não por substring: «nofollow» contém «follow», e um
+# `in` ingénuo dava o teste por passado com o sinal exactamente ao contrário.
+_directivas = [d.strip().lower() for d in _robots.split(',')]
+_tem_noindex = 'noindex' in _directivas
+# Os <loc>, e não o texto do ficheiro: o comentário deste sitemap explica
+# porque é que a privacidade saiu de lá, e a palavra aparece nele.
+_no_mapa = any('privacidade' in loc for loc in _re.findall(r'<loc>([^<]+)</loc>', mapa))
+
+if _tem_noindex and _no_mapa:
+    erro('privacidade.html tem noindex E está no sitemap — sinais ao contrário')
+elif not _tem_noindex and not _no_mapa:
+    erro('privacidade.html perdeu o noindex mas continua fora do sitemap — falta uma das metades')
+elif _tem_noindex:
+    if 'follow' not in _directivas:
+        erro('o noindex da privacidade não diz `follow` — deixa de passar as ligações para a app')
+    else:
+        print('  privacidade.html   ✓ noindex, follow, e fora do sitemap')
+else:
+    print('  privacidade.html   ✓ indexável e no sitemap')
+
 # Um <h1> e um só, e nada de <h2>/<h3> antes dele. Os diálogos da conta
 # estavam dentro do <header>, e punham lá cinco.
 h = _sem_comentarios('index.html')

@@ -1,0 +1,1063 @@
+{
+ "kw": {
+  "clusters": [
+   {
+    "nome": "1. «tempo + {nome da praia}» — praias de mar (o núcleo)",
+    "exemplos": [
+     "tempo praia da barra",
+     "tempo praia de mira",
+     "tempo praia do furadouro",
+     "tempo praia da vagueira",
+     "tempo praia esmoriz",
+     "tempo praia de espinho",
+     "tempo praia costa nova",
+     "tempo praia da torreira",
+     "tempo praia da lomba",
+     "tempo praia cortegaça",
+     "tempo praia de mira hoje",
+     "tempo praia da barra sábado",
+     "tempo praia de mira domingo",
+     "praia de matosinhos tempo",
+     "praia da torreira meteorologia",
+     "costa da caparica meteorologia",
+     "praia do furadouro hoje",
+     "praia de carcavelos hoje"
+    ],
+    "intencao": "Decisória e imediata: a pessoa já escolheu (ou quase) a praia e quer saber se hoje presta. É exactamente a pergunta a que o Praiómetro responde.",
+    "volume_estimado": "O MAIOR de todos. A família «tempo praia» (todas as pesquisas que contêm as duas palavras) é ~26x «praia amanhã» e ~36x qualquer praia individual isolada. Ordem de grandeza inferida (ver notas): ~15.000–25.000 pesquisas/mês em Agosto para a família inteira, ~2.000/mês em Dezembro. Praia de topo (Barra, Mira): ~300–600/mês em Agosto. Praia média: ~50–150/mês. Verificado por Google Trends: no ranking de related queries de «tempo praia», o nº1 nacional é «tempo praia mira» (100) e o nº2 «tempo praia da barra» (96).",
+    "dificuldade": "MÉDIA. O SERP de «tempo praia da barra» é ocupado por otempo.pt (/praia-da-barra.html), windfinder, windy.app, weatheravenue, theweather.com, accuweather e IPMA. MAS: (a) o IPMA usa URLs não indexáveis do tipo index.jsp?selLocal=115, (b) o BeachCam só cobre ~150 praias, (c) NENHUM deles responde «vale a pena?» — todos despejam números em bruto. Há espaço para ganhar por diferenciação de formato (semáforo + nota), não por autoridade.",
+    "porque_importa": "É o casamento perfeito entre o que existe (996 praias) e o que se pesquisa. Cada praia = 1 URL indexável. Hoje a cauda longa indexável é ZERO porque tudo vive atrás de fragmentos (#NomeDaPraia). Este cluster sozinho justifica a mudança de arquitectura para /praia/{slug}."
+   },
+   {
+    "nome": "2. «tempo praia fluvial {nome}» + «praias fluviais {distrito}» — o oceano azul",
+    "exemplos": [
+     "tempo praia fluvial da mamoa",
+     "tempo praia fluvial olhos de fervença",
+     "tempo praia fluvial agroal",
+     "tempo praia fluvial do azibo",
+     "tempo praia fluvial cardigos",
+     "tempo praia fluvial adaufe",
+     "tempo praia fluvial de alpedriz",
+     "tempo praia fluvial melres",
+     "tempo praia fluvial de bitetos",
+     "tempo praia fluvial de boelhe",
+     "praias fluviais perto de mim",
+     "praias fluviais norte",
+     "praias fluviais centro",
+     "praias fluviais coimbra",
+     "melhores praias fluviais alentejo",
+     "praia fluvial mais quente de portugal"
+    ],
+    "intencao": "Mistura de descoberta («onde há uma perto de mim») e verificação meteorológica («está bom hoje?»). A segunda é servível já; a primeira precisa de páginas de região.",
+    "volume_estimado": "MUITO ALTO e subestimado. «praias fluviais» tem média 11,2 contra 24,1 de «tempo praia» na mesma escala Trends — cerca de 47% da família — e o seu PICO chega a 100 (superior ao pico de «tempo praia», 98). A fatia meteorológica («tempo praia fluvial X») é menor e fica abaixo do limiar do Trends, mas o autocomplete devolve uma cauda longa densa e 100% portuguesa.",
+    "dificuldade": "BAIXA — a mais baixa de todas. Testei o SERP de «tempo praia fluvial da mâmoa»: devolve lixo (freemeteo a apontar para uma «Mamoa» em Espanha, theweather.com para «A Mámoa» na Galiza, e páginas de Mauá no Brasil). Os sites que rankeiam para praias fluviais (praiasfluviais.pt, aquapolis.com.pt, vaiver.com, câmaras municipais) são directórios turísticos e NÃO dão meteorologia. Windguru, BeachCam, surf-forecast e IPMA ignoram completamente praias de rio.",
+    "porque_importa": "O Praiómetro já tem 235 praias de rio (m=0) e o MODELO.md já trata o caso (redistribui os 14 pontos da água pelos 86 restantes). Zero concorrentes meteorológicos, zero contaminação brasileira (o Brasil não diz «praia fluvial»), e o termo é intrinsecamente português. Deve ser a PRIMEIRA prioridade de publicação, antes até das praias de mar, porque é onde se ganha depressa."
+   },
+   {
+    "nome": "3. «estado do mar {sítio}» — grande cauda portuguesa, mas encaixe parcial",
+    "exemplos": [
+     "estado do mar costa da caparica",
+     "estado do mar madeira",
+     "estado do mar algarve",
+     "estado do mar espinho",
+     "estado do mar peniche",
+     "estado do mar nazaré",
+     "estado do mar ericeira",
+     "estado do mar figueira da foz",
+     "estado do mar hoje",
+     "estado do mar para amanhã",
+     "estado do mar próximos dias",
+     "estado do mar ipma",
+     "agitação marítima hoje",
+     "agitação marítima algarve"
+    ],
+    "intencao": "Segurança e condições do mar: ondulação, agitação marítima, pesca, surf, se se pode entrar na água. NÃO é a mesma pergunta que «está bom para ir à praia».",
+    "volume_estimado": "MÉDIO-BAIXO como termo de cabeça (~1/8 de «tempo praia» na média a 5 anos), mas com uma cauda de nomes de praia enorme no autocomplete — recolhi mais de 70 localidades portuguesas distintas. Related queries do Trends: «estado do mar madeira» (100), «estado do mar costa da caparica» (99), «estado do mar algarve» (81).",
+    "dificuldade": "MÉDIA-ALTA. O IPMA é a autoridade natural aqui («estado do mar ipma» é sugestão própria) e o termo colide com conteúdo institucional e com avisos de agitação marítima.",
+    "porque_importa": "ATENÇÃO — encaixe apenas parcial, e é preciso ser honesto: o modelo do Praiómetro usa ondulação SÓ como veto de segurança (>2,5 m) e não publica previsão de ondas, período ou swell. Perseguir este cluster a fundo atrai gente que quer outra coisa e gera saltos para trás. Recomendo cobri-lo apenas como secção secundária dentro da página de cada praia de mar, nunca como cluster autónomo."
+   },
+   {
+    "nome": "4. «temperatura da água do mar {sítio}» — procura real, nicho já ocupado",
+    "exemplos": [
+     "temperatura da agua do mar algarve",
+     "temperatura da água do mar em espinho",
+     "temperatura da agua do mar em monte gordo",
+     "temperatura da agua do mar aveiro",
+     "temperatura da água do mar hoje em albufeira",
+     "temperatura da agua do mar praia da barra",
+     "temperatura da agua do mar esmoriz",
+     "temperatura da água do mar no algarve em agosto",
+     "temperatura da agua do mar mapa",
+     "temperatura da água do mar ipma"
+    ],
+    "intencao": "Uma variável específica, muitas vezes antes de viajar («vou em Agosto, a água está boa?»). Metade decisória, metade planeamento.",
+    "volume_estimado": "MÉDIO-BAIXO. Média Trends 0,29 contra 5,33 de «tempo praia da barra» na mesma escala — ou seja, cerca de 18x MENOS do que uma única praia de topo no padrão «tempo». Concentra-se fortemente no Algarve: related query nº1 é «temperatura da agua do mar algarve» (100).",
+    "dificuldade": "ALTA — a mais alta do conjunto. Existe um domínio de correspondência exacta (temperaturadomar.pt) com página por localidade, mais tempo33.pt/temperatura-do-mar/algarve, tabuademares.com, clima-para-turistas.com, otempo.pt/costa-algarve/temperatura-de-agua.html e surf-forecast.com/breaks/{x}/seatemp. Nicho maduro e saturado.",
+    "porque_importa": "Vale a pena servir a variável DENTRO da página da praia (é 14 dos 100 pontos do modelo) e talvez uma página de região «temperatura da água no Algarve», mas não construir um cluster próprio. O custo de oportunidade contra o cluster 2 é mau."
+   },
+   {
+    "nome": "5. «praias sem vento» / «praias abrigadas do vento» — pouco volume, encaixe perfeito",
+    "exemplos": [
+     "praias sem vento algarve",
+     "praias sem vento hoje",
+     "praias sem vento norte",
+     "praias sem vento lisboa",
+     "praias sem vento porto",
+     "praias sem vento portugal",
+     "melhores praias sem vento",
+     "praias do norte sem vento",
+     "praias abrigadas do vento",
+     "praias abrigadas do vento algarve",
+     "praias abrigadas do vento lisboa",
+     "praia sem vento hoje porto",
+     "praia sem vento norte portugal",
+     "vento na praia hoje",
+     "tem vento na praia hoje"
+    ],
+    "intencao": "Decisória pura e comparativa: «diz-me TU qual é a praia boa hoje». É literalmente o output que o Praiómetro consegue calcular e mais ninguém publica.",
+    "volume_estimado": "BAIXO em absoluto — «praias sem vento» tem média Trends 0,06 e fica quase sempre abaixo do limiar de medição (o widget de related queries devolveu vazio). Picos sazonais até 14 no índice. Ordem de grandeza: dezenas a poucas centenas de pesquisas/mês no Verão, não milhares.",
+    "dificuldade": "MUITO BAIXA. Praticamente ninguém serve esta intenção com dados a sério — há artigos de listicle turístico, não rankings calculados diariamente.",
+    "porque_importa": "É o posicionamento da marca, não a fonte de tráfego. O vento vale 34 dos 100 pontos do modelo, é o factor mais pesado, e este cluster é a prova pública disso. CUIDADO com um erro fácil: «vento praia» sozinho NÃO é intenção meteorológica — as related queries do Trends mostram «para-vento praia» (100), «corta vento praia» (51), «tapa vento praia», «corta vento praia decathlon». É intenção de compra de resguardos de praia. A intenção de previsão só aparece com nome de praia colado."
+   },
+   {
+    "nome": "6. Intenção comparativa e superlativa — «praia mais quente», «melhor praia hoje»",
+    "exemplos": [
+     "praia mais quente de portugal",
+     "praia mais quente do algarve",
+     "praia mais quente do norte de portugal",
+     "praia mais quente hoje",
+     "praia mais quente amanhã",
+     "praia com água mais quente em portugal",
+     "praia com agua mais quente no norte de portugal",
+     "praia fluvial mais quente de portugal",
+     "melhor praia para ir hoje",
+     "melhor dia para ir a praia",
+     "melhor dia da semana para ir a praia",
+     "praias com sol hoje"
+    ],
+    "intencao": "Escolha aberta: o utilizador não tem praia decidida e quer um ranking. Alto valor comercial futuro e alta taxa de partilha.",
+    "volume_estimado": "BAIXO-MÉDIO. «praia mais quente» tem média Trends 0,10 (pico 3); «melhores praias» é bastante maior (média 12,0) mas com intenção turística, não meteorológica. Ordem de grandeza: centenas de pesquisas/mês no Verão para as variantes superlativas.",
+    "dificuldade": "BAIXA-MÉDIA. O SERP é dominado por listicles editoriais estáticos (revistas, blogues de viagens) que nunca se actualizam. Uma página gerada diariamente a partir de dados reais ganha em frescura e em intenção.",
+    "porque_importa": "O Praiómetro já calcula uma nota 0–100 para 996 praias — produzir «as 10 melhores praias de hoje no Norte» é quase de graça e é o único conteúdo que os concorrentes estruturalmente não conseguem fazer (o BeachCam mostra imagens, o IPMA mostra tabelas; nenhum ordena)."
+   },
+   {
+    "nome": "7. Perguntas sobre vento e nortada — tráfego residual, mas constrói autoridade",
+    "exemplos": [
+     "a que horas o vento acalma",
+     "a que horas acalma o vento hoje",
+     "quando acalma o vento",
+     "o vento vai acalmar hoje",
+     "que horas o vento vai acalmar",
+     "a que horas abranda o vento",
+     "porque tem tanto vento na praia",
+     "o que é a nortada",
+     "nortada e upwelling",
+     "nortada em portugal",
+     "porque é que a água do mar é fria em portugal"
+    ],
+    "intencao": "Informacional / explicativa. Quem pergunta «a que horas o vento acalma» está a decidir se vai à praia às 17h em vez das 14h — é decisória disfarçada de pergunta.",
+    "volume_estimado": "MUITO BAIXO. Estas queries mal passam o limiar do autocomplete e não aparecem sequer no Trends. Ordem de grandeza: dezenas de pesquisas/mês. Várias formulações que me pediste para testar («porque é que há tanto vento na praia», «quando é que a água do mar está mais quente», «qual a melhor praia sem vento», «melhores praias sem nortada», «praias abrigadas do vento norte») devolveram ZERO sugestões — não existem com esse fraseado.",
+    "dificuldade": "MUITO BAIXA. Sem concorrência dedicada.",
+    "porque_importa": "Não é tráfego, é E-E-A-T e conteúdo para o <details> «Como é que isto decide?» que hoje está colapsado e invisível. «a que horas o vento acalma» é servível de forma brilhante se a página mostrar o vento hora a hora — e o MODELO.md já calcula o percentil 75 entre as 11h e as 19h, portanto os dados existem."
+   },
+   {
+    "nome": "8. Falhas de concorrentes — marca + praia (sinal de oportunidade, não alvo)",
+    "exemplos": [
+     "ipma praia da barra",
+     "ipma praia de mira",
+     "ipma praia de esmoriz",
+     "ipma praia da vagueira",
+     "ipma praia do furadouro",
+     "ipma praias",
+     "info praia app",
+     "info praias portugal app",
+     "praia em directo",
+     "praia em directo vodafone",
+     "praia da barra beachcam",
+     "praia grande sintra windguru",
+     "meia praia lagos windguru"
+    ],
+    "intencao": "Navegacional: a pessoa quer um site específico PARA uma praia específica. Só pesquisa assim porque a marca não tem essa página fácil de encontrar.",
+    "volume_estimado": "BAIXO individualmente, mas é um sinal de diagnóstico muito forte. «ipma» tem média Trends 45,5 contra 0,94 de «tempo praia» — cerca de 48x mais — e mesmo assim as pessoas têm de colar o nome da praia ao lado da marca para lá chegar.",
+    "dificuldade": "ALTA para as queries de marca em si (não se rankeia para «ipma X»), IRRELEVANTE como alvo directo.",
+    "porque_importa": "É a prova de que existe uma lacuna estrutural: o IPMA tem os dados mas não tem URLs por praia; o BeachCam tem URLs por praia (beachcam.meo.pt/livecams/{slug}/) mas só ~150 praias e com premium pago (3,49 €/mês). O Praiómetro pode ter 996 URLs gratuitas. Não persigas estas queries — lê-as como mapa do buraco a ocupar."
+   }
+  ],
+  "padroes_query": [
+   "PADRÃO DOMINANTE CONFIRMADO: {tempo} + {nome da praia} — e não {previsão}. Verifiquei os dois: «tempo praia X» devolve praias portuguesas (Barra, Mira, Vagueira, Esmoriz, Espinho, Costa Nova, Furadouro, Torreira, Cortegaça, Maceda, Apúlia, Amorosa, Aguda, Labruge, Lavra, Leça, Miramar), enquanto «previsão praia X» devolve quase só Brasil (Praia Grande SP, Ubatuba, Guarujá, Itanhaém, Maresias, Juquehy, Praia do Rosa, Praia do Forte). NÃO usar «previsão» nos títulos.",
+   "Ordem das palavras: existem as duas formas, «tempo praia da barra» e «praia da barra tempo». A primeira é mais frequente no autocomplete de cabeça; a segunda aparece como sufixo quando se começa pelo nome da praia. Um <title> do tipo «Praia da Barra: tempo hoje» apanha as duas.",
+   "Modificador temporal: «hoje» esmaga tudo. Trends: praia hoje = 20,4 | praia amanhã = 0,92 | praia fim de semana = 0,64 | praia domingo = 0,34 | praia sábado = 0,04. «Hoje» vale ~22x «amanhã» e ~32x «fim de semana». A página tem de responder ao DIA DE HOJE acima da dobra; os 5 dias são secundários.",
+   "Sufixos que as pessoas colam a um nome de praia, por ordem de frequência observada no autocomplete: beachcam/webcam/direto/ao vivo/camera (nº1, e o Praiómetro NÃO serve), tempo, meteorologia, hoje, mapa/maps/direções/onde fica/como chegar, clima, restaurantes, bandeira hoje, estacionamento, temperatura agua, windguru, interdita/fechada/está aberta.",
+   "«meteorologia» é um sinónimo forte e subestimado de «tempo» em pt-PT: praia da torreira meteorologia, costa da caparica meteorologia, praia de matosinhos meteorologia, praia de ofir meteorologia, praia da aguda meteorologia. Merece estar no texto da página.",
+   "Padrão de vento com localidade: «vento na praia de X» e «vento praia X» (Barra, Espinho, Cabedelo, Amorosa, Rocha, Meco, Mira, Carcavelos, Guincho, Falésia). Sem localidade, «vento praia» é intenção de COMPRA (para-vento, corta-vento, Decathlon).",
+   "Padrão fluvial, inteiramente português e sem concorrência: «tempo praia fluvial {nome}» e «praias fluviais {perto de mim | distrito | melhores}». O modificador «perto de mim» é o nº1 absoluto deste cluster (related query 350 vs 110 do segundo).",
+   "Padrão de estado do mar: «estado do mar {localidade}» + {hoje | para amanhã | próximos dias}. Mais de 70 localidades portuguesas distintas recolhidas.",
+   "Padrão de água: «temperatura da água do mar {localidade}» + {hoje | em {mês}}. O modificador de MÊS é específico deste cluster e é o principal uso fora de época.",
+   "Padrão superlativo/comparativo: «praia mais quente {de portugal | do algarve | do norte de portugal | hoje | amanhã | perto de mim}» e «praia com água mais quente em {região}».",
+   "Padrão de pergunta sobre vento: «a que horas {o vento acalma | acalma o vento | o vento vai parar | abranda o vento}» + «hoje». Existe, é servível, mas é residual em volume.",
+   "ARMADILHA: muitos termos de cabeça que parecem óbvios são brasileiros ou não existem. «vai dar praia» (média Trends 0,01 em PT — praticamente inexistente, e o autocomplete devolve Rio de Janeiro/Salvador), «praia hoje» (Copacabana, Ipanema, Niterói), «onde há sol» / «onde há sol hoje» (ZERO sugestões), «qualidade da água balnear» (média 0,00), «posso ir à praia» (devolve só perguntas de saúde: menstruada, com conjuntivite, depois de tatuagem).",
+   "ARMADILHA MAIOR: «nortada» está capturada por marcas. As related queries do Trends são «nortada restaurante» (100), «nortada porto» (60), «cerveja nortada» (55), «nortada de sabores», «fábrica nortada». O autocomplete acrescenta fatos de banho, crossfit, festival de dança, golf. A intenção meteorológica é residual («nortada significado», «nortada vento», «o que é a nortada»). Usar a palavra na COPY para credibilidade local, nunca como alvo de ranking."
+  ],
+  "sazonalidade": "CURVA MEDIDA (Google Trends PT, «tempo praia», média de 5 anos por mês, índice partilhado 0-100): Jan 9,0 | Fev 9,4 | Mar 11,7 | Abr 18,2 | Mai 21,3 | Jun 39,2 | Jul 56,6 | AGO 72,6 | Set 26,3 | Out 12,5 | Nov 7,7 | Dez 8,3. Rácio pico/vale = 8,7x nas médias mensais e chega a 12–20x se comparar semanas isoladas (pico semanal 100 em 21/08/2022; mínimo 4 em 01/12/2024).\n\nFORMA DA CURVA, e é isto que importa para o calendário editorial: a subida é gradual (Abril já vale o dobro de Fevereiro — Páscoa e primeiros dias de calor) mas a QUEDA é brutal — de Agosto (72,6) para Setembro (26,3) perdem-se 64% num mês, e para Outubro (12,5) perdem-se 83%. Consequência prática: todo o trabalho de indexação tem de estar feito até MEADOS DE MAIO. Uma página publicada em Julho não tem tempo de amadurecer para apanhar Agosto — o Google leva semanas a indexar e a ganhar confiança em URLs novos, e o site parte de duas URLs indexáveis e sem sitemap.\n\nTENDÊNCIA PLURIANUAL a assinalar: os picos anuais estão a descer devagar (2021: 90 | 2022: 87-100 | 2023: 81 | 2024: 78 | 2025: 74). Não sei a causa com certeza; a hipótese mais provável é o widget de meteorologia do próprio Google e a migração para apps a comerem cliques (zero-click). É um argumento a favor de investir na PWA/favoritos e não só no SEO.\n\nFORA DE ÉPOCA (Outubro a Maio) pesquisa-se coisa diferente, não menos: (a) planeamento por mês — «onde ir a praia em outubro», «em novembro», «em abril», «em maio», «em junho», «temperatura da agua do mar no algarve em agosto», «temperatura da agua do mar em junho»; (b) praias fluviais mantêm procura de descoberta; (c) «estado do mar» é o único cluster COM COMPORTAMENTO CONTRACÍCLICO — a sua média mensal quase não cai no Inverno (Out 1,2 | Nov 1,0 | Dez 0,5 | Jan 0,9 contra Ago 3,2) porque é alimentado por temporais, pesca, surf e Nazaré, não por banhos. É a única porta de entrada de tráfego de Inverno que o site pode abrir, ainda que o encaixe com o modelo seja fraco.\n\nGEOGRAFIA DA PROCURA (Trends, «tempo praia», por região, normalizado): Viana do Castelo 100 | Açores 61 | Leiria 58 | Aveiro 45 | Coimbra 38 | Porto 31 | Braga 30 | Santarém 27 | Viseu 27 | Faro 27 | Lisboa 23 | Setúbal 14 | Madeira 3. Isto é o achado estratégico mais forte de toda a investigação e confirma a tese do modelo: quem pesquisa «vale a pena ir à praia?» está no litoral noroeste e centro, onde a NORTADA estraga dias — não no Algarve, onde está quase sempre bom e não é preciso perguntar. O Algarve tem 210 das 996 praias mas é apenas o 10.º em procura. As praias a publicar PRIMEIRO são as de Viana do Castelo, Aveiro, Leiria, Coimbra, Porto e Braga — e isso bate certo com o que o autocomplete de «tempo praia» devolve espontaneamente (Barra, Mira, Vagueira, Esmoriz, Espinho, Costa Nova, Furadouro, Torreira, Cortegaça, Maceda).",
+  "notas": "METODOLOGIA E O QUE É VERIFICADO VS INFERIDO — importante ler antes de agir.\n\nVERIFICADO (dados que puxei directamente, não de segunda mão):\n- Autocomplete do Google (endpoint suggestqueries.google.com, hl=pt-PT, gl=pt): ~260 seeds, incluindo sopa alfabética a-z sobre 8 prefixos, 22 nomes de praia reais e uma amostra estratificada de 36 praias tiradas do vosso data/praias.json. Milhares de sugestões recolhidas. Ficheiros em /private/tmp/claude-501/-Users-renatovalente-Websites/6cb7322e-1346-4dda-9ae7-fcab595bf47e/scratchpad/out1.json a out6.json.\n- Google Trends API (geo=PT, 5 anos): séries temporais, mapas regionais e related queries para «tempo praia», «temperatura da agua do mar», «estado do mar», «praias sem vento», «praias fluviais», «nortada», «vento praia», mais comparações de calibração contra ipma/beachcam/windguru/surf forecast. Ficheiros trends_ts.json, trends_rq0-3.json, trends2.out, trends3.out.\n- Estrutura dos concorrentes, aberta e lida: IPMA cobre ~150 praias com URLs não indexáveis (index.jsp?selLocal=NNN); BeachCam (é do MEO, não da Vodafone) tem ~150 praias em beachcam.meo.pt/livecams/{slug}/ com premium a 3,49 €/mês; temperaturadomar.pt é um exact-match domain com página por localidade.\n\nINFERIDO, e com que grau de confiança:\n- Os números absolutos de pesquisas/mês são ORDENS DE GRANDEZA, não medições. Não tenho Ahrefs nem Keyword Planner. A cadeia de raciocínio é: o Trends dá-me que «ipma» ≈ 48x a família «tempo praia» (médias a 5 anos); assumi «ipma» algures entre 200k e 500k pesquisas/mês em Portugal (é a marca meteorológica nacional num país de 10M) e propaguei. Se essa âncora estiver errada por um factor de 2, todos os meus números absolutos erram por um factor de 2 — mas os RÁCIOS ENTRE CLUSTERS mantêm-se, e são esses que devem guiar a priorização. Confia nos rácios, desconfia dos absolutos.\n- Um aviso sobre como o Trends conta: um termo sem aspas agrega todas as pesquisas que contêm aquelas palavras. Portanto «tempo praia» já inclui «tempo praia da barra», «tempo na praia de mira», etc. É por isso que digo «a família» e não «o termo exacto» — e é a razão pela qual a cauda longa somada vale mais do que qualquer página única.\n- Estimei que ~35% das 996 praias têm procura meteorológica própria mensurável: na amostra de 36 praias, 24 tinham alguma sugestão de autocomplete, mas só ~13 tinham uma sugestão explícita com «tempo». Extrapolando: talvez 300-400 praias com alguma cauda, e só ~50-100 com volume que valha a pena. As restantes ~600 páginas valem na mesma pelo efeito de cobertura e de long tail agregada, mas não esperes tráfego individual delas.\n\nTRÊS AVISOS QUE NÃO SÃO SOBRE PALAVRAS-CHAVE MAS QUE DETERMINAM SE ISTO FUNCIONA:\n1. Nada disto rende enquanto as praias viverem atrás de fragmentos (#NomeDaPraia). O Google não indexa fragmentos como páginas. É preciso uma URL real por praia (/praia/{slug}), com sitemap.xml, robots.txt e canonical — nenhum dos três existe hoje. E como o conteúdo é 100% client-side (fetch à Open-Meteo no browser), cada página tem de ter texto e dados estáticos no HTML servido (nome, região, tipo, concelho, orientação da costa, exposição à nortada, texto explicativo), senão o Googlebot vê uma casca vazia. Isto é a diferença entre a investigação valer alguma coisa e não valer nada.\n2. og:image ainda aponta para renatovalente5.github.io — corrigir para praiometro.pt agora que o apex está ligado, senão todas as partilhas sociais das novas páginas ficam com URL errado.\n3. A procura nº1 colada a nomes de praia é «beachcam / direto / webcam / ao vivo» e o Praiómetro não tem câmaras. Não tentes competir aí nem prometer o que não tens; mas vale a pena saber que é isso que as pessoas mais querem ver antes de irem à praia.\n\nDUAS RECOMENDAÇÕES QUE DECORREM DIRECTAMENTE DOS DADOS:\n- Começa pelas praias FLUVIAIS, não pelas de mar. É contra-intuitivo mas é onde a concorrência é literalmente nula, o volume é ~47% da família «tempo praia», e a contaminação brasileira é zero. São 235 páginas que podem rankear em semanas.\n- Nas praias de mar, publica por ordem geográfica de procura (Viana do Castelo, Aveiro, Leiria, Coimbra, Porto, Braga) e não por fama turística. O Algarve pode esperar.\n- E tudo isto tem de estar indexado até meados de Maio. Depois de Agosto, a janela fecha-se durante nove meses.",
+  "fontes": [
+   "https://suggestqueries.google.com/complete/search?client=firefox&hl=pt-PT&gl=pt&q= (API de autocomplete do Google, ~260 seeds, recolha própria)",
+   "https://trends.google.com/trends/api/explore + /widgetdata/multiline + /widgetdata/relatedsearches (geo=PT, today 5-y, recolha própria)",
+   "https://www.ipma.pt/pt/maritima/costeira/ (previsão para ~150 praias, URLs do tipo index.jsp?selLocal=NNN, não indexáveis)",
+   "https://beachcam.meo.pt/praias/ e https://beachcam.meo.pt/livecams/praia-da-barra/ (BeachCam é do MEO; ~150 praias; premium 3,49 €/mês)",
+   "https://www.otempo.pt/praia-da-barra.html e https://www.otempo.pt/costa-algarve/temperatura-de-agua.html",
+   "https://www.temperaturadomar.pt/europa/portugal/faro-algarve/ e /albufeira/ (exact-match domain, página por localidade)",
+   "https://tempo33.pt/temperatura-do-mar/algarve",
+   "https://tabuademares.com/pt/faro/altura/previsao/temperatura-agua",
+   "https://pt.windfinder.com/forecast/barra",
+   "https://windy.app/forecast2/spot/1653339/Aveiro+-+Praia+da+Barra",
+   "https://pt.surf-forecast.com/breaks/Albufeira/seatemp",
+   "https://praiasfluviais.pt/praia?id=praia-fluvial-de-mamoa (directório turístico, sem meteorologia)",
+   "https://aquapolis.com.pt/praia-fluvial-da-mamoa-milheiros-de-poiares-santa-maria-da-feira/",
+   "https://cm-feira.pt/praia-fluvial-da-mamoa",
+   "https://www.accuweather.com/pt/pt/praia-grande/274062/weather-forecast/274062",
+   "/Users/renatovalente/Websites/Praiometro/data/praias.json (996 praias: 761 de mar, 235 de rio; Algarve 210, Lisboa e Setúbal 207, Norte 203, Centro 196, Alentejo 95, Açores 48, Madeira 37)",
+   "/Users/renatovalente/Websites/Praiometro/MODELO.md (pesos do modelo, janela 11h-19h, percentil 75 do vento, vetos, ondulação >2,5 m como aviso de segurança)"
+  ]
+ },
+ "serp": {
+  "serps": [
+   {
+    "query": "tempo na praia",
+    "topo": [
+     "beachcam.meo.pt (webcams ao vivo, +150 praias)",
+     "ipma.pt/pt/maritima/costeira/ (hub «Praias»)",
+     "ipma.pt/pt/otempo/prev.localidade.hora",
+     "meteoblue.com/pt/tempo/semana/praia_portugal_3372761",
+     "pt.tutiempo.net/praias/portugal.html",
+     "beachcam.meo.pt/livecams/praia-de-matosinhos/",
+     "tempo.pt/praia-de-mira.htm",
+     "accuweather.com (Praia, CABO VERDE)",
+     "freemeteo.com.pt (Praia, Cabo Verde)",
+     "surftotal.com/camaras-report/..."
+    ],
+    "formato_dominante": "Hubs nacionais e webcams, NÃO páginas por praia. Ninguém tem uma página cuja resposta seja «hoje sim/não». A query é semanticamente suja: «Praia» é a capital de Cabo Verde e polui 2-3 lugares do top 10 com resultados de CV e do Brasil (Praia Grande/SP).",
+    "features": "VERIFICADO em DuckDuckGo pt-PT (kl=pt-pt): sem featured snippet, sem PAA, sem pacote local. NÃO VERIFICADO no Google: o google.com/search bloqueia com muro de consentimento e não aceitei o banner. INFERÊNCIA: no Google esta query provavelmente dispara a weather onebox própria do Google."
+   },
+   {
+    "query": "previsão praia portugal",
+    "topo": [
+     "ipma.pt/pt/maritima/costeira/ (#1)",
+     "ipma.pt/pt/otempo/prev.localidade.hora/index.jsp",
+     "tempo.pt/praia-520413.htm",
+     "worldmeteo.info/pt/europa/portugal/praia/tempo-148939/",
+     "meteoblue.com/pt/tempo/semana/praia_portugal_3372761",
+     "pt.sea-forecast.com/portugal",
+     "temperaturadomar.pt/europa/portugal/weather.html",
+     "temperaturadomar.pt/europa/portugal/",
+     "pt.tutiempo.net/praias/portugal.html",
+     "pt.tideschart.com/Portugal/"
+    ],
+    "formato_dominante": "Páginas-índice de país (hubs). O IPMA ganha por autoridade, não por qualidade de página. Outra vez, metade do top 10 confunde «Praia» localidade com «praia» substantivo.",
+    "features": "Sem SERP features no DDG pt-PT. Nenhum resultado é uma página de praia concreta."
+   },
+   {
+    "query": "vale a pena ir à praia hoje",
+    "topo": [
+     "beachcam.meo.pt (#1)",
+     "github.com/renatovalente5/vai-dar-praia (#2 — o REPOSITÓRIO do próprio Praiómetro)",
+     "ipma.pt/pt/maritima/costeira/",
+     "temperaturadomar.pt/europa/portugal/weather.html",
+     "portugalwebcams.pt/categoria/praias",
+     "infoagua.apambiente.pt/pt/praias",
+     "meo.pt/beachcam",
+     "ipma.pt/pt/index.html",
+     "worldmeteo.info/pt/europa/portugal/praia/...",
+     "praiashoje.com.br (BRASIL)"
+    ],
+    "formato_dominante": "NÃO EXISTE formato dominante — a intenção está órfã. O sinal mais forte de toda esta análise: um repositório de código no GitHub, sem conteúdo, sem links, rankeia em #2. Isto significa que o Google/Bing não encontram nenhuma página portuguesa que responda literalmente a esta pergunta. O único que ocupa a intenção com produto real é o Beachcam (e responde com vídeo, não com previsão).",
+    "features": "Sem SERP features no DDG pt-PT. Nota: o único resultado que responde mesmo à pergunta é brasileiro (praiashoje.com.br) — o nicho existe e está provado noutro mercado, mas está VAZIO em Portugal."
+   },
+   {
+    "query": "temperatura da água do mar portugal",
+    "topo": [
+     "temperaturadomar.pt/europa/portugal/ (#1)",
+     "temperaturadomar.pt/europa/portugal/porto/ (#2)",
+     "ipma.pt/pt/maritima/sst/",
+     "seatemperature.info/pt/portugal-temperatura-da-agua.html",
+     "pt.seatemperature.net/country/portugal",
+     "seatemperature.info/pt/portugal/porto-temperatura-da-agua.html",
+     "ipma.pt/pt/maritima/costeira/",
+     "praiasdeportugal.com/pt/blog/temperatura-agua-mar-portugal-guia-regioes-meses",
+     "pt.tutiempo.net/temperatura-mar/portugal.html",
+     "pt.seatemperature.net/country/portugal/porto-portugal"
+    ],
+    "formato_dominante": "Páginas por CIDADE de 4 sites-satélite estrangeiros que fazem só temperatura da água (temperaturadomar.pt, seatemperature.info, seatemperature.net, seatemperature.com). Conteúdo fino, quase duplicado entre si. Único conteúdo editorial PT no top 10: praiasdeportugal.com.",
+    "features": "Sem features no DDG. INFERÊNCIA: no Google esta query tende a dar featured snippet de tabela (os artigos de tabela mensal estão desenhados para isso)."
+   },
+   {
+    "query": "tempo praia do furadouro",
+    "topo": [
+     "tempo.pt/furadouro.htm (#1)",
+     "tempo.pt/furadouro-519595.htm (#2 — canibalização própria)",
+     "worldmeteo.info/pt/europa/portugal/furadouro/tempo-195641/",
+     "ipma.pt/pt/otempo/prev.localidade.hora",
+     "accuweather.com/pt/pt/furadouro/271949/weather-forecast/271949",
+     "freemeteo.com.pt/tempo/furadouro/15-dias/lista/",
+     "pt.surf-forecast.com/breaks/Furadouro/forecasts/latest/six_day",
+     "ipma.pt/pt/maritima/costeira/index.jsp?selLocal=236&idLocal=236",
+     "meteoblue.com/pt/tempo/semana/furadouro_portugal_2267801",
+     "foreca.com/pt/110342513/Praia-do-Furadouro-Ovar-Portugal/hourly"
+    ],
+    "formato_dominante": "Página por LOCALIDADE (a povoação Furadouro), não por praia. Quase todos os resultados são páginas geradas automaticamente a partir de bases de dados de topónimos (GeoNames). Só o Foreca usa o nome «Praia do Furadouro» no título.",
+    "features": "Sem features. Nota: o IPMA aparece com o URL de query-string ?selLocal=236 mas o <title> é «IPMA - Praias» — não menciona Furadouro."
+   },
+   {
+    "query": "tempo praia da rocha",
+    "topo": [
+     "tempo.pt/praia-da-rocha.htm (#1)",
+     "worldmeteo.info/pt/europa/portugal/praia-da-rocha/tempo-137986/",
+     "accuweather.com/pt/pt/praia-da-rocha/273254/hourly-weather-forecast/273254",
+     "accuweather.com/.../10-day-weather-forecast/273254",
+     "meteoblue.com/pt/tempo/semana/praia-da-rocha_portugal_2264336",
+     "pt.tutiempo.net/praia/portugal/praia-da-rocha.html",
+     "tempo.com/praia-da-rocha.htm (Meteored BRASIL)",
+     "freemeteo.com.pt/tempo/praia-da-rocha/15-dias/lista/",
+     "seatemperature.info/pt/praia-da-rocha-previsao-do-tempo.html",
+     "ema.ipma.pt/emas/praia-da-rocha/"
+    ],
+    "formato_dominante": "Página por localidade outra vez, porque «Praia da Rocha» É uma localidade turística. O tutiempo é o único com um caminho /praia/ dedicado. O Meteored canibaliza-se a si próprio com o domínio brasileiro (tempo.com) na mesma SERP portuguesa.",
+    "features": "Sem features. AccuWeather ocupa 2 posições, Meteored ocupa 2 domínios."
+   },
+   {
+    "query": "tempo costa da caparica",
+    "topo": [
+     "tempo.pt/costa-da-caparica.htm (#1)",
+     "accuweather.com/pt/pt/costa-de-caparica/275615/weather-forecast/275615",
+     "ipma.pt/pt/otempo/prev.localidade.hora/teste/index.jsp",
+     "tempo.pt/caparica.htm (canibalização)",
+     "seatemperature.info/pt/costa-da-caparica-previsao-do-tempo.html",
+     "worldmeteo.info/pt/europa/portugal/costa-da-caparica/tempo-136509/",
+     "otempo.pt/costa-de-caparica.html",
+     "accuweather.com/.../10-day-weather-forecast/275615",
+     "meteoblue.com/pt/tempo/semana/costa-de-caparica_portugal_2268916",
+     "ipma.pt/pt/maritima/costeira/index.jsp?selLocal=14&idLocal=14"
+    ],
+    "formato_dominante": "Página por localidade. Repare-se que o IPMA aparece com um URL /teste/ (ambiente de teste indexado) — sintoma de higiene técnica má.",
+    "features": "Sem features. Zero páginas que distingam as ~20 praias numeradas da Costa da Caparica entre si."
+   },
+   {
+    "query": "tempo praia do guincho",
+    "topo": [
+     "seatemperature.info/pt/praia-do-guincho-previsao-do-tempo.html (#1)",
+     "freemeteo.com.pt/tempo/praia-do-guincho/15-dias/lista/",
+     "accuweather.com/pt/pt/guincho/274053/weather-forecast/274053",
+     "ipma.pt/pt/maritima/costeira/index.jsp?selLocal=12&idLocal=12",
+     "pt.surf-forecast.com/breaks/Praiado-Guincho/forecasts/latest/six_day",
+     "pt.tideschart.com/Portugal/Lisbon/Cascais/Praia-do-Guincho/",
+     "pt.surf-forecast.com/breaks/Praiado-Guincho/metars/latest",
+     "beachcam.meo.pt/livecams/praia-do-guincho/",
+     "pt.tideschart.com/Portugal/Lisbon/Cascais/Praia-do-Guincho/Weather/",
+     "seatemperature.info/pt/praia-do-guincho-temperatura-da-agua.html"
+    ],
+    "formato_dominante": "MUDA O PADRÃO: aqui, como não há povoação «Guincho» significativa, o tempo.pt desaparece do top 10 e ganham os sites com páginas por PRAIA (seatemperature.info, tideschart, surf-forecast). Confirma a tese: onde não há aldeia, os generalistas não chegam.",
+    "features": "Sem features. Tideschart ocupa 2 posições com sub-páginas (/ e /Weather/); surf-forecast 2; seatemperature.info 2. SERP fragmentada = fácil de entrar."
+   },
+   {
+    "query": "tempo praia de mira",
+    "topo": [
+     "tempo.pt/praia-de-mira.htm (#1)",
+     "accuweather.com/pt/pt/praia-de-mira/860220/hourly-weather-forecast/860220",
+     "tempo.pt/mira_coimbra-l32018.htm",
+     "worldmeteo.info/pt/europa/portugal/praia-de-mira/tempo-165593/",
+     "meteoblue.com/pt/tempo/semana/praia-de-mira_portugal_2735729",
+     "tempo.com/praia-de-mira.htm (BR)",
+     "otempo.pt/praia-de-mira.html",
+     "ipma.pt/pt/otempo/prev.localidade.hora/teste/index.jsp",
+     "freemeteo.com.pt/tempo/praia-de-mira/15-dias/lista/",
+     "beachcam.meo.pt/livecams/"
+    ],
+    "formato_dominante": "Página por localidade. 10 resultados, 10 páginas geradas automaticamente, zero opinião. Nenhuma responde «hoje há nortada?».",
+    "features": "Sem features."
+   },
+   {
+    "query": "temperatura da água praia de carcavelos",
+    "topo": [
+     "seatemperature.info/pt/carcavelos-temperatura-da-agua.html (#1)",
+     "pt.seatemperature.net/current/portugal/carcavelos",
+     "seatemperature.info/carcavelos-water-temperature.html (versão EN na SERP PT)",
+     "pt.surf-forecast.com/breaks/Carcavelos/seatemp",
+     "ipma.pt/pt/maritima/costeira/index.jsp?selLocal=13&idLocal=13",
+     "pt.tideschart.com/Portugal/Lisbon/Praia-de-Carcavelos/Water-Temperature/",
+     "pt.tideschart.com/Portugal/Lisbon/Oeiras/Carcavelos/Water-Temperature/",
+     "ipma.pt/pt/maritima/sst/",
+     "seatemperature.com/regions/europe/portugal/praia-de-carcavelos",
+     "pt.surf-forecast.com/breaks/Carcavelos/forecasts/latest"
+    ],
+    "formato_dominante": "Sub-página dedicada só à temperatura da água, por praia/cidade. Este é o padrão mais replicável de toda a análise: /{praia}-temperatura-da-agua. Notar que o tideschart tem DUAS páginas para a mesma praia (Praia-de-Carcavelos e Oeiras/Carcavelos) — canibalização por geração automática.",
+    "features": "Sem features. Dado real observado nos snippets: seatemperature.info diz 18.1 °C na versão PT e 19.3 °C na versão EN da MESMA praia no mesmo dia — os líderes desta SERP são pouco fiáveis."
+   },
+   {
+    "query": "temperatura da água praia do furadouro",
+    "topo": [
+     "seatemperature.info/pt/furadouro-temperatura-da-agua.html (#1)",
+     "pt.surf-forecast.com/breaks/Furadouro/seatemp",
+     "pt.tideschart.com/Portugal/Aveiro/Ovar/Praia-do-Furadouro/Water-Temperature/",
+     "pt.tideschart.com/Portugal/Aveiro/Ovar/Praia-do-Furadouro/",
+     "seatemperature.com/regions/europe/portugal/praia-do-furadouro",
+     "ipma.pt/pt/maritima/sst/",
+     "pt.surf-forecast.com/breaks/Furadouro/forecasts/latest/six_day",
+     "seatemperature.info/pt/furadouro-mares.html",
+     "getbeachfinder.com/spot/25dd1180-.../praia-do-furadouro",
+     "seatemperature.com/regions/europe/portugal/praia-do-furadouro-sul"
+    ],
+    "formato_dominante": "Sub-páginas por intenção. Qualidade editorial baixíssima: o snippet do tideschart lê-se «Temperatura da água na Panamá Praia do Furadouro, Ovar» — tradução automática partida, indexada e a rankear em #3. Isto é o nível a bater.",
+    "features": "Sem features. Aparece um concorrente novo e directo: getbeachfinder.com, que agrega água+ar+UV+vento+ondas por spot, mas em inglês e com URLs com UUID."
+   },
+   {
+    "query": "praia de carcavelos vento",
+    "topo": [
+     "pt.windfinder.com/forecast/carcavelos (#1)",
+     "windy.app/pt/forecast2/spot/4628663/Praia+de+Carcavelos",
+     "ipma.pt/pt/maritima/costeira/index.jsp?selLocal=13&idLocal=13",
+     "surfguru.com.br/previsao/portugal/lisboa/cascais/praia-de-carcavelos (BRASIL)",
+     "pt.sea-forecast.com/portugal/carcavelos",
+     "tempo.pt/carcavelos.htm",
+     "pt.windfinder.com/weatherforecast/carcavelos_lisbon_portugal",
+     "beachcam.meo.pt/livecams/praia-de-carcavelos/",
+     "seatemperature.info/pt/carcavelos-temperatura-da-agua.html",
+     "ipma.pt/en/maritima/costeira/... (versão EN na SERP PT)"
+    ],
+    "formato_dominante": "Domínio absoluto do Windfinder + Windy.app. Formato: tabela horária de velocidade/direcção/rajada, desenhada para kite, windsurf e vela. Zero interpretação — o utilizador tem de saber o que 24 km/h de NNW significa para uma toalha.",
+    "features": "Sem features. O IPMA aparece com a versão inglesa a competir com a portuguesa."
+   },
+   {
+    "query": "furadouro vento previsão",
+    "topo": [
+     "pt.windfinder.com/forecast/furadouro (#1)",
+     "windy.app/pt/forecast2/spot/10204/Furadouro",
+     "tempo.pt/furadouro.htm",
+     "tabuademares.com/pt/aveiro/furadouro/previsao/vento",
+     "pt.surf-forecast.com/breaks/Furadouro/forecasts/latest/six_day",
+     "accuweather.com/pt/pt/furadouro/271949/weather-forecast/271949",
+     "surfguru.com.br/previsao/portugal/aveiro/ovar/praia-do-furadouro",
+     "worldmeteo.info/pt/europa/portugal/furadouro/tempo-195641/",
+     "pt.surf-forecast.com/breaks/Furadouro/forecasts/latest",
+     "pt.windfinder.com/ (homepage)"
+    ],
+    "formato_dominante": "Igual: Windfinder/Windy.app + tabuademares com sub-página /previsao/vento. Nota estratégica: o tabuademares.com prova que uma sub-página dedicada a UMA variável (/previsao/vento) rankeia — é um padrão de URL a copiar.",
+    "features": "Sem features."
+   },
+   {
+    "query": "tempo praia fluvial de alqueva",
+    "topo": [
+     "tempo.pt/alqueva.htm (a ALDEIA, não a praia)",
+     "pt.seatemperature.net/lagos/water-temp-in-barragem-de-alqueva",
+     "meteoblue.com/pt/tempo/semana/barragem-do-alqueva_portugal_7535640",
+     "meteoblue.com/pt/tempo/semana/alqueva_portugal_2271855",
+     "accuweather.com/pt/pt/alqueva/273154/hourly-weather-forecast/273154",
+     "vagamundos.pt/melhores-praias-fluviais-alqueva/ (guia turístico)",
+     "accuweather.com/.../10-day-weather-forecast/273154",
+     "worldmeteo.info/pt/europa/portugal/alqueva/tempo-136039/",
+     "ipma.pt/pt/maritima/costeira/",
+     "tempo.com/alqueva.htm (BR)"
+    ],
+    "formato_dominante": "NENHUM resultado do top 10 é uma página sobre uma praia fluvial. Todos devolvem a povoação ou a barragem. O único resultado com intenção certa é um artigo de viagens sem previsão. Esta é a maior lacuna verificada de toda a análise — e o Praiómetro tem 235 praias fluviais em data/praias.json.",
+    "features": "Sem features. Nem o IPMA cobre praias fluviais (a página /maritima/costeira/ é, por definição, costeira)."
+   },
+   {
+    "query": "o que é a nortada",
+    "topo": [
+     "observador.pt/especiais/...como-se-forma-a-nortada... (#1)",
+     "pt.wikipedia.org/wiki/Nortada (#2)",
+     "pt.meteorologiaenred.com/o-que-é-uma-nortada.html",
+     "praiasdeportugal.com/pt-br/blog/nortada-nas-praias-de-portugal-2026-...",
+     "infopedia.pt/dicionarios/lingua-portuguesa/nortada",
+     "cervejaria-nortada.pt (MARCA)",
+     "nortada.pt/pages/quem-somos-nos (MARCA de roupa)",
+     "cervejanortada.pt (MARCA)",
+     "nortada.pt (MARCA)",
+     "significadosdepalavras.com/nortada"
+    ],
+    "formato_dominante": "Artigo editorial + Wikipédia. Metade do top 10 é ruído de marca (uma cervejaria, uma marca de fatos de banho). Nenhum resultado liga a explicação a uma ferramenta que mostre a nortada HOJE, numa praia concreta.",
+    "features": "Sem definition box no DDG. INFERÊNCIA: no Google, com Wikipédia em #2, é quase certo haver featured snippet — e é atacável, porque nenhum dos textos actuais explica a nortada em termos de consequência prática («a partir de 20-25 km/h começa a levantar areia»), que é exactamente o que o Praiómetro já escreve no <details>."
+   },
+   {
+    "query": "quando é que a água do mar aquece em portugal",
+    "topo": [
+     "praiasdeportugal.com/pt-br/blog/temperatura-da-agua-no-mar-de-portugal-... (#1)",
+     "praiasdeportugal.com/pt/blog/temperatura-agua-mar-portugal-guia-regioes-meses (#2)",
+     "lusometeo.com/atualidade/praias-previsao-agua-do-mar-31482/",
+     "ncultura.pt/agua-do-mar-atinge-22oc-no-norte-...",
+     "temperaturadomar.pt/europa/portugal/when.html",
+     "sol.iol.pt/sociedade/noticias/praias-no-norte-com-agua-mais-quente...",
+     "temperaturadomar.pt/europa/portugal/",
+     "sicnoticias.pt/meteorologia/...",
+     "seatemperature.info/pt/portugal/porto-temperatura-da-agua.html",
+     "publico.pt/interactivos/temperatura-agua-praia/"
+    ],
+    "formato_dominante": "Artigo/guia com tabelas mensais por região + notícias sazonais. NENHUM site de previsão rankeia com uma ferramenta. O praiasdeportugal.com ocupa #1 E #2 (versão pt-br e pt do mesmo artigo). O Público tem um interactivo, o que confirma que o formato «ferramenta jornalística» funciona nesta intenção.",
+    "features": "Sem features no DDG. INFERÊNCIA: alta probabilidade de featured snippet de tabela e de PAA no Google, dada a forma de pergunta e a presença de artigos-tabela nos dois primeiros lugares."
+   },
+   {
+    "query": "praias abrigadas da nortada / melhores praias sem vento portugal",
+    "topo": [
+     "praiasdeportugal.com/pt-br/blog/nortada-nas-praias-de-portugal-2026-... (#1)",
+     "observador.pt (artigo sobre a nortada)",
+     "noticiasaominuto.com, sicnoticias.pt, expresso.pt, nit.pt (notícias sazonais)",
+     "travelmagg.sapo.pt/top10/artigos/10-praias-calmas-portugal",
+     "vortexmag.net/10-praias-desertas-secretas-ou-tranquilas-no-norte-de-portugal/",
+     "versa.iol.pt/evasao/praia/praias-ventosas-com-agua-fria-em-portugal-...",
+     "impulsiveaddiction.com/melhores-praias-do-norte-de-portugal/",
+     "tempo.pt/noticias/actualidade/cinco-praias-portuguesas-que-ainda-escapam-aos-mapas-turisticos.html",
+     "e-konomista.pt/praias-escondidas-portugal/"
+    ],
+    "formato_dominante": "100% listicles turísticos e notícias. ZERO ferramentas, ZERO dados, ZERO ordenação por condições reais. Ninguém responde «quais são as praias com menos vento HOJE». Esta é a segunda maior lacuna verificada.",
+    "features": "Sem features no DDG. Estas SERPs são de conteúdo editorial puro — o Praiómetro pode entrar com o mesmo formato mas com dados a sério por trás."
+   }
+  ],
+  "concorrentes": [
+   {
+    "nome": "IPMA — Instituto Português do Mar e da Atmosfera",
+    "url": "https://www.ipma.pt/pt/maritima/costeira/",
+    "estrutura_urls": "Query string, não caminhos: /pt/maritima/costeira/index.jsp?selLocal=236&idLocal=236. O parâmetro é um ID numérico opaco. Existe ainda /pt/maritima/sst/ (temperatura da superfície do mar) e um sub-site separado ema.ipma.pt/emas/{estacao}/ com URLs limpos por estação meteorológica.",
+    "paginas_indexadas": "VERIFICADO: o <select> da página lista 155 praias (155 <option>, 155 nomes únicos). Mas na prática é 1 URL canónica indexável para as 155 — o <title> é literalmente «IPMA - Praias» para TODAS elas, e o conteúdo é injectado por JavaScript. Existem também versões /en/ e /teste/ indexadas a competir com a portuguesa.",
+    "forcas": "Autoridade institucional máxima e perfil de backlinks que ninguém bate. É a fonte oficial citada por toda a imprensa. Rankeia #1 em «previsão praia portugal» e aparece no top 10 de quase todas as queries de praia. Dados que o Praiómetro não tem: agitação marítima oficial, SST por modelo NEMO, avisos meteorológicos, estações EMA reais.",
+    "fraquezas": "SEO técnico praticamente inexistente e VERIFICADO por mim: sem robots.txt (404 em ipma.pt/robots.txt), sem <link rel=canonical>, sem <meta name=description>, sem JSON-LD, e um único <title> para 155 praias. Stack de 2013-2015: jQuery 1.11.3 e Leaflet 0.7.7. Conteúdo renderizado por JS a partir de um OpenCMS. Jargão puro («agitação marítima», «altura significativa», «período de pico»), que é exactamente o problema que o Praiómetro existe para resolver. UX e mobile datados. Indexa ambientes /teste/. Não cobre praias fluviais nem praias pequenas."
+   },
+   {
+    "nome": "Info Praia / InfoÁgua (APA — Agência Portuguesa do Ambiente)",
+    "url": "https://infoagua.apambiente.pt/pt/praias",
+    "estrutura_urls": "Um único caminho, /pt/praias, para o país inteiro. infopraia.apambiente.pt faz redirect para infoagua.apambiente.pt. Sem URL por praia.",
+    "paginas_indexadas": "VERIFICADO: 1 página. robots.txt devolve 404 e sitemap.xml devolve HTTP 500. Sem canonical. É uma SPA jQuery + axios + echarts + swiper: os nomes das praias existem no HTML mas o conteúdo útil é montado no cliente.",
+    "forcas": "Dados oficiais que mais ninguém tem: qualidade da água balnear (~6000 análises por época), lotação em tempo real via 157 câmaras, bandeiras e certificações, acessibilidade. Combina IPMA + Instituto Hidrográfico. Aparece no top 10 de «vale a pena ir à praia hoje».",
+    "fraquezas": "Estratégia app-first: o valor está na app iOS/Android, e a web é um resto. Zero arquitectura de informação para SEO — sitemap partido (500), robots em falta, uma só página. Não faz previsão a 5 dias. Não emite veredicto. Não cobre praias sem concessão nem praias fluviais fora do sistema de águas balneares."
+   },
+   {
+    "nome": "Posso ir? (DECO PROTESTE + APA + Tech4Covid19)",
+    "url": "sem site — possoir.pt e www.possoir.pt não resolvem (NXDOMAIN, verificado)",
+    "estrutura_urls": "Não aplicável: não tem presença web própria.",
+    "paginas_indexadas": "VERIFICADO: zero. A pegada orgânica resume-se a notícias de 2020 (DN, ECO/Sapo, Renascença, Mais Ribatejo) e ao comunicado da DECO.",
+    "forcas": "Marca DECO PROTESTE e dados oficiais de lotação da APA. Cobertura anunciada de 600 praias costeiras e fluviais — mais do que o IPMA. 240 mil utilizadores em 2020.",
+    "fraquezas": "NÃO É CONCORRENTE DE SEO. Produto nascido da COVID-19 (distanciamento social) em 2020, sem domínio activo. Não disputa uma única SERP com o Praiómetro. Só é relevante como aviso: uma app sem web não capta procura de pesquisa — que é precisamente o erro que o Praiómetro deve evitar ao deixar as 996 praias atrás de fragmentos #."
+   },
+   {
+    "nome": "Praia em Directo (Fundação Vodafone / Programa Praia Saudável)",
+    "url": "sem site — praiaemdirecto.pt e praiaemdireto.pt não resolvem (NXDOMAIN, verificado)",
+    "estrutura_urls": "Não aplicável.",
+    "paginas_indexadas": "VERIFICADO: zero. Só existe como app, dentro do Programa Praia Saudável (protocolo Fundação Vodafone + Autoridade Marítima Nacional + APA + INR + ABAE), ~1 M€/ano. A pegada web é um tópico do forum.vodafone.pt e uma publicação de Facebook.",
+    "forcas": "Parceria institucional forte e integração com nadadores-salvadores e bandeira azul.",
+    "fraquezas": "Mesmo diagnóstico do «Posso ir?»: app-only, sem domínio, sem SEO. Não compete em nenhuma SERP."
+   },
+   {
+    "nome": "tempo.pt (Meteored)",
+    "url": "https://www.tempo.pt/praia-de-mira.htm",
+    "estrutura_urls": "/{slug-da-localidade}.htm no raiz, com variantes por desambiguação (/furadouro.htm e /furadouro-519595.htm; /esmoriz_aveiro-l132590.htm). Notícias em /noticias/.",
+    "paginas_indexadas": "Dezenas de milhares de localidades PT (não medível sem ferramenta paga; o robots.txt só declara o sitemap de notícias, não o de localidades). O NÚMERO QUE INTERESSA É OUTRO E ESTÁ VERIFICADO: cobre POVOAÇÕES, não praias. praia-de-mira.htm, praia-da-rocha.htm, costa-da-caparica.htm, carcavelos.htm e furadouro.htm devolvem 200; praia-da-adraga.htm, praia-do-meco.htm, praia-do-osso-da-baleia.htm e praia-do-malhao.htm devolvem 404 — e uma pesquisa site:tempo.pt por «adraga» não devolve nada.",
+    "forcas": "É o rei da cauda longa «tempo {localidade}»: #1 em Furadouro, Praia da Rocha, Costa da Caparica e Praia de Mira. Domínio .pt com autoridade acumulada. SEO on-page correcto e VERIFICADO: canonical, meta description, meta keywords, robots «index, follow, max-image-preview:large», e hreflang para toda a rede Meteored (tiempo.com, meteored.com.ar, …). 14 dias de previsão. Redacção de notícias meteorológicas que apanha tráfego sazonal.",
+    "fraquezas": "ZERO dados estruturados — verifiquei: nem um bloco application/ld+json na página. Página pesada com doubleclick + Google Tag Manager + CMP próprio (cmp.meteored.com): banner de cookies obrigatório e publicidade a competir com o conteúdo. Canibaliza-se em duas frentes: URLs duplicados para a mesma localidade e o domínio brasileiro tempo.com a aparecer na mesma SERP portuguesa. E o furo estratégico: qualquer praia sem aldeia com o mesmo nome simplesmente não existe no tempo.pt."
+   },
+   {
+    "nome": "surf-forecast.com (versão pt.)",
+    "url": "https://pt.surf-forecast.com/breaks/Furadouro/forecasts/latest/six_day",
+    "estrutura_urls": "Excelente e replicável: /breaks/{Nome-Do-Break}/ com sub-páginas por intenção — /forecasts/latest, /forecasts/latest/six_day, /seatemp (temperatura da água), /metars/latest (observação real), /wavefinder. Nomes legíveis, embora com erros de junção («Praiado-Guincho», «Fozdo-Lizandro»).",
+    "paginas_indexadas": "VERIFICADO: sitemap_index.xml.gz com 29 sitemaps (um por letra A-Z + other + buoys). Bem mais de 200 breaks só em Portugal, organizados por região (Beira, Douro e Minho, Ericeira, Lisboa, Madeira, Peniche, Alentejo, Algarve, Açores). Com 5+ sub-páginas cada, são mais de 1000 URLs indexáveis só para Portugal.",
+    "forcas": "É o único que cobre praias sem povoação: pt.surf-forecast.com/breaks/Praia-do-Osso-da-Baleia/forecasts/latest devolve 200 quando o tempo.pt e o windfinder devolvem 404. Sub-páginas por intenção que capturam «temperatura da água {praia}» e «{praia} vento». Autoridade de 20 anos no nicho.",
+    "fraquezas": "Jargão de surf inultrapassável para o público-alvo do Praiómetro: swell, período primário, energia da onda, guia de fato. Página de 62 KB e TTFB de ~0,9 s — a mais lenta que medi. Tabelas horizontais densas, más em telemóvel. Fala para surfistas, não para famílias com toalha e chapéu. E bloqueia GPTBot/CCBot/anthropic-ai em /breaks/*, o que lhe corta visibilidade em respostas de IA."
+   },
+   {
+    "nome": "windfinder / windy.app / windguru (bloco «vento»)",
+    "url": "https://pt.windfinder.com/forecast/furadouro",
+    "estrutura_urls": "windfinder: /forecast/{slug} e /weatherforecast/{slug} (sub-página «superforecast»). windy.app: /pt/forecast2/spot/{id}/{Nome+Do+Spot} — ID numérico + nome. windguru: www.windguru.cz/{id} — só um número, sem nome nenhum no URL.",
+    "paginas_indexadas": "Milhares de spots globais. Cobertura PT parcial e VERIFICADA: windfinder tem /forecast/furadouro e /forecast/praia_da_torreira (200) mas devolve 404 em praia_do_osso_da_baleia e praia_da_adraga. windy.app devolveu 403 a pedidos automatizados (anti-bot).",
+    "forcas": "Autoridade quase total nas queries de vento: windfinder é #1 em «praia de carcavelos vento» e em «furadouro vento previsão», com o windy.app logo atrás. Dados horários de velocidade, direcção e rajada, com modelos múltiplos.",
+    "fraquezas": "São ferramentas para desportos de vento (kite, windsurf, vela, parapente) e falam essa língua. Nunca traduzem o vento em consequência: ninguém lá diz «hoje a areia vai voar». O windguru é o pior caso de SEO que encontrei — o URL é só um número (windguru.cz/2222), o <title> é «Windguru - {Spot}» e o HTML tem 9 KB porque tudo é montado em JavaScript. Cobertura por spot de desporto, não por praia de banhos: praias familiares sem interesse para vento simplesmente não existem."
+   },
+   {
+    "nome": "meteoblue",
+    "url": "https://www.meteoblue.com/pt/tempo/semana/praia-de-mira_portugal_2735729",
+    "estrutura_urls": "/pt/tempo/semana/{slug}_{pais}_{geonameid}. O sufixo é um ID do GeoNames — ou seja, a unidade é a localidade do GeoNames, não a praia.",
+    "paginas_indexadas": "Centenas de milhares de localidades globais, multiplicadas por idioma e por tipo de vista (semana, meteograma, mapas). Em PT cobre as mesmas localidades que o tempo.pt.",
+    "forcas": "Marca respeitada, multi-modelo, meteogramas detalhados, canonical e hreflang correctos (verificado), previsão presente no HTML servido. Está no top 10 de praticamente todas as queries «tempo {praia}» que testei.",
+    "fraquezas": "Sem JSON-LD (verificado). Interface densíssima e orientada a quem sabe ler meteogramas. Não tem noção de «praia» como entidade — herda o problema do GeoNames, por isso Praia da Adraga ou Praia do Malhão não têm página. Não emite veredicto nem hierarquiza factores."
+   },
+   {
+    "nome": "tideschart (pt.tideschart.com)",
+    "url": "https://pt.tideschart.com/Portugal/Aveiro/Ovar/Praia-do-Furadouro/",
+    "estrutura_urls": "A MELHOR estrutura de todo o mercado, e a que recomendo estudar: /Portugal/{Distrito}/{Concelho}/{Praia}/ com sub-páginas /Weather/, /Water-Temperature/, /Surf-Report/. Hierarquia geográfica completa, nomes legíveis, uma sub-página por intenção de pesquisa.",
+    "paginas_indexadas": "Não foi possível contar: o site está atrás de Cloudflare e devolveu 403 ao curl e 402 ao WebFetch — não contornei o desafio. Pelas SERPs, tem pelo menos 2-3 URLs por praia portuguesa e cobre praias que o tempo.pt não cobre. O robots.txt (esse acessível) bloqueia AhrefsBot, SEMrushBot, MJ12bot, dotbot e afins — defende-se de análise competitiva.",
+    "forcas": "Arquitectura de URLs e cobertura de cauda longa. Ocupa múltiplas posições na mesma SERP (vi 2 resultados no top 10 de «tempo praia do guincho» e 2 em «temperatura da água praia de carcavelos»). Cobre marés, que o Praiómetro não cobre.",
+    "fraquezas": "Conteúdo gerado por máquina, repetitivo e mal traduzido — o snippet indexado em #3 lê-se «Temperatura da água na Panamá Praia do Furadouro, Ovar», um erro de tradução automática a rankear em português. Canibaliza-se (tem Praia-de-Carcavelos e Oeiras/Carcavelos como páginas separadas). Publicidade. O foco é maré, não «vale a pena ir»."
+   },
+   {
+    "nome": "Bloco «temperatura da água»: seatemperature.info + temperaturadomar.pt + seatemperature.net + seatemperature.com",
+    "url": "https://seatemperature.info/pt/furadouro-temperatura-da-agua.html",
+    "estrutura_urls": "seatemperature.info: /pt/{slug}-temperatura-da-agua.html, /pt/{slug}-previsao-do-tempo.html, /pt/{slug}-mares.html — uma página por variável, padrão muito eficaz. temperaturadomar.pt (marca PT do world-sea-temperatures): /europa/portugal/{cidade}/ e /europa/portugal/when.html. seatemperature.net: /current/portugal/{cidade} e /lagos/{...}. seatemperature.com: /regions/europe/portugal/{praia}.",
+    "paginas_indexadas": "VERIFICADO parcialmente: o sitemap.xml declarado no robots.txt do seatemperature.info devolve 404 — o site declara um sitemap que não existe. A página-índice do temperaturadomar.pt para Portugal só lista 20 cidades. seatemperature.info cobre Furadouro, Esmoriz, Carcavelos e Guincho, mas devolve 404 em adraga-temperatura-da-agua.html.",
+    "forcas": "Ocupam, entre os quatro, praticamente todo o top 10 de qualquer query «temperatura da água {x}» — incluindo #1 e #2 no termo de cabeça. Páginas leves (9,5 KB) e rápidas. Canonical correcto.",
+    "fraquezas": "Quatro sites-satélite a canibalizarem-se na mesma SERP com conteúdo quase idêntico. Sem JSON-LD e sem hreflang (verificado no seatemperature.info). Unidade geográfica é a cidade, não a praia. Fiabilidade duvidosa e demonstrável: no mesmo dia, a versão PT anuncia 18,1 °C em Carcavelos e a versão EN da mesma casa anuncia 19,3 °C. Português de tradução automática. Não fazem previsão útil a 5 dias nem emitem veredicto."
+   },
+   {
+    "nome": "praiasdeportugal.com — o concorrente português mais perigoso",
+    "url": "https://praiasdeportugal.com/pt/praias/praia-de-carcavelos",
+    "estrutura_urls": "/{idioma}/praias/{slug-da-praia} e /{idioma}/blog/{slug-do-artigo}, mais /hoteis/, /bares/, /regioes/. Sitemap index completo e segmentado: static-index, posts-index, praias-index, hoteis-index, bares-index, regioes-index — cada um com um ficheiro por idioma.",
+    "paginas_indexadas": "VERIFICADO no sitemap: 291 praias em português (praias-pt.xml), multiplicadas por 11 idiomas (pt, pt-br, en, es, fr, de, it, nl, ru, zh, ja) — mais de 3000 páginas de praia — e ainda posts, hotéis, bares e regiões. lastmod de 2026-08-04, ou seja, actualizado hoje.",
+    "forcas": "SEO técnico exemplar e o oposto do IPMA: canonical, sitemaps segmentados, JSON-LD rico e correcto (TouristAttraction, GeoCoordinates, BreadcrumbList, WebPage, WebSite, SearchAction, Organization, PostalAddress). Ganha as SERPs informativas que interessam ao Praiómetro: #1 em «praias abrigadas da nortada», #1 E #2 em «quando é que a água do mar aquece em portugal», #4 em «o que é a nortada», top 10 em «temperatura da água do mar portugal». Monetiza com hotéis e bares — sem a restrição não-comercial que o Praiómetro tem.",
+    "fraquezas": "NÃO TEM PREVISÃO. Verifiquei a página da Praia de Carcavelos: 13 KB, e as palavras «Vento» e «Temperatura da água» aparecem uma vez cada, como rótulos estáticos. É um guia turístico com bom SEO, não uma ferramenta. Não responde a «hoje». 291 praias contra as 996 do Praiómetro, e sem praias fluviais do interior. Conteúdo de blog gerado em 11 idiomas com sinais de tradução automática (o artigo pt-br a rankear em SERPs pt-PT)."
+   },
+   {
+    "nome": "Beachcam (MEO / Altice)",
+    "url": "https://beachcam.meo.pt/livecams/praia-de-carcavelos/",
+    "estrutura_urls": "/livecams/{slug-da-praia}/ e páginas de praia em beachcam.pt/praias/{slug}/ (vi um staging indexado: stagek8s.beachcam.pt).",
+    "paginas_indexadas": "Mais de 150 praias com câmara, uma página cada. Homepage de 75 KB.",
+    "forcas": "É #1 em «vale a pena ir à praia hoje» e aparece em quase todas as SERPs de praia que testei. Imbatível na intenção «como está a praia AGORA»: ninguém compete com vídeo ao vivo. Marca MEO, links de imprensa, dados de ondulação/maré/vento sobrepostos à câmara.",
+    "fraquezas": "Responde ao presente, não ao futuro: não diz nada sobre os próximos 5 dias, que é todo o produto do Praiómetro. Só cobre praias com câmara instalada (~150 de 996). Página pesada. Tem staging indexado (stagek8s.beachcam.pt), sintoma de higiene técnica descuidada."
+   },
+   {
+    "nome": "Cauda de agregadores automáticos (worldmeteo, AccuWeather, freemeteo, otempo.pt, Foreca, tutiempo, sea-forecast, tabuademares, surfguru, meteocast, getbeachfinder)",
+    "url": "https://www.worldmeteo.info/pt/europa/portugal/furadouro/tempo-195641/",
+    "estrutura_urls": "Todos variações de {país}/{localidade}/{id}. Excepções interessantes: pt.tutiempo.net/praia/portugal/{praia}.html (caminho dedicado a PRAIA), tabuademares.com/pt/{distrito}/{local}/previsao/vento (sub-página por variável), getbeachfinder.com/spot/{UUID}/{slug}.",
+    "paginas_indexadas": "Dezenas de milhares cada, geradas a partir de bases de topónimos. Ocupam sistematicamente as posições 4-10.",
+    "forcas": "Volume bruto. Enchem o top 10 e empurram para baixo qualquer entrante. O tutiempo prova que uma taxonomia /praia/ dedicada rankeia; o tabuademares prova que uma sub-página /previsao/vento rankeia.",
+    "fraquezas": "Conteúdo indiferenciado, sem opinião e sem hierarquia entre variáveis. Nenhum emite veredicto. O tutiempo tem arquitectura interna fraca (verifiquei: a página-índice pt.tutiempo.net/praias/portugal.html não contém um único link para /praia/portugal/*). O AccuWeather canibaliza-se com 2-3 URLs por localidade na mesma SERP. O getbeachfinder é o mais próximo do conceito do Praiómetro (agrega água+ar+UV+vento+ondas por spot) mas está em inglês e usa UUIDs nos URLs."
+   }
+  ],
+  "espaco_livre": "O espaço real do Praiómetro não é «fazer melhor previsão» — é ocupar quatro lacunas que verifiquei estarem literalmente vazias.\n\n1) PRAIAS FLUVIAIS — a lacuna maior e a mais fácil.\nPesquisei «tempo praia fluvial de alqueva» e NENHUM dos 10 resultados é sobre a praia fluvial: o tempo.pt devolve a aldeia Alqueva, o meteoblue devolve a barragem, o AccuWeather devolve o concelho, e o IPMA nem sequer pode competir porque a sua página se chama /maritima/costeira/. O único resultado com a intenção certa é um artigo de viagens sem previsão nenhuma. O Praiómetro tem 235 praias fluviais em data/praias.json (m=0), com coordenadas, e é o único produto do mercado que as pode servir com previsão a 5 dias. Não há concorrência para vencer aqui — só páginas para criar.\n\n2) PRAIAS SEM POVOAÇÃO — a segunda lacuna, também verificada com 404s.\nTodo o mercado generalista indexa LOCALIDADES, não praias, porque puxa de bases de topónimos (GeoNames). Testei quatro praias famosas que não têm aldeia com o mesmo nome: Adraga, Meco, Osso da Baleia e Malhão. O tempo.pt devolve 404 nas quatro; o windfinder devolve 404 na Adraga e no Osso da Baleia; o seatemperature.info devolve 404 na Adraga. Só o surf-forecast cobre — e em jargão de surf. A SERP de «tempo praia do guincho» é a prova viva: como não há povoação «Guincho», o tempo.pt DESAPARECE do top 10 e ganham os sites com página por praia. O Praiómetro tem 996 praias reais do OpenStreetMap, ou seja, ~3,4x as 291 do praiasdeportugal.com e ~6,4x as 155 do IPMA.\n\n3) A INTENÇÃO «VALE A PENA» ESTÁ ÓRFÃ — e há prova irrefutável disso.\nNa SERP de «vale a pena ir à praia hoje», o resultado #2 é github.com/renatovalente5/vai-dar-praia — o repositório de código do próprio Praiómetro. Uma página de código sem conteúdo, sem links e sem SEO rankeia em segundo lugar para o termo que define o produto. Isto só acontece quando não existe concorrência: nenhuma página portuguesa responde literalmente àquela pergunta. E há validação do nicho noutro mercado — o praiashoje.com.br ocupa o #10 dessa mesma SERP com exactamente este conceito, feito para o Brasil. O conceito está provado; o território português está vago.\n\n4) VENTO TRADUZIDO EM CONSEQUÊNCIA — o diferencial defensável.\nO windfinder, o windy.app e o windguru dominam o NÚMERO do vento e ninguém lhes tira isso. Mas ninguém ocupa a CONSEQUÊNCIA. As queries «praias abrigadas da nortada» e «melhores praias sem vento portugal» devolvem 100% listicles turísticos e notícias — zero ferramentas, zero dados, zero ordenação por condições reais. O Praiómetro já tem o modelo que faz esta tradução (vento a 34 pontos, o limiar dos 20-25 km/h a que a areia começa a levantar, média de quatro modelos, janela da tarde em vez de média do dia) — está escrito no <details> «Como é que isto decide?» do index.html, colapsado e invisível para o Google. É o activo editorial mais valioso do site e está enterrado.\n\nONDE ISTO SE MATERIALIZA, por ordem de retorno:\na) Uma página por praia (996 URLs) em vez de fragmentos #NomeDaPraia — hoje a cauda longa indexável é zero. É a decisão que desbloqueia tudo o resto, e não exige servidor: gera-se HTML estático no build, como o LR Motors já faz.\nb) Sub-páginas por intenção, copiando o padrão que já rankeia: /{praia}/temperatura-da-agua e /{praia}/vento. O tideschart, o seatemperature.info e o tabuademares provam que uma página por variável ocupa posições próprias na mesma SERP. Priorizar as praias onde os líderes dão 404.\nc) Páginas de ranking regional com dados a sério — «praias com menos vento hoje no Algarve», «praias mais abrigadas da nortada» — contra listicles que não têm um único dado. É a única forma de disputar o praiasdeportugal.com no seu terreno.\nd) Conteúdo informativo com autoridade própria: «o que é a nortada» explicada em consequência prática, e «quando é que a água do mar aquece em Portugal» com a escala atlântica (19 °C é Verão normal, não é dia mau). Estas SERPs são hoje de jornais e de um guia turístico; nenhum tem o modelo por trás.\ne) Higiene técnica básica, que o mercado inteiro tem má: robots.txt (hoje 404), sitemap.xml (hoje 404), canonical (inexistente), og:image a apontar para o domínio antigo do GitHub Pages, e JSON-LD — que praticamente NENHUM concorrente de previsão usa. Verifiquei ausência total de JSON-LD no tempo.pt, no meteoblue, no seatemperature.info e no IPMA. O único que o tem bem feito é o praiasdeportugal.com, e esse não faz previsão. Há aqui uma vantagem inteira por tomar.\nf) Velocidade e ausência de publicidade como arma real: praiometro.pt serve 4,6 KB de HTML, sem banner de cookies e sem anúncios. O tempo.pt serve 32 KB mais doubleclick, GTM e CMP obrigatório; o surf-forecast serve 62 KB com TTFB de 0,9 s. A restrição não-comercial da Open-Meteo, que parece uma limitação, é aqui uma vantagem competitiva de Core Web Vitals e de experiência.",
+  "nao_lutar": "Contra estes, atacar de frente é queimar esforço. Em quase todos os casos há uma manobra de flanco que vale mais.\n\n1) WINDFINDER, WINDY.APP e WINDGURU em vento puro («{praia} vento», «kitesurf {spot}», «rajadas {spot}»). São #1 e #2 nessas SERPs, têm 20 anos de autoridade no nicho e um público técnico que quer a tabela horária, não um veredicto. FLANCO: não disputar o número — disputar a consequência («vai levantar areia?», «praias abrigadas hoje»), onde não têm nada.\n\n2) SURF-FORECAST em surf, ondulação e swell. Tem mais de 200 breaks em Portugal, 29 sitemaps, sub-páginas por intenção e duas décadas de links. FLANCO: é a única cobertura de praias sem povoação, mas fala surfês. O Praiómetro ganha a mesma praia com linguagem de família — e ganha as praias de banhos que ao surf-forecast não interessam.\n\n3) IPMA e APA/InfoÁgua em tudo o que seja dado OFICIAL: qualidade da água balnear, bandeira azul, lotação da praia, época balnear, avisos meteorológicos, agitação marítima oficial. Não é uma questão de SEO — o Praiómetro não tem esses dados nem os pode ter, e fingir que tem seria mau. FLANCO: linkar-lhes e ser explicitamente o complemento («o IPMA diz se o mar está seguro; nós dizemos se vale a pena ir»). O aviso das bandeiras que já está no index.html é exactamente a postura certa.\n\n4) BEACHCAM (MEO) em «ver a praia ao vivo» e «webcam praia {x}». É #1 em «vale a pena ir à praia hoje» com vídeo ao vivo e marca Altice. Não se compete com uma câmara. FLANCO: o Beachcam responde ao AGORA e não ao futuro. Os próximos 5 dias são território livre.\n\n5) TEMPO.PT (Meteored) em «tempo {cidade}» e nas cidades e vilas grandes — Lisboa, Porto, Faro, Portimão. Domínio .pt com autoridade acumulada, notícias diárias e cobertura de todas as localidades do país. FLANCO: cobre povoações, não praias. Atacar exactamente onde ele devolve 404 (Adraga, Meco, Osso da Baleia, Malhão, e todas as praias fluviais).\n\n6) SEATEMPERATURE.INFO / TEMPERATURADOMAR.PT / SEATEMPERATURE.NET / SEATEMPERATURE.COM no termo genérico «temperatura da água do mar portugal» e nas cidades grandes. São quatro sites da mesma família a saturar o top 10; entrar de frente obriga a deslocar quatro resultados de uma vez. FLANCO: a unidade deles é a cidade, não a praia, e devolvem 404 em praias pequenas. Ir buscar «temperatura da água {praia concreta}» — e fazê-lo com honestidade, já que eles publicam 18,1 °C na versão PT e 19,3 °C na versão EN da mesma praia no mesmo dia.\n\n7) PRAIASDEPORTUGAL.COM em guias turísticos: «melhores praias de {região}», «praia da Marinha», «o que fazer em {praia}», hotéis e bares. É o concorrente PT tecnicamente mais competente que encontrei — 291 praias × 11 idiomas, JSON-LD de TouristAttraction, sitemaps segmentados e actualizados hoje — e monetiza, coisa que a licença não-comercial da Open-Meteo não permite ao Praiómetro. FLANCO: não tem previsão nenhuma. Não responde a «hoje». Disputar-lhe só as SERPs informativas onde os dados decidem («nortada», «quando aquece a água», «praias sem vento hoje») e deixar-lhe o turismo.\n\n8) GOOGLE em «tempo em {cidade}». INFERÊNCIA, não verificada nesta sessão (não consegui ler a SERP do Google — bloqueia com muro de consentimento e não aceitei o banner): para estas queries o Google responde com a sua própria weather onebox acima de tudo o resto. Nenhum clique compensa o esforço.\n\n9) A REGRA GERAL: não disputar termos de cabeça («tempo na praia», «previsão praia portugal»). Além da autoridade dos incumbentes, verifiquei que essas SERPs estão poluídas por ambiguidade semântica — «Praia» é a capital de Cabo Verde e Praia Grande é uma cidade de São Paulo, e 2-3 dos 10 lugares vão sistematicamente para Cabo Verde e para o Brasil. É volume que nunca converte. Todo o valor está na cauda longa de 996 praias, onde a concorrência é gerada por máquina, mal traduzida e cheia de buracos.\n\nRESSALVA METODOLÓGICA, para não passar por verificado o que não é: todas as SERPs acima foram lidas no DuckDuckGo com kl=pt-pt (motor suportado pelo Bing), porque o WebSearch disponível é geolocalizado nos EUA e devolvia resultados brasileiros, e o google.com/search bloqueia com muro de consentimento que não aceitei. As posições no Google serão diferentes, e as SERP features do Google (featured snippet, People Also Ask, Discover, weather onebox) NÃO foram observadas — assinalei-as como inferência sempre que as mencionei. O que É directamente verificado, por curl e leitura de HTML, é tudo o que diz respeito a estrutura de URLs, códigos HTTP, sitemaps, robots.txt, canonicals, JSON-LD, peso das páginas e tempos de resposta.",
+  "fontes": [
+   "https://html.duckduckgo.com/html/?q=tempo+na+praia&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=previs%C3%A3o+praia+portugal&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=vale+a+pena+ir+%C3%A0+praia+hoje&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=temperatura+da+%C3%A1gua+do+mar+portugal&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=tempo+praia+do+furadouro&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=tempo+praia+da+rocha&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=tempo+costa+da+caparica&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=tempo+praia+do+guincho&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=tempo+praia+de+mira&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=temperatura+da+%C3%A1gua+praia+de+carcavelos&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=temperatura+da+%C3%A1gua+praia+do+furadouro&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=praia+de+carcavelos+vento&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=furadouro+vento+previs%C3%A3o&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=tempo+praia+fluvial+de+alqueva&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=praia+de+esmoriz+vento+hoje&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=praia+da+torreira+vale+a+pena+hoje+vento&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=o+que+%C3%A9+a+nortada&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=quando+%C3%A9+que+a+%C3%A1gua+do+mar+aquece+em+portugal&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=praias+abrigadas+da+nortada&kl=pt-pt",
+   "https://html.duckduckgo.com/html/?q=melhores+praias+sem+vento+portugal&kl=pt-pt",
+   "https://www.ipma.pt/pt/maritima/costeira/",
+   "https://www.ipma.pt/pt/maritima/costeira/index.jsp?selLocal=236&idLocal=236",
+   "https://www.ipma.pt/robots.txt",
+   "https://www.ipma.pt/pt/maritima/sst/",
+   "https://ema.ipma.pt/emas/praia-da-rocha/",
+   "https://infopraia.apambiente.pt/",
+   "https://infoagua.apambiente.pt/pt/praias",
+   "https://infoagua.apambiente.pt/robots.txt",
+   "https://infoagua.apambiente.pt/sitemap.xml",
+   "https://apambiente.pt/apa/infoagua-praias",
+   "https://www.deco.proteste.pt/corporate/comunicados-de-imprensa/posso-ir-a-praia-mais-de-240-mil-portugueses-sabem-a-resposta",
+   "https://www.dn.pt/pais/posso-ir-a-praia-a-app-que-ja-ajudou-240-mil-12429809.html",
+   "https://forum.vodafone.pt/t5/My-Vodafone/App-Praia-em-Direto/m-p/351609",
+   "https://techbit.pt/vodafone-adapta-programa-praia-saudavel-covid-19/",
+   "https://www.tempo.pt/praia-de-mira.htm",
+   "https://www.tempo.pt/robots.txt",
+   "https://www.tempo.pt/praia-da-rocha.htm",
+   "https://www.tempo.pt/costa-da-caparica.htm",
+   "https://www.tempo.pt/furadouro.htm",
+   "https://pt.surf-forecast.com/robots.txt",
+   "https://pt.surf-forecast.com/sitemap_index.xml.gz",
+   "https://pt.surf-forecast.com/countries/Portugal/breaks",
+   "https://pt.surf-forecast.com/breaks/Praia-do-Osso-da-Baleia/forecasts/latest",
+   "https://www.meteoblue.com/pt/tempo/semana/praia-de-mira_portugal_2735729",
+   "https://pt.windfinder.com/forecast/furadouro",
+   "https://www.windguru.cz/2222",
+   "https://seatemperature.info/robots.txt",
+   "https://seatemperature.info/pt/furadouro-temperatura-da-agua.html",
+   "https://www.temperaturadomar.pt/europa/portugal/",
+   "https://pt.tideschart.com/robots.txt",
+   "https://praiasdeportugal.com/robots.txt",
+   "https://praiasdeportugal.com/sitemap.xml",
+   "https://praiasdeportugal.com/sitemaps/praias-index.xml",
+   "https://praiasdeportugal.com/sitemaps/praias-pt.xml",
+   "https://praiasdeportugal.com/pt/praias/praia-de-carcavelos",
+   "https://beachcam.meo.pt/",
+   "https://pt.tutiempo.net/praias/portugal.html",
+   "https://getbeachfinder.com/spot/25dd1180-3a2a-4e44-8ebe-624fd9e2af65/praia-do-furadouro",
+   "https://observador.pt/especiais/uns-adoram-na-porque-refresca-o-verao-outros-detestam-na-porque-levanta-areia-como-se-forma-a-nortada-e-porque-quase-nao-a-vimos-este-ano/",
+   "https://pt.wikipedia.org/wiki/Nortada",
+   "https://www.publico.pt/interactivos/temperatura-agua-praia/",
+   "https://praiometro.pt/",
+   "https://praiometro.pt/robots.txt",
+   "https://praiometro.pt/sitemap.xml"
+  ]
+ },
+ "tec": {
+  "resumo": "Auditoria feita a 4-5 de agosto de 2026 contra https://praiometro.pt em produção e contra o código em /Users/renatovalente/Websites/Praiometro. O essencial: a infra-estrutura está correcta (redirects apex/www/github.io todos 301 para o apex, HTTPS activo, HTTP/2, gzip em tudo, 72 KB gzip para carregar a página inteira) mas o site é invisível para a pesquisa por três razões que se somam. Primeira: 996 praias vivem atrás de fragmentos (#Nome), e o Google diz explicitamente que não suporta fragmentos para mudar conteúdo — a cauda longa indexável é zero, quando toda a concorrência verificada na SERP (tempoeradar, windfinder, wisuki, windy.app, surfguru) tem uma URL por praia. Segunda: o Jekyll do GitHub Pages está a publicar MODELO.md e MONETIZACAO.md como páginas HTML indexáveis em quatro URLs cada — incluindo a análise de monetização, com título «Pôr isto a render dinheiro», em lang=en-US e com canonical em http://. Terceira: não há robots.txt, sitemap.xml, canonical nem dados estruturados, e o único conteúdo textual real (416 palavras no HTML, 59 visíveis) está colapsado dentro do rodapé. Acrescento um achado que não estava na lista: «Praiómetro» já é uma marca brasileira estabelecida (o Praiômetro do Viaje na Viagem), pelo que nem a query de marca está garantida. Não consegui medir Core Web Vitals em campo — o painel do browser não chega a pintar e as entradas de paint/LCP/CLS vêm vazias; as estimativas de 4G estão marcadas como estimativas e derivam de tamanhos e tempos que medi mesmo.",
+  "achados": [
+   {
+    "titulo": "996 praias atrás de fragmentos: cauda longa indexável = zero",
+    "gravidade": "critico",
+    "evidencia": "assets/js/app.js:361 — history.replaceState(null, '', '#' + endereco(praia)); e app.js:910 — doEndereco((location.hash || '').slice(1)). Só existem 2 URLs HTML próprias em produção: / e /privacidade.html. Documentação do Google (developers.google.com/search/docs/crawling-indexing/url-structure), citação verificada: «Don't use fragments to change the content of a page, as Google Search generally doesn't support URL fragments.» SERP verificada para «tempo na praia de Carcavelos previsão vento hoje» — todos os resultados têm uma URL dedicada por local: tempoeradar.pt/tempo/carcavelos/9570966, pt.windfinder.com/forecast/carcavelos, pt.wisuki.com/forecast/2454/carcavelos, windy.app/forecast2/spot/4628663/Praia+de+Carcavelos, surfguru.com.br/previsao/portugal/lisboa/cascais/praia-de-carcavelos. Dados locais confirmados: data/praias.json tem 996 praias (761 mar, 235 rio), 7 regiões (Algarve 210, Lisboa e Setúbal 207, Norte 203, Centro 196, Alentejo 95, Açores 48, Madeira 37) e 66 nomes duplicados.",
+    "impacto": "É o achado que anula todos os outros. A procura neste nicho é 100% cauda longa («praia da barra vento amanhã», «dá praia no furadouro»). Com 2 URLs o site só pode competir pela query de marca — que, como mostro noutro achado, já está tomada. Toda a concorrência ganha porque tem página por praia; não é uma questão de autoridade, é de existir uma URL para o Google classificar.",
+    "correccao": "Gerar 996 páginas estáticas no build a partir de data/praias.json, em /praia/<slug>/ (slug sem acentos e em minúsculas; para os 66 nomes duplicados usar <slug>-<concelho> ou <slug>-<regiao>). Cada página com: <h1> com o nome da praia, 120-200 palavras próprias (região, mar ou rio, o que o vento costuma fazer ali, o que a nota significa), a previsão do dia pré-renderizada em HTML no momento do build (mesmo que fique 6-12 h desactualizada, dá conteúdo ao Googlebot sem depender de render), e o widget a hidratar por cima. Manter o fragmento a funcionar com um redirect JS de #Nome para a URL nova. 996 ficheiros de ~4 KB = ~4 MB, muito abaixo do limite de 1 GB do GitHub Pages.",
+    "esforco": "alto — 2 a 4 dias: script gerador (Node, sem dependências, como o resto do projecto), texto por praia, e refactor do app.js para arrancar a partir de uma praia já conhecida em vez do hash"
+   },
+   {
+    "titulo": "MODELO.md e MONETIZACAO.md publicados como páginas HTML indexáveis, em 4 URLs cada",
+    "gravidade": "critico",
+    "evidencia": "curl https://praiometro.pt/MONETIZACAO devolve HTTP 200, content-type text/html, 23 386 bytes, com <title>Pôr isto a render dinheiro | praiometro</title>, <html lang=\"en-US\">, <meta name=\"generator\" content=\"Jekyll v3.10.0\">, tema Primer e jekyll-seo-tag v2.8.0. Servido em: /MONETIZACAO (200 html), /MONETIZACAO.html (200 html), /MONETIZACAO.md (200 text/markdown) — e o mesmo para MODELO. O canonical gerado é <link rel=\"canonical\" href=\"http://praiometro.pt/MODELO.html\"> — em HTTP, não HTTPS. /README.md também devolve 200 (text/markdown) e /LICENSE 200. Confirmei o corpo servido: começa em «# Pôr isto a render dinheiro / Análise feita a 3 de agosto de 2026» e cita os termos da Open-Meteo.",
+    "impacto": "Três danos ao mesmo tempo. (1) A análise interna de monetização — que discute a proibição comercial da Open-Meteo e o plano de receita — está publicamente crawlable no domínio de produção e pode entrar no índice. (2) São 4 URLs de baixa qualidade, declaradas em inglês, num site de 2 páginas: multiplicam por 3 o índice do site com conteúdo que não serve nenhuma intenção de utilizador. (3) O canonical dessas páginas aponta para http://, o que contradiz o resto do site.",
+    "correccao": "Criar _config.yml na raiz com: exclude: [README.md, MODELO.md, MONETIZACAO.md, LICENSE, _source]. NÃO acrescentar .nojekyll — verifiquei que /_source/verificar.py, /_source/praias-bruto.json e /_source/cdp.py devolvem 404 hoje precisamente porque o Jekyll ignora pastas com underscore; com .nojekyll passariam a ser servidos (142 KB e 156 KB de JSON em bruto, mais dois scripts Python). Em alternativa, mover os .md para _docs/ (o underscore basta) e deixar só o README. Depois de excluir, confirmar com curl que /MODELO, /MODELO.html e /MONETIZACAO passam a 404.",
+    "esforco": "baixo — 5 minutos, um ficheiro _config.yml de 2 linhas"
+   },
+   {
+    "titulo": "Sem robots.txt e sem sitemap.xml",
+    "gravidade": "critico",
+    "evidencia": "curl https://praiometro.pt/robots.txt → 404 (9 379 bytes, a página 404 por omissão do GitHub Pages). curl https://praiometro.pt/sitemap.xml → 404. curl https://praiometro.pt/feed.xml → 404. Confirmado que o Jekyll está activo mas sem o plugin jekyll-sitemap, que o GitHub Pages não activa por omissão.",
+    "impacto": "Hoje, com 2 URLs, o custo é quase nulo — o Google descobre-as pelo domínio. No minuto em que existirem 996 páginas de praia, o sitemap deixa de ser opcional: é o único mecanismo de descoberta de páginas órfãs num site sem navegação. E sem robots.txt não há forma de bloquear as páginas do Jekyll enquanto a exclusão não estiver feita.",
+    "correccao": "robots.txt na raiz com: User-agent: * / Allow: / / Disallow: /MODELO / Disallow: /MONETIZACAO / Sitemap: https://praiometro.pt/sitemap.xml. Gerar sitemap.xml no mesmo script que gera as páginas de praia (996 URLs cabem num só ficheiro — o limite é 50 000 URLs / 50 MB). Submeter no Search Console assim que o domínio estiver verificado por DNS TXT.",
+    "esforco": "baixo — o robots.txt são 5 minutos; o sitemap sai de graça do gerador de páginas"
+   },
+   {
+    "titulo": "Zero canonical, e 4 URLs a servir 2 páginas",
+    "gravidade": "alto",
+    "evidencia": "Verificado por md5 do corpo: https://praiometro.pt/ e https://praiometro.pt/index.html devolvem ambos c9cf8463cc999ba53cdac5ee7d3520e5. https://praiometro.pt/privacidade e https://praiometro.pt/privacidade.html devolvem ambos c47b436d29eb7605c7b68df60a39e0e2 (a versão sem extensão existe porque o Jekyll gera privacidade.html e o GitHub Pages serve a URL extensionless). Inspecção do DOM em produção: canonical = false nas duas páginas; não existe <link rel=\"canonical\"> em index.html nem em privacidade.html.",
+    "impacto": "O Google escolhe uma versão sozinho e normalmente acerta, mas qualquer link externo, partilha ou colagem que use a variante «errada» divide sinais. O custo real aparece quando existirem 996 páginas: sem uma regra canónica definida desde já, cada praia passa a ter 2-3 variantes e o problema multiplica-se por mil.",
+    "correccao": "<link rel=\"canonical\" href=\"https://praiometro.pt/\"> em index.html e <link rel=\"canonical\" href=\"https://praiometro.pt/privacidade.html\"> em privacidade.html (ou decidir pela forma sem extensão e ser consistente — hoje o rodapé de index.html:233 e o painel de perfil em index.html:87 apontam ambos para privacidade.html, portanto é essa a forma a canonizar). Nas páginas de praia, escolher /praia/<slug>/ com barra final e nunca ligar para a variante sem barra.",
+    "esforco": "baixo — duas linhas, mas a decisão sobre o formato das URLs novas tem de ser tomada antes do gerador"
+   },
+   {
+    "titulo": "«Praiómetro» já é uma marca estabelecida no Brasil — a query de marca não está garantida",
+    "gravidade": "alto",
+    "evidencia": "Pesquisa por «praiometro» devolve, em primeiro lugar e em força, o Praiômetro do Viaje na Viagem: viajenaviagem.com/praiometro-nordeste-caribe/, mais TikTok (tiktok.com/discover/praiometro-2026-um-mes-para-cada-praia), Threads (@viajenaviagem), Instagram, Facebook, Tripadvisor e comunidadevip.com.br. Zero resultados de praiometro.pt. Sem o acento — que é como quase toda a gente escreve — as duas marcas são a mesma string. Trata-se também de um produto do mesmo domínio semântico (praias, chuva, quando ir), o que agrava a confusão de entidade.",
+    "impacto": "A query de marca é normalmente a mais barata de ganhar e serve de âncora à autoridade do domínio. Aqui está a competir com um site brasileiro com anos de conteúdo, backlinks de imprensa e sinais sociais fortes. Não é fatal — o .pt e a intenção portuguesa ajudam a segmentação — mas significa que a estratégia não pode assentar no nome.",
+    "correccao": "Não mudar o nome, mas: (1) nunca depender da query de marca no planeamento; (2) title e description têm de carregar a intenção e o país, não só o nome («Praiómetro — vale a pena ir à praia hoje? 996 praias de Portugal»); (3) publicar JSON-LD Organization/WebSite com name, url, inLanguage pt-PT e sameAs para o repositório GitHub e para as redes que existirem, para o Google construir a entidade separada; (4) no arranque, segmentar «praiómetro portugal» e «praiómetro praias» em vez de «praiómetro» sozinho.",
+    "esforco": "médio — a parte de JSON-LD é rápida; a construção de entidade é trabalho contínuo"
+   },
+   {
+    "titulo": "O único conteúdo textual real está colapsado dentro do <footer>",
+    "gravidade": "alto",
+    "evidencia": "Medido: 416 palavras no HTML inicial depois de retirar tags, comentários, SVG e scripts; 59 palavras renderizadas visíveis no DOM (document.body.innerText). O bloco «Como é que isto decide?» — index.html:209-228, cerca de 230 palavras, o único texto substantivo do site — está dentro de <details> fechado e dentro de <footer> (index.html:208-235).",
+    "impacto": "O <details> fechado está no DOM e o Google lê-o (o problema não é estar colapsado). O problema é o <footer>: conteúdo em landmark de rodapé é tratado como boilerplate, porque num site normal repete-se em todas as páginas. Resultado prático: o Google vê uma página com quase zero conteúdo próprio a classificar, num nicho onde a concorrência tem páginas com centenas de palavras e tabelas horárias.",
+    "correccao": "Mover o bloco «Como é que isto decide?» para dentro de <main>, como uma <section> com <h2> real (por exemplo «Como decidimos se vale a pena ir»). Pode continuar em <details> se preferir a interface limpa. Acrescentar por baixo uma segunda secção curta sobre o que a nortada faz ao Verão português — é o diferencial editorial do site e não existe em texto indexável em lado nenhum. No rodapé fica só a atribuição de fontes e a privacidade.",
+    "esforco": "baixo — mover um bloco de HTML e acrescentar um <h2>"
+   },
+   {
+    "titulo": "Seis headings aparecem antes do <h1>, e o <h1> é só a marca",
+    "gravidade": "alto",
+    "evidencia": "Ordem real dos headings no DOM em produção, medida: H2 «Perfil» → H3 «Conta» → H3 «As tuas praias» → H3 «Privacidade» → H3 «Apagar a conta» → H2 «Apagar a conta e os dados?» → H1 «Praiómetro» → H2 «Escolher a praia» (visually-hidden) → H2 «As tuas praias» → H2 «Previsão» (visually-hidden). A causa são os dois <dialog> (index.html:62 e index.html:102) estarem dentro do <header>, antes do <h1> em index.html:115.",
+    "impacto": "O Google usa a árvore de headings para perceber a estrutura e o tema da página; a primeira coisa que encontra é «Perfil / Conta / Apagar a conta». Nenhum heading da página contém as palavras «praia», «previsão», «vento» ou «Portugal» — excepto o «Previsão» escondido. Também: «As tuas praias» aparece duas vezes com níveis diferentes (H3 no diálogo, H2 na secção de favoritos), o que confunde a hierarquia e a lista de headings de um leitor de ecrã. Sobre a dúvida dos visually-hidden: contam, sim — a classe usa position/clip e não display:none (assets/css/estilo.css:82), portanto estão no DOM acessível e o Google lê-os. O problema não é serem invisíveis, é serem genéricos.",
+    "correccao": "Mover os dois <dialog> (#perfil e #confirmar) para imediatamente antes de </body> — funcionam igual, e o <header> volta a começar no <h1>. Dar intenção ao <h1>: «Praiómetro — vale a pena ir à praia hoje?» com o nome dentro. Substituir o H2 escondido «Escolher a praia» por algo com carga («Escolher uma praia de Portugal») e «Previsão» por «Previsão para os próximos 6 dias». Nas páginas de praia, o <h1> é o nome da praia.",
+    "esforco": "baixo — mover dois blocos e reescrever três strings"
+   },
+   {
+    "titulo": "Praticamente nenhuma ligação interna: 2 links, ambos para a mesma página",
+    "gravidade": "alto",
+    "evidencia": "Inventário completo dos <a href> da homepage, medido no DOM: #resultado (skip link), privacidade.html (index.html:87), https://open-meteo.com (index.html:231), https://www.openstreetmap.org/copyright (index.html:232), privacidade.html (index.html:233). Ou seja: 2 links internos para o mesmo destino e 2 externos. document.querySelectorAll('nav').length = 0.",
+    "impacto": "Não há nada para o crawler seguir a partir da homepage, nenhuma distribuição de PageRank interno, e nenhuma hipótese de o Google gerar sitelinks (que precisam de estrutura de navegação percebida). Também é o que impede o site de acumular profundidade: uma página só, sem saídas, é lida como uma ferramenta e não como um recurso.",
+    "correccao": "Com as páginas de praia criadas, montar a malha: /praias/ (índice geral), /praias/algarve/, /praias/norte/, /praias/centro/, /praias/lisboa-e-setubal/, /praias/alentejo/, /praias/acores/, /praias/madeira/ — as 7 regiões existem já no campo r do praias.json. Cada página de praia liga para a região e para as 6 praias mais próximas (a função distancia() em app.js:86 já calcula isso; basta corrê-la no build). Acrescentar um <nav> no cabeçalho com as regiões.",
+    "esforco": "médio — sai quase de graça do mesmo gerador das páginas de praia"
+   },
+   {
+    "titulo": "og:image ainda no domínio antigo; faltam og:url, og:site_name e twitter:image",
+    "gravidade": "alto",
+    "evidencia": "index.html:15 — og:image = https://renatovalente5.github.io/praiometro/assets/img/og.png. Verificado: essa URL devolve 301 para https://praiometro.pt/assets/img/og.png e a imagem serve com 200, image/png, 182 057 bytes, 1200×630 px. Portanto NÃO está partida — mas depende de um redirect. Ausentes, confirmado no DOM: og:url, og:site_name, twitter:image, og:image:width, og:image:height, og:image:alt. privacidade.html não tem Open Graph nenhum.",
+    "impacto": "Vários crawlers sociais (o do WhatsApp e o do LinkedIn com mais frequência) não seguem redirects em og:image e mostram a partilha sem imagem. Sem twitter:image, o twitter:card=summary_large_image declarado em index.html:16 não tem imagem própria e depende do fallback para o Open Graph. Sem og:url, qualquer partilha com parâmetros de campanha ou com fragmento gera uma entrada social distinta. Nada disto é sinal de ranking directo, mas partilhas sem imagem custam cliques e links — que são sinal.",
+    "correccao": "Trocar og:image para https://praiometro.pt/assets/img/og.png. Acrescentar og:url (https://praiometro.pt/), og:site_name (Praiómetro), twitter:image (mesma URL), og:image:width 1200, og:image:height 630, og:image:alt. Dar Open Graph próprio a privacidade.html. E recomprimir o og.png: 182 KB para uma imagem 1200×630 é excessivo — quantizado a PNG-8 ou convertido para JPEG de qualidade 85 fica abaixo de 60 KB.",
+    "esforco": "baixo — seis meta tags e uma passagem de compressão"
+   },
+   {
+    "titulo": "Cadeia crítica serializada: o praias.json só arranca depois de 90 KB de JavaScript",
+    "gravidade": "medio",
+    "evidencia": "Medido em produção com a Navigation Timing API: TTFB 59 ms, domInteractive 242 ms, DOMContentLoaded 245 ms. O fetch de data/praias.json arranca aos 244 ms — ou seja, depois de todos os scripts terem descarregado e executado (modelo.js termina aos 216, favoritos.js 228, app.js 234, conta.js 241). Transferências reais em gzip: HTML 4 656 B, estilo.css 9 549 B, modelo.js 8 949 B, favoritos.js 3 633 B, app.js 15 180 B, conta.js 6 849 B, praias.json 22 981 B (106 222 B em claro). Total ~72 KB gzip em 6 pedidos, todos na mesma origem. Sobre o defer: os três scripts sem defer (index.html:237-239) estão no fim do <body>, portanto o bloqueio do parser custa pouco ao primeiro pixel — mas o app.js com defer (index.html:240) só funciona porque calha executar depois deles; se alguém reordenar as tags ou mover uma para o <head>, parte-se em silêncio. Medi ainda as duas chamadas à Open-Meteo a partir de rede fixa: forecast com 4 modelos 30 266 B em 276 ms, marine 4 510 B em 228 ms.",
+    "impacto": "ESTIMATIVA, não medição — não consegui obter LCP/INP/CLS reais: o painel do browser não chega a pintar e as entradas de paint, largest-contentful-paint e layout-shift vêm todas vazias. Em 4G lento (1,6 Mbps, 150 ms RTT) estimo FCP 1,2-1,6 s e LCP 1,5-2,0 s para o visitante novo — o elemento LCP é texto do HTML inicial (o h1 .marca ou o parágrafo .vazio__texto), portanto passa. O caso mau é o visitante que volta ou que chega por link com #hash: aí escolher() dispara duas chamadas à Open-Meteo e o LCP passa a ser o cartão do veredicto, estimado em 3,5-4,5 s — reprova o limiar de 2,5 s. CLS: para o visitante novo há pelo menos um deslocamento garantido, porque atalhos() (app.js:875) injecta 5 botões dentro do #atalhos vazio depois do praias.json chegar; a caixa .conta reserva 38 px (estilo.css:138) mas depois colapsa para 0 com .conta--vazia (estilo.css:140) quando não há sessão — outro deslocamento. INP deve ser bom: a pesquisa é um loop sobre 996 objectos em memória, sem rede.",
+    "correccao": "(1) <link rel=\"preload\" as=\"fetch\" href=\"data/praias.json\" crossorigin> no <head> — o pedido passa a arrancar em paralelo com o JS em vez de esperar 244 ms. (2) Pôr os quatro scripts no <head> com defer, todos: defer garante execução por ordem do documento, o preload scanner descobre-os mais cedo, e desaparece o contrato frágil actual. (3) Emagrecer o praias.json: o campo b (nome sem acentos) é derivável de n em runtime com a função normalizar() que já existe em app.js:72 — poupa cerca de 35% do ficheiro. (4) Juntar os quatro JS num só ficheiro (menos 3 pedidos). (5) Reservar altura para o #atalhos no CSS (min-height igual à altura de uma linha de botões) e não colapsar a .conta depois de já ter reservado. (6) Nas páginas de praia, pré-renderizar a previsão no build — resolve o LCP do caso mau e dá conteúdo ao Googlebot sem depender de render.",
+    "esforco": "médio — os pontos 1, 2 e 5 são meia hora; o 3 e o 6 dependem do gerador"
+   },
+   {
+    "titulo": "cache-control: max-age=600 em todos os recursos, sem hash nos nomes, e sem HSTS",
+    "gravidade": "medio",
+    "evidencia": "Medido: cache-control: max-age=600 em /, /assets/css/estilo.css, /assets/js/app.js e /data/praias.json — o GitHub Pages impõe este valor e não é configurável. Verificado que não existe header strict-transport-security no apex, nem x-content-type-options, nem referrer-policy, nem content-security-policy, nem x-frame-options. HTTP/2 activo, certificado válido, http://praiometro.pt faz 301 para https.",
+    "impacto": "Os recursos imutáveis (CSS, JS, praias.json, ícones) revalidam de 10 em 10 minutos, o que impede a estratégia normal de hash-no-nome com max-age de um ano e penaliza as visitas repetidas — e são as visitas repetidas que alimentam o CrUX, que por sua vez alimenta o sinal de page experience. Sem HSTS, o primeiro pedido de cada visitante pode sair em HTTP e apanhar o 301: um round-trip extra e uma janela de intercepção. O GitHub Pages não envia HSTS em domínios próprios e não há forma de o forçar.",
+    "correccao": "Se isto passar a importar, pôr a Cloudflare (plano gratuito) à frente do GitHub Pages: dá cache-control próprio, Brotli em vez de só gzip, HSTS (e depois a submissão ao preload list, que exige o header), Early Hints e os headers de segurança em falta. Não é urgente hoje — com 72 KB de página o ganho é pequeno — mas é o único caminho, porque o GitHub Pages não tem headers configuráveis, redirects configuráveis nem SSR.",
+    "esforco": "médio — meia tarde de configuração de DNS e regras, se e quando fizer sentido"
+   },
+   {
+    "titulo": "Sem 404.html próprio: erros caem na página da GitHub, em inglês",
+    "gravidade": "medio",
+    "evidencia": "curl https://praiometro.pt/naoexiste-xpto devolve HTTP 404 com <title>Page not found · GitHub Pages</title>, 9 379 bytes. Também /404.html, /robots.txt e /sitemap.xml caem na mesma página. Não existe 404.html no repositório (confirmado em git ls-tree -r origin/main).",
+    "impacto": "O código de estado está correcto — 404 real, não soft-404 — e isso é o que conta para o SEO. O dano é de utilização e de retenção: quem erra o slug vê uma página da GitHub em inglês, sem marca e sem saída, e sai. Com 996 URLs novas com acentos e nomes compostos, os erros de digitação e os links partidos vão ser muitos.",
+    "correccao": "404.html na raiz, em pt-PT, com a mesma folha de estilo, a caixa de procura de praias e ligações para os índices regionais. O GitHub Pages serve-a com status 404 real, portanto não cria soft-404. É a única página de erro possível nesta arquitectura — não há forma de configurar 410, 451 ou redirects de erro.",
+    "esforco": "baixo — uma página, reaproveitando o CSS e o app.js"
+   },
+   {
+    "titulo": "Nenhum dado estruturado nas páginas reais — e JSON-LD errado nas páginas do Jekyll",
+    "gravidade": "medio",
+    "evidencia": "Medido no DOM da homepage: document.querySelectorAll('script[type=\"application/ld+json\"]').length = 0. Em contrapartida, /MODELO e /MONETIZACAO trazem JSON-LD gerado pelo jekyll-seo-tag, do tipo WebPage, com url http://praiometro.pt/MODELO.html — dados estruturados no sítio errado, com o protocolo errado.",
+    "impacto": "Sem dados estruturados o Google tem de inferir tudo do texto — e o texto, como está noutro achado, são 59 palavras visíveis. É sobretudo a construção de entidade que sofre, o que agrava a colisão de marca com o Praiômetro brasileiro.",
+    "correccao": "O que DEVE existir: (1) WebSite + Organization ou Person na homepage, com name, url, inLanguage pt-PT e sameAs para o repositório GitHub — é o que separa a entidade da marca brasileira. (2) WebApplication com applicationCategory «WeatherApplication», isAccessibleForFree true e offers a price 0 — descreve honestamente o que a coisa é. (3) Beach em cada página de praia: verifiquei em schema.org que é tipo válido, hierarquia Thing > Place > CivicStructure > Beach, com geo (GeoCoordinates), name, containedInPlace para a região ou concelho, isAccessibleForFree e publicAccess — todas as propriedades que preciso já estão no praias.json. (4) BreadcrumbList nas páginas de praia (Início > Algarve > Praia da Rocha) — é dos poucos que ainda produz rich result real. O que seria SPAM ou inútil, com as razões: AggregateRating ou Review numa praia é violação directa das políticas — não há avaliações de utilizadores, e a nota 0-100 é um cálculo próprio, não uma avaliação; LocalBusiness numa praia é falso, uma praia não é um negócio; Event para «época balnear» não corresponde a evento nenhum; FAQPage é inútil — verifiquei que os rich results de FAQ deixaram de aparecer a 7 de maio de 2026 e o suporte saiu do Rich Results Test em junho de 2026; WebSite+SearchAction (sitelinks searchbox) foi descontinuado a 21 de novembro de 2024 e a marcação já não faz nada; não existe tipo WeatherForecast no schema.org, inventá-lo produz markup inválido; Dataset para o praias.json é tecnicamente defensável mas atrai o Google Dataset Search, não utilizadores.",
+    "esforco": "baixo para a homepage; sai do gerador nas páginas de praia"
+   },
+   {
+    "titulo": "Contraste insuficiente no subtítulo do cabeçalho sobre o gradiente do céu",
+    "gravidade": "medio",
+    "evidencia": "Rácios calculados a partir dos valores em assets/css/estilo.css. O .marca__lead («Escolhe a praia. Dizemos-te se vale a pena ir.») usa --tinta-2 #4a6274; o <header> assenta por cima do .ceu, cujo gradiente arranca em --ceu-a #7dd3e8 (estilo.css:34 e :29 do bloco .ceu). #4a6274 sobre #7dd3e8 dá 3,75:1 — abaixo dos 4,5:1 exigidos pela WCAG AA para texto normal. O <h1> com --tinta #10222e sobre o mesmo fundo dá 9,58:1 e passa. Todo o resto passa: --tinta-3 #566e7d dá 5,35:1 sobre branco e 4,97:1 sobre o fundo; --mar #0e7490 dá 5,36:1; e em modo escuro --tinta-3 #7794a5 dá 5,14:1 sobre a carta. Alvos de toque: medi 3 links do rodapé a 76×15, 95×15 e 70×15 px, abaixo dos 24×24 do WCAG 2.5.8 — mas são links inline dentro de uma frase e a norma tem uma excepção explícita para alvos inline, portanto falham a heurística do Lighthouse e não a norma.",
+    "impacto": "O contraste não é sinal de ranking directo, mas é a primeira linha de texto abaixo do título — a que explica o que o site faz — e falha AA no topo do gradiente. O Lighthouse assinala-o, e o relatório de acessibilidade é o que muita gente usa como proxy de qualidade.",
+    "correccao": "Escurecer o .marca__lead para --tinta (#10222e) ou dar-lhe um valor próprio com pelo menos 4,5:1 sobre #7dd3e8 — por exemplo #2c4453 dá 5,2:1. Em alternativa, baixar a saturação do topo do gradiente. Para os links do rodapé, aumentar o line-height ou dar-lhes padding vertical para chegarem aos 24 px de altura — resolve a queixa do Lighthouse sem custo visual.",
+    "esforco": "baixo — dois valores de CSS"
+   },
+   {
+    "titulo": "Description de 183 caracteres; title e lang correctos",
+    "gravidade": "medio",
+    "evidencia": "Medido no DOM: title com 50 caracteres («Praiómetro — o tempo na praia, sem termos técnicos»), description com 183 (index.html:7). html lang=\"pt-PT\" correcto nas duas páginas. og:locale pt_PT presente em index.html:12 e ausente em privacidade.html. theme-color #0891b2 em index.html:8 mas theme_color #0e7490 no manifest.webmanifest — divergentes.",
+    "impacto": "O Google corta a description perto dos 155-160 caracteres e, quando corta, tem mais probabilidade de a reescrever a partir do corpo da página — que aqui tem 59 palavras. Metade da mensagem («verde é bom, amarelo é assim-assim, vermelho fica para outro dia») nunca aparece na SERP. O title está bom em comprimento mas lidera com a marca, que é justamente a palavra disputada.",
+    "correccao": "Reescrever a description para cerca de 150 caracteres com a intenção à frente, por exemplo: «Vale a pena ir à praia? Escolhe entre 996 praias de Portugal e vê a nota de hoje e dos próximos 5 dias — vento, sol e temperatura da água.» Reordenar o title para começar pela intenção: «Vale a pena ir à praia hoje? — Praiómetro». Alinhar theme-color com o manifest (e considerar duas tags com media para claro e escuro, já que o site suporta os dois). Acrescentar og:locale e um bloco Open Graph mínimo a privacidade.html.",
+    "esforco": "baixo"
+   },
+   {
+    "titulo": "hreflang não é preciso — e não deve ser acrescentado",
+    "gravidade": "baixo",
+    "evidencia": "Uma só língua, uma só versão. html lang=\"pt-PT\" está correcto em index.html:2 e privacidade.html:2. Não existe versão em pt-BR nem em inglês. Nota importante: as páginas geradas pelo Jekyll declaram lang=\"en-US\" e og:locale en_US — que é conteúdo em português declarado como inglês, e mais uma razão para as excluir.",
+    "impacto": "Acrescentar hreflang sem versões alternativas não faz nada de bom e cria uma superfície para erros (auto-referências partidas, x-default sozinho, que é inerte). O risco real é o inverso: as páginas do Jekyll em en-US podem levar o Google a duvidar da consistência linguística do domínio.",
+    "correccao": "Não acrescentar hreflang. Resolver a declaração en-US excluindo os .md do build (ver o achado dos ficheiros MODELO/MONETIZACAO). Se um dia existir uma versão em inglês, aí sim: pt-PT, en e x-default, com auto-referência em todas.",
+    "esforco": "nenhum — é uma decisão de não fazer"
+   },
+   {
+    "titulo": "Armadilhas do GitHub Pages: verificadas uma a uma, e a conclusão sobre o .nojekyll é «não»",
+    "gravidade": "baixo",
+    "evidencia": "Todos os testes feitos com curl contra produção. Redirects: apex 200; www.praiometro.pt 301 para o apex; http://praiometro.pt 301 para https; renatovalente5.github.io/praiometro/ 301 para o apex — tudo correcto, incluindo o github.io, que costuma ser o caso mal resolvido. Case-sensitivity: confirmada — /Privacidade.html, /privacidade.HTML e /data/Praias.json dão todos 404. Trailing slash: /data/ e /assets/ dão 404 (não há listagem de directórios, bom); /privacidade.html/ dá 404; /privacidade (sem extensão) dá 200 e é a origem do duplicado. Underscore: /_source/verificar.py, /_source/praias.json e /_source/testar-modelo.js dão todos 404 — porque o Jekyll está activo e ignora pastas com underscore. /CNAME dá 404 (correcto). Limites do GitHub Pages: 1 GB de site, 100 GB/mês de tráfego, 10 builds por hora — 996 páginas de ~4 KB são ~4 MB, folgadíssimo.",
+    "impacto": "A resposta directa à pergunta sobre o .nojekyll é NÃO — e é importante. Acrescentar .nojekyll desligaria o Jekyll e, com ele, a exclusão automática das pastas com underscore: /_source/praias-bruto.json (142 KB), /_source/praias-classificadas.json (156 KB), /_source/verificar.py e /_source/cdp.py passariam todos a ser servidos publicamente. Seria uma regressão, não uma correcção. Sobre a case-sensitivity: com 996 slugs gerados a partir de nomes com acentos e maiúsculas, uma inconsistência entre o slug gerado e o slug ligado produz 404 silenciosos em massa.",
+    "correccao": "Manter o Jekyll e controlar o que ele publica com _config.yml (ver o achado dos MODELO/MONETIZACAO). Verificar que nenhum ficheiro servido contém {{ ou {% — verifiquei e não contém, mas o gerador de páginas tem de garantir isso, porque o Jekyll interpreta Liquid em qualquer ficheiro que processe. No gerador de slugs, normalizar sempre para minúsculas e sem acentos (a função normalizar() em app.js:72 já faz exactamente isso) e gerar os links a partir da mesma função, nunca à mão. Confirmar cada URL nova com curl depois do primeiro deploy.",
+    "esforco": "baixo — disciplina no gerador, e não acrescentar o .nojekyll"
+   },
+   {
+    "titulo": "README aponta para o domínio antigo e tem contagens erradas",
+    "gravidade": "baixo",
+    "evidencia": "README.md: «→ [renatovalente5.github.io/praiometro](https://renatovalente5.github.io/praiometro/)» e «999 praias portuguesas do OpenStreetMap, 785 de mar e 214 de rio». Contagem real de data/praias.json, feita agora: 996 praias, 761 de mar, 235 de rio.",
+    "impacto": "O README é a página do repositório no GitHub — é uma fonte de links real e provavelmente o primeiro backlink do projecto. Hoje passa esse link para a URL antiga, que apanha o 301 e perde uma fracção do sinal, além de anunciar o domínio errado a quem lê. Os números errados são um problema de credibilidade num projecto cuja proposta é precisamente o rigor do modelo.",
+    "correccao": "Trocar o link para https://praiometro.pt e corrigir para 996 / 761 / 235. Aproveitar para acrescentar o domínio no campo «Website» das definições do repositório, que é outro link seguido.",
+    "esforco": "baixo — dois minutos"
+   },
+   {
+    "titulo": "Preconnect desperdiçado exactamente na visita que vem do Google",
+    "gravidade": "baixo",
+    "evidencia": "index.html:21-22 declaram preconnect para api.open-meteo.com e marine-api.open-meteo.com. Mas em app.js:898-918, para um visitante novo — sem hash na URL e sem pm:praia no localStorage — a variável p fica null e escolher() nunca é chamado. Confirmei no carregamento em produção: a lista de recursos tem 6 pedidos, todos para praiometro.pt, e nenhum para as APIs.",
+    "impacto": "Dois handshakes TCP+TLS completos abertos para servidores que não vão ser usados, precisamente na visita orgânica de primeira vez — que é a que interessa para o CWV de campo. Em 4G, cada handshake custa 2-3 round-trips e compete por largura de banda com o CSS e o JS, que estão no caminho crítico. O efeito é pequeno mas é negativo, não neutro.",
+    "correccao": "Trocar os dois preconnect por dns-prefetch (que custa só a resolução de DNS), ou manter o preconnect apenas para api.open-meteo.com e injectá-lo dinamicamente quando se souber que há praia para carregar. Nas páginas de praia — onde a chamada à API acontece sempre — o preconnect passa a ser justificado e deve ficar.",
+    "esforco": "baixo — duas linhas"
+   },
+   {
+    "titulo": "Zero imagens na página: a11y impecável, Google Imagens fora de alcance",
+    "gravidade": "baixo",
+    "evidencia": "Medido no DOM: document.querySelectorAll('img').length = 0. Todos os gráficos são SVG inline com aria-hidden=\"true\" (índice, ícones de veredicto, ícones de factor). Só há um SVG sem aria-hidden, o do logótipo dentro do <h1>.",
+    "impacto": "Para acessibilidade está certo — ícones decorativos escondidos do leitor de ecrã, e cada veredicto tem forma além de cor (o comentário em app.js:41-43 explica bem a WCAG 1.4.1). O custo é noutro lado: «praia da rocha», «praia do guincho» são queries visuais, e o Google Imagens e o pack de imagens na SERP são uma via de entrada que este site não tem. Também não há nada para o Discover pegar.",
+    "correccao": "Nas páginas de praia, servir uma imagem real por praia — própria, ou de fonte com licença compatível e atribuição (o OpenStreetMap não tem fotografias; o Wikimedia Commons tem, com licenças CC que obrigam a crédito visível). Com alt descritivo em português, loading=\"lazy\", width e height explícitos para não gerar CLS, e um nome de ficheiro com o slug da praia. Se não houver fotografia, gerar um cartão SVG/PNG com o nome e a região — pobre para o Imagens, mas resolve o og:image por praia, que hoje seria o mesmo para as 996.",
+    "esforco": "alto se for fotografia real e curada; baixo se for cartão gerado"
+   },
+   {
+    "titulo": "Search Console e Bing Webmaster Tools sem sinal de verificação",
+    "gravidade": "baixo",
+    "evidencia": "Não existe ficheiro de verificação servido nem meta tag google-site-verification no HTML das duas páginas (inspecção do DOM e do source). Não consigo confirmar de fora se há verificação por DNS TXT — essa não deixa rasto no site. A pesquisa por site:praiometro.pt não devolveu nada, mas o operador não foi honrado pela ferramenta que usei, portanto não posso concluir daí que o site não está indexado. O domínio foi ligado há um dia (commit do CNAME de 4 de agosto de 2026), o que por si só explica ausência de índice.",
+    "impacto": "Sem Search Console não há forma de saber se as páginas estão indexadas, quais as queries, o que o Googlebot vê depois de renderizar, nem de submeter o sitemap quando existir. É o instrumento de medição de tudo o que está acima.",
+    "correccao": "Verificar praiometro.pt no Search Console por propriedade de domínio (DNS TXT — cobre www, apex e todos os subdomínios de uma vez), submeter o sitemap.xml assim que existir, e usar a Inspecção de URL na homepage para ver o HTML renderizado que o Google obtém — é a forma de confirmar empiricamente o que este relatório infere sobre rendering. Fazer o mesmo no Bing Webmaster Tools, que aceita importação directa do Search Console e dá acesso ao IndexNow (útil para submeter 996 URLs de uma vez).",
+    "esforco": "baixo — meia hora, e é o primeiro passo antes de qualquer outra coisa"
+   }
+  ]
+ },
+ "risco": {
+  "veredicto": "VEREDICTO: gerar 996 páginas, uma por praia, é INSEGURO como está desenhado — mas não por serem programáticas. É inseguro por três razões concretas que verifiquei nos teus próprios dados e no texto actual das políticas da Google.\n\n1) AS PÁGINAS NÃO SERIAM DISTINTAS. Corri o clustering das 996 coordenadas de data/praias.json contra a resolução real dos modelos que o Praiómetro usa. A Open-Meteo declara ECMWF IFS 9–25 km, ICON 2–11 km, GFS 3–25 km, UKMO 2–10 km. A ~11 km as 996 praias colapsam em 265 células distintas; a 4 km, 470; a 2 km, 625. Há 912 pares de praias a menos de 1 km uma da outra. Ou seja: se o conteúdo principal da página for a previsão, publicas 996 URLs com ~265 conteúdos reais. Isso é literalmente o quarto exemplo de \"Doorway abuse\" da Google — \"creating substantially similar pages\" — e o quinto de \"Scaled content abuse\". Verificado, não inferido.\n\n2) A FORMA ÓBVIA DE IMPLEMENTAR É UM DOORWAY DE MANUAL. A política de spam (última actualização declarada na própria página: 2026-05-15) mantém o exemplo \"Having multiple domain names or pages targeted at specific regions or cities that funnel users to one page\". Se /praia/praia-do-furadouro/ existir para apanhar a query e depois empurrar o utilizador para a app em / ou para /#PraiaDoFuradouro, cais exactamente aí. O teste é binário: a página da praia tem de SER o destino, com a previsão completa a funcionar nela.\n\n3) A PÁGINA ESTÁTICA VAZIA É THIN NOS DOIS SENTIDOS. Verifiquei por curl (sem JS, UA de browser e de Googlebot) o que a concorrência entrega em HTML puro: surf-forecast.com 14 001 caracteres de texto, meteoblue 10 491, tempo.pt/Meteored 6 301, seatemperature.info 3 769 (com frases derivadas dos dados). Windguru entrega 2 051 caracteres — só navegação, é uma SPA pura — e sobrevive por autoridade de marca acumulada desde 2000, não por mérito da página. O portal oficial da APA (infopraia.apambiente.pt) entrega 705 caracteres e não tem sequer URL por praia. Conclusão: quem ganha cauda longa de \"tempo em X\" pré-renderiza os números no HTML. Um esqueleto + nome da praia é thin no crawl E, mesmo que a Google renderize bem o JS (renderiza, com atraso), o conteúdo renderizado é a mesma previsão que 9 sites já têm — information gain zero.\n\nO QUE MUDA ISTO DE INSEGURO PARA SEGURO: a página não pode viver da previsão. Tem de viver de dados que só tu tens. Só tu tens o modelo de 5 factores com os pesos 34/26/18/14/8 e os vetos. Aplicado ao histórico (ERA5 via Open-Meteo Historical), dá por praia: % de dias verdes por mês, semana em que a praia \"abre\" e \"fecha\", exposição à nortada em função da orientação da costa, mediana do vento da tarde, água por mês. Isso é conteúdo estável, único no mundo, cabe em HTML estático, e é citável. É a diferença entre \"página programática útil\" e \"conteúdo em escala\". A previsão é o gancho de utilidade; a climatologia do teu modelo é a razão de indexação.\n\nDOIS AVISOS DUROS QUE ENCONTREI NOS DADOS:\n- 235 das 996 são praias de rio (m=0). Testei a marine-api: para praias fluviais devolve sea_surface_temperature e wave_height TODOS a null (0/24 horas válidas), enquanto uma praia de mar devolve 24/24. Ou seja, 24% das páginas nasceriam com 2 dos 5 factores em falta e um veto inoperante. Não as metas no mesmo template nem na mesma vaga.\n- 66 nomes estão duplicados no ficheiro (4× \"Praia da Vigia\", 4× \"Praia dos Pescadores\", 4× \"Praia Fluvial\", 3× \"Praia do Norte\"...). O slug tem de incluir o concelho, ou geras colisões e canonicals ambíguos.\n\nRISCO ASSIMÉTRICO: publicar é barato, desfazer é caro. A Google diz que a recuperação depois de uma avaliação de core update pode levar \"several months\" e às vezes só na próxima core update. E o sinal é ao nível do site: \"Any content — not just unhelpful content — on sites determined to have relatively high amounts of unhelpful content overall is less likely to perform well in Search\". Com 2 URLs indexáveis hoje, 996 páginas fracas passariam a ser 99,8% do site. Crawl budget NÃO é o problema (a Google só o considera relevante acima de ~1M páginas, ou 10 mil que mudem diariamente) — o problema é o classificador de qualidade e o \"Discovered – currently not indexed\" em massa, que é ele próprio um sinal negativo sobre o domínio.\n\nNota de método: as políticas, as definições, os limites da Open-Meteo, os limites do GitHub Pages e o HTML da concorrência foram verificados directamente nas fontes primárias. Os números de CTR das AI Overviews e as \"estatísticas de citação\" de 2026 vêm de blogues de fornecedores de SEO, muitos deles gerados por IA — trato-os como indicativos, não como facto.",
+  "regras_faz": [
+   "PRIMEIRO A BASE, ZERO PÁGINAS DE PRAIA. Antes de gerar uma única praia: robots.txt (hoje dá 404 em praiometro.pt), sitemap.xml (também 404), <link rel=canonical> absoluto em todas as páginas, e corrigir og:image que ainda aponta para renatovalente5.github.io. Sem isto, qualquer vaga de páginas é desperdício.",
+   "CRIA UMA PÁGINA /metodologia/ A SÉRIO, E PRIMEIRO. Promove o conteúdo do <details> «Como é que isto decide?» a página própria, expandida: os 5 factores, os pesos 34/26/18/14/8, os vetos (trovoada, vento >45 km/h, sensação <16 °C, ondulação >2,5 m), porque a escala da água é atlântica e não mediterrânica, porque se usa a tarde e não a média do dia, e a média dos 4 modelos. É a página mais única que tens, é o alvo de citação por LLMs, e é o que legitima todas as páginas de praia que se lhe seguirem.",
+   "CADA PÁGINA DE PRAIA TEM DE SER O DESTINO, NÃO A PORTA. A previsão dos 6 dias, o semáforo, a nota e os números têm de funcionar na própria URL /praia/<slug>/. Nada de redirecionar, nada de «ver na app», nada de link para /#Praia. Isto neutraliza directamente dois dos quatro exemplos de doorway abuse.",
+   "PRÉ-RENDERIZA A PREVISÃO NO HTML ESTÁTICO. GitHub Pages não tem servidor, mas uma GitHub Action agendada (cron 3-4×/dia) que busca a Open-Meteo, escreve os HTML e publica por artefacto com actions/deploy-pages é SSR na prática. Cabe folgadamente nos limites: Open-Meteo dá 10 000 chamadas/dia e aceita coordenadas separadas por vírgula na mesma chamada; GitHub Pages permite 1 GB de site (996 páginas × ~25 KB ≈ 25 MB). Depois hidrata no cliente para os dados ficarem ao minuto.",
+   "CARIMBA A HORA DOS DADOS NO HTML, VISÍVEL. «Dados de 4 de Agosto, 08:00» ao pé dos números. Resolve a discrepância entre o HTML servido e o que o utilizador vê depois da hidratação, e evita qualquer leitura de cloaking.",
+   "O CONTEÚDO ÚNICO É A CLIMATOLOGIA, NÃO A PREVISÃO. Corre uma vez o histórico (ERA5, Open-Meteo Historical) pelo teu próprio modelo e publica por praia: percentagem de dias verdes/amarelos/vermelhos por mês, mês mais fiável, primeira e última semana «verde» do ano, mediana do vento da tarde em Julho/Agosto, quantos dias por mês são chumbados só pela nortada, temperatura da água por mês. Isto não existe em mais lado nenhum, é estável (não precisa de refresh), e é o que justifica a indexação.",
+   "DEDUPLICA POR CÉLULA DE GRELHA + EXPOSIÇÃO ANTES DE GERAR. Regra dura para o gerador: se duas praias caem na mesma célula de ~4 km E têm a mesma orientação de costa, só uma recebe página própria (a de nome mais procurado); a outra vira âncora na página do concelho, com redirect ou canonical para lá. Isto corta de 996 para ~470 candidatas antes de qualquer edição.",
+   "SLUG COM DESAMBIGUAÇÃO OBRIGATÓRIA. Nunca /praia/praia-do-norte/. Sempre /praia/praia-do-norte-nazare/ e /praia/praia-do-norte-<concelho>/. São 66 nomes duplicados no teu ficheiro; sem isto geras colisões silenciosas.",
+   "CONSTRÓI HIERARQUIA NAVEGÁVEL, NÃO UM MONTE PLANO. /praias/ → /praias/centro/ → /praias/ovar/ → /praia/praia-do-furadouro/. O quarto exemplo de doorway abuse é exactamente «páginas substancialmente semelhantes, mais próximas de resultados de pesquisa do que de uma hierarquia navegável». A hierarquia é a defesa.",
+   "LIGAÇÕES INTERNAS COM SENTIDO, MÍNIMO 4 POR PÁGINA. Concelho, região, /metodologia/, e as 3 praias mais próximas — mas com a nota de hoje ao lado do link («Cortegaça, 2 km — 78/100 hoje»). Um link que já traz informação é uma ligação com sentido; uma lista de 20 nomes é ruído.",
+   "TEXTO GERADO POR RAMIFICAÇÃO, NÃO POR SUBSTITUIÇÃO. Proíbe no gerador qualquer frase-molde onde só muda o nome. Escreve o texto a partir dos limiares do teu modelo, com ramos que produzem frases genuinamente diferentes: «Aqui a nortada manda: 41% dos dias de Agosto chumbam só pelo vento» vs «Praia abrigada — em Agosto o vento raramente estraga o dia (7% dos dias)». Regra prática que consigo aplicar: nenhuma frase pode aparecer literalmente em mais de 5% das páginas.",
+   "TÍTULO E META DESCRIPTION DERIVADOS DOS DADOS. Não «Praia do Furadouro — Praiómetro». Antes «Praia do Furadouro: vale a pena hoje? — 6 dias, vento da tarde e água». E na description, um número real da praia (mês mais fiável, % de dias verdes em Agosto).",
+   "REVISÃO HUMANA DE 100% DA PRIMEIRA VAGA. Lê as 40 páginas antes de publicar. É o único filtro que apanha o que o gerador não vê (nomes de OSM esquisitos, praias que já não existem, coordenadas erradas). Depois disto, revisão por amostragem de 20% nas vagas seguintes.",
+   "DADOS ESTRUTURADOS SÓ ONDE EXISTEM. BreadcrumbList em todas (é tipo suportado), Place/LocalBusiness na página da praia se e só se corresponder ao que está visível, e Dataset na /metodologia/. Não existe tipo «weather» no catálogo da Google — não inventes.",
+   "SITEMAP COM LASTMOD REAL E SEGMENTADO POR VAGA. Um sitemap index com /sitemap-nucleo.xml, /sitemap-praias-1.xml, etc. Permite ver no Search Console a taxa de indexação de cada vaga isoladamente, que é a métrica que decide se avanças.",
+   "MEDE ANTES DE AVANÇAR. Portão quantitativo: só publicas a vaga seguinte se ≥80% da vaga anterior estiver em «Indexado» no Search Console após 4-6 semanas E houver impressões (não cliques — impressões) em queries com nome de praia. Se a taxa for <60%, não avanças: melhoras ou apagas.",
+   "PODA SEM PENA. Ao fim de 6 meses, páginas com zero impressões e não indexadas saem do sitemap e passam a noindex ou a âncora no concelho. Reduzir o número de páginas fracas melhora a leitura de qualidade do domínio inteiro.",
+   "GUARDA E FAZ CUMPRIR A ATRIBUIÇÃO. Open-Meteo é CC-BY 4.0 e a licença gratuita é não-comercial (proíbe explicitamente publicidade e subscrições). Mantém o crédito visível em todas as páginas geradas, não só na homepage."
+  ],
+  "regras_nao_faz": [
+   "NÃO PUBLIQUES AS 996 DE UMA VEZ. Não é o crawl budget (esse só conta acima de ~1M páginas). É que passarias de 2 URLs indexáveis para 998 num domínio com zero histórico, tornando o conteúdo programático 99,8% do site — exactamente o cenário do sinal ao nível do site da Google. E desfazer custa meses.",
+   "NÃO PUBLIQUES A PÁGINA COMO ESQUELETO + JS. Se o HTML entregue for <h1>Praia X</h1> e o resto vier da Open-Meteo no browser, a página é thin no momento do crawl. A Google renderiza JS, mas com atraso e sem garantias, e recomenda explicitamente pré-renderização. Windguru safa-se com uma SPA de 2 051 caracteres por ter 25 anos de autoridade — tu não tens.",
+   "NÃO FAÇAS A PÁGINA DA PRAIA FUNILAR PARA A HOMEPAGE. Nada de «ver previsão completa →/#Praia», nada de redirect por JS a partir de /praia/x/. É o exemplo literal de doorway abuse sobre páginas por região/cidade que empurram para uma página só.",
+   "NÃO GERES PÁGINAS PARA COMBINAÇÕES. Nada de /praia/x/agosto/, /praia/x/amanha/, /praia/x/fim-de-semana/, /praias-perto-de-x/. Multiplicar 996 por dimensões é a definição operacional de geração em escala para apanhar queries. Um selector na mesma página resolve o mesmo problema com uma URL.",
+   "NÃO ESCREVAS PROSA DESCRITIVA COM IA. «A Praia do Furadouro é uma bela praia de areia dourada no concelho de Ovar…» é information gain zero, existe em 40 sites, e é o alvo central do scaled content abuse. Se não tens nada verificado para dizer sobre a praia, não digas nada — deixa falar os números.",
+   "NÃO COPIES TEXTO DO OSM, DA WIKIPÉDIA, DA APA OU DO PRAIAS.PT. Coordenadas e nomes do OSM, sim (com atribuição). Descrições, não. Verifiquei que o praias.pt (648 URLs no sitemap, 519 profundas) tem páginas de concelho com ~296 caracteres de texto próprio — é o exemplo do que não fazer, não uma referência a imitar.",
+   "NÃO METAS AS 235 PRAIAS DE RIO NO MESMO TEMPLATE NEM NA MESMA VAGA. Testei: a marine-api devolve sea_surface_temperature e wave_height a null em 24/24 horas para praias fluviais. Duas das cinco componentes do modelo desaparecem e um dos vetos deixa de existir. Ou fazes um template próprio (temperatura do ar, caudal, sombra, sem água do mar) ou deixas-as de fora do plano de SEO por agora.",
+   "NÃO DÊS PÁGINA PRÓPRIA A PRAIAS QUE PARTILHAM CÉLULA DE GRELHA E EXPOSIÇÃO. As 912 praias a menos de 1 km umas das outras vão ter previsões idênticas por construção. Duas páginas com os mesmos números e o mesmo texto são duas páginas substancialmente semelhantes, independentemente de os nomes serem diferentes.",
+   "NÃO CRIES llms.txt NEM FICHEIROS PARA IA. Gary Illyes disse que a Google não suporta llms.txt e não planeia suportar; John Mueller comparou-o à meta keywords. A Google escreve explicitamente que não são precisos «new machine readable files, AI text files, or markup». É trabalho a zero.",
+   "NÃO USES nosnippet NEM max-snippet NAS PÁGINAS DE PRAIA. O único requisito declarado para aparecer como fonte nas AI Overviews e no AI Mode é estar indexado e elegível para snippet. Bloquear o snippet é auto-exclusão.",
+   "NÃO PONHAS FAQPage NEM HowTo À ESPERA DE RICH RESULTS. Já não constam do catálogo de tipos suportados. E nunca marques dados que não estejam visíveis na página.",
+   "NÃO METAS PUBLICIDADE NEM SUBSCRIÇÕES ENQUANTO USARES A OPEN-METEO GRATUITA. Os termos definem uso comercial como «operating websites or apps that have subscriptions or display advertisements». O SEO aqui é para tráfego e utilidade — se um dia monetizares, muda-se de licença primeiro, não depois.",
+   "NÃO DEIXES PÁGINAS VAZIAS OU MEIO-FEITAS INDEXÁVEIS. Se uma praia não tem dados, a página não entra no sitemap e leva noindex. Um soft-404 indexado vale menos que zero.",
+   "NÃO ACELERES A VAGA SEGUINTE PORQUE «ESTÁ A CORRER BEM» AO FIM DE UMA SEMANA. Uma core update leva 12 a 45 dias a rolar e a avaliação de qualidade é ao nível do site. O sinal fiável são 4-6 semanas de indexação estável, não 7 dias de curiosidade do Googlebot.",
+   "NÃO CHAMES A ISTO «SEO PROGRAMÁTICO» NA CABEÇA. Mueller: «Programmatic SEO is often a fancy banner for spam». A pergunta operacional não é «consigo gerar isto?» mas «que pergunta é que esta página responde que nenhuma outra página minha responde?». Se não houver resposta em 5 segundos, a página não se publica."
+  ],
+  "faseamento": "FASEAMENTO RECOMENDADO — 5 vagas ao longo de ~9 meses, cada uma com portão de decisão.\n\nVAGA 0 — FUNDAÇÕES (semana 1-2). Zero páginas de praia.\nrobots.txt + sitemap.xml (ambos 404 hoje), canonical absoluto, og:image corrigido para praiometro.pt, JSON-LD BreadcrumbList + WebSite, /metodologia/ como página completa, /praias/ como índice, 7 hubs de região (Norte, Centro, Lisboa e Setúbal, Alentejo, Algarve, Madeira, Açores). Total: ~11 URLs novas → o site passa de 2 para 13.\nPortão: as 13 indexadas em 3 semanas. Se a homepage e a /metodologia/ não indexarem, há um problema técnico e não vale a pena continuar.\n\nVAGA 1 — PROVA DE CONCEITO (semana 3-8). 40 páginas de praia (intervalo aceitável 30-50).\nSó praias com procura nacional real e forte identidade: Nazaré, Carcavelos, Costa da Caparica, Guincho, Praia da Rocha, Falésia, Marinha, Meia Praia, Matosinhos, Figueira da Foz, São Pedro de Moel, Foz do Arelho, Ofir, Mira, Furadouro, Comporta, Odeceixe, Zambujeira, Formosa (Madeira), etc. Todas de mar. Todas com climatologia calculada. Todas lidas por ti antes de publicar. Zero praias de rio, zero praias que partilhem célula de grelha com outra da lista.\nPortão para avançar: ≥80% indexadas ao fim de 4-6 semanas E impressões em queries com nome de praia no Search Console. Se <60%, pára e melhora — não publiques mais nada.\n\nVAGA 2 — ESTRUTURA LOCAL (mês 3-4). ~90 URLs.\nOs hubs de concelho (~60-70 concelhos com praia) mais 20-30 praias do segundo escalão. Os hubs de concelho são páginas legítimas por si: comparam as praias do concelho lado a lado com a nota de hoje, e é isso que a maioria das pessoas procura («praias de Ovar»). Acumulado: ~155 URLs.\nPortão: mesmo critério, mais «os hubs de concelho recebem impressões».\n\nVAGA 3 — CAUDA MÉDIA (mês 5-7). +150 praias de mar.\nSó as que sobreviveram à deduplicação por célula de 4 km. Revisão humana por amostragem de 20%. Acumulado: ~305 URLs.\n\nVAGA 4 — RIO E RESTO (mês 8-9). +100 a 150, condicional.\nPraias de rio só se, entretanto, tiveres um template próprio que não dependa da marine-api (temperatura do ar, sensação, sol, vento, sombra) e que diga isso ao utilizador. Se não tiveres, não publicas. Acumulado: ~400-450 URLs.\n\nTECTO: ~450 a 550 páginas de praia, NUNCA as 996. As restantes vivem como âncoras nos hubs de concelho, que é onde têm valor real e onde não diluem nada.\n\nREGRA TRANSVERSAL: entre vagas, nunca menos de 4 semanas. E se sair uma core update no meio (a cadência recente é ~3-4 por ano: Março 2025, Junho 2025, Dezembro 2025, Fevereiro 2026 Discover, Março 2026, Maio 2026), congela e espera para ver o efeito antes de publicar a vaga seguinte.\n\nPORQUÊ ASSIM E NÃO TUDO DE UMA VEZ: o custo de publicar 996 é quase zero, o custo de as tirar depois é meses de recuperação — a Google diz que pode levar «several months» e por vezes só na próxima core update. O faseamento não é medo, é comprar informação barata: cada vaga diz-te se o modelo de página funciona antes de o replicares 900 vezes.",
+  "paginas_primeira_vaga": "40 páginas de praia na primeira vaga (intervalo defensável: 30 a 50), precedidas por ~11 páginas estruturais (robots/sitemap não contam, mas /metodologia/, /praias/ e os 7 hubs de região contam). Ou seja: menos de 60 URLs indexáveis ao fim do primeiro mês e meio, num site que hoje tem 2.\n\nPorquê 40 e não 100 nem 400: 40 é grande o suficiente para dar sinal estatístico no Search Console (com 10 páginas não distingues sorte de sistema) e pequeno o suficiente para as leres todas antes de publicar — e a revisão humana de 100% da primeira vaga é o que separa esta operação de scaled content abuse. É também mais ou menos o número de praias portuguesas com procura de pesquisa genuinamente nacional; abaixo disso estás a inventar procura.\n\nTecto final recomendado: 450-550 páginas de praia, nunca 996. As 996 não têm 996 conteúdos distintos — têm 265 conjuntos de dados de previsão distintos à resolução dos modelos (~11 km) e 470 à resolução mais optimista (4 km). Publicar mais páginas do que dados distintos é a definição operacional do problema.",
+  "ai_search": "AI OVERVIEWS / AI MODE — O QUE MUDA PARA O PRAIÓMETRO EM 2026\n\nO que está verificado (fonte primária, Google):\n- Não há optimização própria para IA. A Google escreve que «There are no additional requirements to appear in AI Overviews or AI Mode, nor other special optimizations necessary» e que não são precisos «new machine readable files, AI text files, or markup».\n- O único requisito é: página indexada e elegível para snippet. Logo, nunca uses nosnippet/max-snippet nas páginas de praia.\n- llms.txt está morto: Gary Illyes disse no Search Central Live que a Google não o suporta nem planeia suportar; Mueller comparou-o à meta keywords e notou que os logs mostram que os serviços de IA nem sequer o pedem.\n- O conselho oficial é banal e é exactamente o que já está no plano: permitir o crawl, ligações internas, conteúdo importante em texto, boa experiência de página, structured data que corresponda ao que está visível.\n\nO que é indicativo e não verificado (vem de blogues de fornecedores de SEO, vários deles gerados por IA — trata como direcção, não como número):\n- As AI Overviews concentram-se precisamente em queries informacionais de cauda longa, que é a forma exacta de «tempo na praia X amanhã». Estimativas de queda de CTR quando há AIO andam entre -50% e -60%. No AI Mode, o zero-click é quase total.\n- As citações concentram-se num punhado de domínios grandes; passagens com dados originais ou próprios aparecem citadas muito acima da sua frequência natural.\n\nO QUE ISTO IMPLICA, CONCRETAMENTE:\n\n1) MUDA A ARITMÉTICA DAS 996 PÁGINAS. Se a query «tempo na praia do Furadouro amanhã» é respondida pela AI Overview com um número, o clique não acontece — independentemente de teres ou não a melhor página. Isto é o argumento mais forte contra gastar esforço em 996 páginas para apanhar previsão pura. Reforça a recomendação: 450-550, e o valor na climatologia, não na previsão.\n\n2) A TUA VANTAGEM É SERES A FONTE DE UMA AFIRMAÇÃO QUE NENHUM LLM CONSEGUE PRODUZIR SOZINHO. Um modelo consegue dizer que vai fazer 22 °C no Furadouro — vai buscar isso a dez sítios. Não consegue dizer «segundo o Praiómetro, 41% das tardes de Agosto no Furadouro são chumbadas pela nortada» sem te citar, porque esse número só existe se alguém correr o modelo de 5 factores sobre o histórico. É por isso que a climatologia não é só conteúdo anti-thin — é a única coisa na estratégia com hipótese real de citação.\n\n3) COMO TORNAR ISSO CITÁVEL (accionável):\n- Põe os números únicos em texto simples, cedo na página, com unidades explícitas e a praia nomeada na mesma frase. Nada de os esconder num <details> colapsado — foi esse o erro da homepage actual, onde o único conteúdo real está dentro de «Como é que isto decide?».\n- Uma tabela por praia, mês a mês, com % de dias verdes/amarelos/vermelhos. Tabelas extraem-se bem.\n- /metodologia/ como alvo canónico de citação: página estável, com URL que nunca muda, que explica os pesos, os vetos e as limitações — incluindo o que o Praiómetro NÃO diz (não é segurança balnear; a bandeira do nadador-salvador manda). Essa honestidade é ela própria um sinal de qualidade e é o tipo de frase que um LLM cita.\n- Dataset schema na /metodologia/ (Dataset continua a ser tipo suportado) e um ficheiro de dados descarregável com a climatologia por praia, CC-BY. Publicar o dataset é a jogada de maior alavancagem para citação: transforma-te em fonte primária, não em mais um agregador.\n- Nomeia sempre as fontes no corpo do texto (Open-Meteo, ECMWF, ICON, GFS, UKMO, ERA5, OpenStreetMap). Páginas que citam fontes identificadas aparecem citadas mais vezes.\n\n4) O QUE NÃO FAZER: não criares ficheiros para IA, não escreveres «conteúdo optimizado para LLM», não inflares o texto para chegar a contagens de palavras. E não confundas ser citado com ter tráfego — em 2026, para um site destes, ser citado é sobretudo notoriedade de marca. O tráfego real virá de queries de marca («praiómetro») e de queries com intenção de ferramenta («vale a pena ir à praia hoje»), onde a AI Overview tem menos vantagem porque a resposta é interactiva. Vale a pena optimizar para citação — mas como estratégia de marca a 12-18 meses, não como substituto do tráfego orgânico.",
+  "fontes": [
+   "https://developers.google.com/search/docs/essentials/spam-policies — políticas de spam, versão com «Last Updated 2026-05-15»; secções Scaled content abuse (5 exemplos) e Doorway abuse (4 exemplos, incluindo «multiple domain names or pages targeted at specific regions or cities that funnel users to one page» e «creating substantially similar pages that are closer to search results than a clearly defined, browseable hierarchy»)",
+   "https://developers.google.com/search/blog/2024/03/core-update-spam-policies — anúncio de Março de 2024: «no matter how it's created»; a política aplica-se a automação, esforço humano ou combinação dos dois",
+   "https://developers.google.com/search/docs/fundamentals/creating-helpful-content — auto-avaliação: «Is the content mass-produced…», «Are you using extensive automation to produce content on many topics?», «Why is it being created in the first place?»",
+   "https://developers.google.com/search/blog/2022/08/helpful-content-update — sinal ao nível do site: «Any content — not just unhelpful content — on sites determined to have relatively high amounts of unhelpful content overall is less likely to perform well in Search»",
+   "https://developers.google.com/search/updates/core-updates — recuperação: «several months for our systems to learn and confirm»; «waiting until the next core update»",
+   "https://support.google.com/webmasters/answer/9044175 — acções manuais; «Thin content with little or no added value» inclui explicitamente doorways",
+   "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics — crawl/render/index; fila de renderização «can take longer»; «server-side or pre-rendering is still a great idea»",
+   "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls — canonicalização, consolidação de sinais, evitar crawl desperdiçado",
+   "https://developers.google.com/search/docs/crawling-indexing/large-site-managing-crawl-budget — crawl budget só relevante acima de ~1M páginas ou 10 mil que mudem diariamente",
+   "https://developers.google.com/search/docs/appearance/ai-features — «There are no additional requirements to appear in AI Overviews or AI Mode, nor other special optimizations necessary»",
+   "https://developers.google.com/search/docs/appearance/structured-data/search-gallery — catálogo de tipos suportados: Dataset, Breadcrumb, Local business, etc.; FAQPage e HowTo já não constam; não existe tipo weather",
+   "https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history — histórico oficial de updates: core Março 2024 (45 dias), spam Março 2024, core Agosto/Novembro/Dezembro 2024, spam Dezembro 2024, core Março 2025, core Junho 2025, spam Agosto 2025 (26 dias), core Dezembro 2025, Discover Fevereiro 2026, spam Março 2026 (19h30), core Março 2026, core Maio 2026 (11d21h), spam Junho 2026",
+   "https://searchengineland.com/google-says-normal-seo-works-for-ranking-in-ai-overviews-and-llms-txt-wont-be-used-459422 — Gary Illyes: a Google não suporta llms.txt nem planeia suportar",
+   "https://www.searchenginejournal.com/google-says-llms-txt-is-purely-speculative-for-now/577576/ — Mueller compara llms.txt à meta keywords",
+   "https://www.searchenginejournal.com/in-depth-look-at-google-spam-policies-updates/511005/ — o que mudou na documentação: «spammy automatically generated content» renomeado para «scaled content abuse», definição alargada para além do programático",
+   "https://www.seroundtable.com/programmatic-seo-banner-for-spam-google-35766.html — John Mueller: «Programmatic SEO is often a fancy banner for spam» (403 ao fetch directo; citação confirmada via ahrefs.com/blog/programmatic-seo/)",
+   "https://ahrefs.com/blog/programmatic-seo/ — critério prático: «Relevant, unique data is usually what makes the difference between helpful content and spam»",
+   "https://www.gsqi.com/marketing-blog/google-march-2024-core-update-helpful-content-system/ — Glenn Gabe sobre a integração do helpful content system no core (deixou de ser classificador único)",
+   "https://www.searchenginejournal.com/google-explains-seo-connection-of-site-quality-to-non-indexed-pages/582683/ — «Discovered – currently not indexed» como sintoma de problema de qualidade ao nível do site",
+   "https://open-meteo.com/en/docs — resoluções: ECMWF IFS 9-25 km, ICON 2-11 km, GFS 3-25 km, UKMO 2-10 km; coordenadas múltiplas separadas por vírgula na mesma chamada",
+   "https://open-meteo.com/en/terms — limites gratuitos 600/min, 5 000/hora, 10 000/dia, 300 000/mês; CC-BY 4.0; uso comercial inclui «operating websites or apps that have subscriptions or display advertisements»",
+   "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits — 1 GB de repositório e de site publicado, 100 GB/mês de largura de banda, 10 builds/hora (não se aplica com workflow próprio de Actions)",
+   "VERIFICAÇÃO PRÓPRIA por curl sem JS (4 Ago 2026): surf-forecast.com/breaks/Furadouro 14 001 caracteres de texto no HTML; meteoblue 10 491; tempo.pt/ovar.htm 6 301; seatemperature.info 3 769 com frases derivadas dos dados; windguru.cz/48 apenas 2 051 (SPA pura, sem canonical, sem JSON-LD, sem h1); infopraia.apambiente.pt 705 e sem URL por praia; tideschart.com e timeanddate.com bloqueados por Cloudflare",
+   "VERIFICAÇÃO PRÓPRIA: https://praias.pt/sitemap.xml — 648 URLs, 519 do tipo região/concelho; a página de concelho testada tinha ~296 caracteres de texto próprio depois de removidos nav e rodapé",
+   "VERIFICAÇÃO PRÓPRIA: https://praiometro.pt/robots.txt e /sitemap.xml devolvem ambos 404 (confirma o diagnóstico de partida)",
+   "VERIFICAÇÃO PRÓPRIA sobre /Users/renatovalente/Websites/Praiometro/data/praias.json: 996 praias → 265 células distintas a ~11 km, 470 a 4 km, 625 a 2 km, 764 a 1 km; 912 pares a menos de 1 km; 66 nomes duplicados; 235 praias de rio (m=0)",
+   "VERIFICAÇÃO PRÓPRIA contra marine-api.open-meteo.com: praias fluviais devolvem sea_surface_temperature e wave_height a null em 24/24 horas; praia de mar devolve 24/24 válidos e wave_height 0,82 m"
+  ]
+ },
+ "dados": {
+  "dados_internos": [
+   "ESTADO ACTUAL DO FICHEIRO DE PRODUÇÃO — /Users/renatovalente/Websites/Praiometro/data/praias.json: 996 registos, 7 campos (n, b, la, lo, r, m e um 'v' não documentado). Distribuição verificada: 761 de mar / 235 de rio; Algarve 210, Lisboa e Setúbal 207, Norte 203, Centro 196, Alentejo 95, Açores 48, Madeira 37. Só existem 7 regiões — não há concelho, não há distrito, não há nada por onde construir páginas de agregação.",
+   "BUG/ACHADO — o campo 'v' existe em 53 registos, vale sempre 1, e NENHUM ficheiro em assets/js/ o lê (grep confirmado em app.js, favoritos.js, conta.js, index.html). Descobri o que é: cruzando com o OSM, os 53 são exactamente praias com supervised=yes ou lifeguard=yes (53 de 54 possíveis). Ou seja, já está lá um campo 'vigiada' morto, com cobertura péssima (54 praias em 996). A APA cobre isto muito melhor (ver fontes externas).",
+   "MINA DE OURO LOCAL — /Users/renatovalente/Websites/Praiometro/_source/osm-praias.json tem 1046 elementos OSM COM TODAS AS TAGS, e o pipeline deitou fora quase tudo ao gerar o data/praias.json. Contagens verificadas: surface 735 (607 sand, 45 pebblestone, 28 grass, 13 gravel, 6 shingle, 6 dirt, 5 concrete, 3 rock, 2 asphalt, resto ruído), wikidata 261, wikimedia_commons 145 (categorias Commons), wikipedia 122, alt_name 102, access 157 (151 yes, 3 permissive, 3 no), supervised 130 (80 'no', 39 'yes', 11 com horários tipo 'May-Sep 09:30-12:30,14:15-19:30'), lifeguard 89 (61 no, 28 yes), nudism 54 (26 yes, 10 designated, 4 customary, 2 permissive, 1 obligatory, 11 no), sport 33 (16 swimming, 14 surfing, 2 kitesurfing, 1 combinado), website 33, wheelchair 29 (15 no, 14 yes), name:en 22, opening_hours 19 (todos '24/7', inútil), description 18 (texto livre em PT, tipo 'Praia não vigiada / Bom spot de surf', 'Muitas moscas'), name:pt 15, ref 14, name:es 12, fee 8 (todos 'no'), dog 6 (todos 'no'), tourism 7 (attraction), leisure 7, opening_hours:lifeguard 4, award:blue_flag 4.",
+   "RESPOSTA DIRECTA À PERGUNTA SOBRE TAGS: award:blue_flag existe mas está preenchida em 4 praias de 1046 — é lixo estatístico, não serve para nada. Idem operator (1 praia). surface é a única tag OSM com cobertura a sério (70%). supervised/lifeguard/wheelchair/nudism têm cobertura de 3% a 13% e, pior, a maioria dos valores é 'no' — publicar 'esta praia não é vigiada' com base em 130 registos OSM enviesados é um risco de segurança, não uma funcionalidade.",
+   "ACHADO DE JUNÇÃO — 14 praias OSM têm a tag ref, e 13 delas são códigos oficiais de água balnear da APA/UE (PTCX2C=Mareta, PTCT3X=Caminha, PTCF2N=Moledo, PTCW7N=Vieira, etc.). Isto confirma que o identificador oficial e o OSM falam a mesma língua — só que 14 praias é pouco para servir de chave. A junção tem de ser espacial (ver abaixo).",
+   "DERIVÁVEL OFFLINE, SEM REDE, HOJE — CONCELHO: não dá com o que está no repositório (não há polígonos administrativos). Mas 482 praias herdam o concelho de graça da APA (campo 'concelho' + código DICO do INE), e as restantes ~514 resolvem-se com um point-in-polygon contra a CAOP da DGT (CC BY 4.0, GeoPackage de download directo). É o desbloqueio de SEO mais barato do inventário: cria ~155-278 páginas de agregação ('Praias de Vila Nova de Gaia', 'Praias de Odemira') que hoje simplesmente não existem.",
+   "DERIVÁVEL OFFLINE — PRAIAS VIZINHAS: puro cálculo de haversine sobre os 996 pontos, zero custo, zero risco legal. Medido: 706 praias têm ≥3 vizinhas a 5 km e 837 têm ≥3 vizinhas a 10 km. Dá links internos genuínos ('se esta estiver com nortada, a 3 km tens X virada a sul') e resolve o problema estrutural de o site ter hoje 2 URLs e nenhuma malha interna.",
+   "DERIVÁVEL — ORIENTAÇÃO DA COSTA E EXPOSIÇÃO À NORTADA: SIM, DÁ, e testei. O método é PCA (eixo principal) sobre o polígono da praia no OSM. Resultados que validei à mão: Furadouro eixo 13-26°, normal 103/283 → virada a oeste (correcto); Carcavelos eixo 116°, normal 26/206 → virada a sul (correcto); Mareta/Sagres eixo 77,5°, normal 167,5/347,5 → virada a sul (correcto, e é exactamente por isso que é o refúgio clássico da nortada); Amado eixo 21,6° → virada a WNW (correcto); Guincho normal ~293-317° → NW (correcto). O alongamento (√λ1/λ2) sai 3,2 a 9,4 nestes casos, o que também dá um indicador de confiança: praia comprida = eixo fiável, enseada redonda = eixo sem significado.",
+   "OBSTÁCULO A RESOLVER PARA A ORIENTAÇÃO — o _source/overpass.txt usou 'out center tags', portanto o ficheiro guardado NÃO tem geometria, só o centróide. É preciso repetir a query com 'out geom' (mesma fonte, mesma licença, uma chamada, ~1046 ways/relations). Sem isso a orientação não se calcula.",
+   "DESAMBIGUAR QUAL DOS DOIS LADOS É O MAR — o PCA dá um eixo, e o eixo tem duas normais opostas. Testei a solução mais barata: a API de elevação da Open-Meteo (https://api.open-meteo.com/v1/elevation) aceita múltiplas coordenadas por chamada e devolve 0.0 no mar. Verificado no Furadouro: ponto a 1,5 km no rumo 283° → 0.0 m (mar); ponto a 1,5 km no rumo 103° → 5.0 m (terra). Alternativa 100% offline e sem depender da Open-Meteo: usar as ways natural=coastline do OSM, que por convenção têm sempre a terra à esquerda do sentido de desenho.",
+   "O QUE A ORIENTAÇÃO DESBLOQUEIA NO MODELO — o MODELO.md admite explicitamente na secção 'O que este modelo NÃO sabe' que «Não conhece a orientação da costa de cada praia. Um vento de leste numa praia virada a oeste é abrigado; o modelo pontua a velocidade, não o abrigo.» Isto deixa de ser verdade: com a normal calculada, o ângulo entre a direcção do vento (que o app já calcula por média vectorial) e a normal terrestre dá directamente offshore/onshore/alongshore. É simultaneamente conteúdo único para SEO ('Praia X está virada a sul, por isso a nortada entra de lado e não de frente') e uma melhoria real de precisão do modelo.",
+   "DERIVÁVEL — COMPRIMENTO E ÁREA DA PRAIA: sai do mesmo polígono OSM (2√λ1 da PCA, ou perímetro/área). Distingue 'areal de 1,6 km' (Carcavelos, medido) de 'enseada de 400 m' (Guincho, medido). É um facto verificável e concreto por página, do tipo que o Google gosta e que nenhum concorrente português publica de forma sistemática.",
+   "NÃO DERIVÁVEL OFFLINE COM O QUE EXISTE — DISTÂNCIA À LOCALIDADE MAIS PRÓXIMA: não há gazetteer no repositório. Precisa de uma de três fontes externas: nodes place=city/town/village do OSM (mesma licença ODbL, uma query Overpass), GeoNames (CC BY 4.0), ou os centróides de freguesia da CAOP (CC BY 4.0). Nenhuma é cara; é só que não está feito.",
+   "ATENÇÃO À MISTURA DE NOMES — /Users/renatovalente/Websites/Praiometro/_source/ambiguos.json lista 38 nomes duplicados entre regiões ('Praia do Norte', 'Praia Formosa', 'Meia Praia', e uma praia chamada literalmente 'Praia'). Se cada praia vai ter URL própria, isto obriga a um esquema de slug com desambiguação (concelho ou região no caminho) DECIDIDO ANTES da primeira publicação — mudar slugs depois de indexados é a forma mais rápida de deitar fora o trabalho de SEO."
+  ],
+  "fontes_externas": [
+   {
+    "nome": "APA / InfoÁgua — perfis oficiais das águas balneares (a melhor fonte encontrada)",
+    "existe": "SIM, e é muito melhor do que a documentação sugere. Verificado hoje: a página https://infoagua.apambiente.pt/pt/praias traz o dataset completo embutido no HTML como variáveis JavaScript — DATA_BeachesData (760 praias oficiais, com um objecto 'profile' e um objecto 'quality' cada), DATA_BlueFlagBeaches (galardoados 2026), DATA_BeachQualityMap e DATA_BeachesAlerts. Extraí e contei tudo.",
+    "licenca": "CC BY 4.0. Verificado via API do dados.gov (https://dados.gov.pt/api/1/datasets/aguas-balneares-de-portugal/): licença 'cc-by', editor Agência Portuguesa do Ambiente, last_update 2026-08-04 (hoje). Atribuição obrigatória à APA. NOTA HONESTA: o dataset formalmente declarado CC BY no dados.gov aponta para os serviços WMS/WFS (que só têm código+nome+coordenadas); o JSON rico do InfoÁgua é a mesma informação da mesma entidade pública, mas o InfoÁgua não publica termos próprios (não tem página de termos, e o robots.txt dá 404). Base legal razoável: DL 26/2016 (reutilização de informação do sector público). Recomendo enviar um e-mail à APA a declarar o uso — é barato e fecha a questão.",
+    "valor_seo": "ALTÍSSIMO — é a única fonte que dá conteúdo factual, oficial e verificável por praia, que é exactamente o que falta hoje. Campos verificados no 'profile': vigilância, posto de socorros, sanitários, duche, recolha de lixo, limpeza de praia, painel informativo, apoio balnear, apoio de praia, estacionamento, bandeira azul, praia acessível, cadeira anfíbia, ondas de especial valor (=spot de surf reconhecido), obras em curso, risco de derrocada, URL de webcam, categoria de água balnear, costeira/interior. No 'quality': concelho, código DICO do INE, data de início e fim da época balnear POR PRAIA, classificação do ano anterior, última classificação da época actual, data da última análise, motivo de interdição. Cobertura medida contra as 996 praias do Praiómetro, com junção espacial a ≤300 m: 482 praias (48%) ganham perfil oficial — 435 vigiadas, 439 com sanitários, 399 com estacionamento, 338 com apoio balnear, 331 com duche, 318 com bandeira azul, 177 acessíveis, 161 com cadeira anfíbia, 156 com ondas de especial valor, 161 com risco de derrocada assinalado, 26 com webcam, 482 com concelho. Classificação de 2025 dessas 482: 414 Excelente, 44 Boa, 14 Aceitável, 7 Má.",
+    "esforco": "BAIXO. Um script de build que faz um GET à página, extrai as variáveis DATA_* com json.raw_decode, e faz a junção espacial por haversine. A junção é o único trabalho a sério: medida hoje, 482 praias a <300 m, 572 a <500 m, 686 a <1 km — mas só 397 das 686 passam também num teste de compatibilidade de nome, portanto RECOMENDO travar em 300 m + confirmação de nome, e deixar as restantes sem perfil oficial em vez de arriscar atribuir a praia errada. Frequência: 1x por dia durante a época balnear (a última classificação muda), 1x por semana fora dela.",
+    "nota": "RISCO REAL A GERIR: a última classificação da água é informação de SAÚDE PÚBLICA. Hoje o site diz corajosamente no README e no MODELO.md que «não sabe da qualidade da água». No momento em que passa a dizer, passa a ter o dever de a manter fresca — publicar 'água adequada a banhos' em cache de há três semanas quando a APA já desaconselhou é pior do que não dizer nada. Medido agora: 668 das 760 praias com 'Água adequada a banhos', 4 com 'Água desaconselhada a banhos', 88 sem análises. Mitigação obrigatória: carimbar a data da última análise ao lado do valor e ligar sempre ao SNIRH. DISCREPÂNCIA que encontrei e que não sei explicar: o InfoÁgua marca bandeira_azul=1 em 447 praias, mas a ABAAE anunciou 396 praias galardoadas em 2026 — usar o número da ABAAE como verdade e o campo da APA só como indício.",
+    "url": "https://infoagua.apambiente.pt/pt/praias"
+   },
+   {
+    "nome": "AEA/EEA — WISE Bathing Water Directive (histórico de 11 épocas balneares)",
+    "existe": "SIM, verificado com uma query real. Serviço ArcGIS público: https://water.discomap.eea.europa.eu/arcgis/rest/services/BathingWater/BathingWater_Dyna_WM_2025/MapServer/3/query com where=countryCode='PT'. Devolveu 682 águas balneares portuguesas (487 Coastal, 118 River, 49 Lake, 28 Transitional). Cada registo traz bathingWaterIdentifier (o mesmo código PTxxxx da APA e da tag ref do OSM), nome, coordenadas, categoria, e — o mais valioso — qualityStatus mais qualityStatus_minus1 até qualityStatus_minus10, ou seja ONZE épocas balneares de classificação por praia. Distribuição em 2025: 559 Excellent, 75 Good, 19 Sufficient, 17 Not classified, 12 Poor.",
+    "licenca": "CC BY, com uso COMERCIAL EXPRESSAMENTE PERMITIDO. Verificado em https://www.eea.europa.eu/en/legal-notice: «EEA materials are published under the CC-BY license» e podem ser reutilizados «without prior permission, free of charge, for commercial or non-commercial purposes», exigindo apenas reconhecer a AEA como fonte original e não distorcer o significado. É a licença MAIS LIMPA de todo este inventário — a única fonte de conteúdo por praia que não fica presa à restrição não-comercial.",
+    "valor_seo": "MUITO ALTO, e por uma razão que nenhum concorrente português explora: transforma um número num histórico. «A água da Praia da Mareta foi classificada Excelente em 11 das últimas 11 épocas» é uma frase única, factual, com uma entidade nomeada, e é impossível de gerar sem fazer este trabalho. É também conteúdo ESTÁVEL — não caduca de semana a semana como a última análise — o que é exactamente o tipo de texto que sustenta uma página estática indexada. Cobertura medida: das 482 praias do Praiómetro com água balnear oficial a ≤300 m, 397 têm histórico AEA disponível.",
+    "esforco": "MUITO BAIXO. Uma única chamada HTTP no build devolve as 682 de uma vez (sem paginação — exceededTransferLimit veio a null). A chave de junção já está resolvida pela junção espacial com a APA — o codigo_agua_balnear é o mesmo campo.",
+    "nota": "Preferir esta fonte à APA para TUDO o que seja histórico, precisamente por causa da licença comercial. O nome da praia na AEA vem em maiúsculas e às vezes difere do nome APA/OSM; usar sempre o código PTxxxx como chave e o nome do OSM para exibição. O bwProfileLink aponta para o perfil nacional (nos Açores aponta para o portal regional, não para a APA) — verificar antes de o mostrar como link.",
+    "url": "https://water.discomap.eea.europa.eu/arcgis/rest/services/BathingWater/BathingWater_Dyna_WM_2025/MapServer/3/query?where=countryCode%3D%27PT%27&outFields=*&returnGeometry=false&f=json"
+   },
+   {
+    "nome": "APA INSPIRE — serviço geográfico oficial das águas balneares (WFS/ArcGIS REST)",
+    "existe": "SIM. O WFS anunciado no dados.gov responde mas é pobre em metadados; o irmão ArcGIS REST do mesmo servidor é muito mais prático e devolveu 671 águas balneares numa chamada. Esquema verificado: apenas 6 campos — codigo, nome, latitude, longitude, id, shape.",
+    "licenca": "CC BY 4.0 (é a este serviço que o registo do dados.gov formalmente aponta). Atribuição à APA.",
+    "valor_seo": "BAIXO em si mesmo — só dá código, nome e coordenadas. O seu valor é INDIRECTO e importante: é a versão do dataset com licença CC BY inequivocamente declarada, portanto serve de base legal 'limpa' para a lista e para a chave de junção PTxxxx, deixando o InfoÁgua só para os atributos.",
+    "esforco": "MUITO BAIXO. Uma chamada.",
+    "nota": "671 registos aqui contra 760 no InfoÁgua e 682 na AEA — as três contagens não batem certo entre si, o que é normal (anos de referência diferentes) mas convém não prometer 'todas as praias oficiais' com um número exacto.",
+    "url": "https://inspire.apambiente.pt/getogc/rest/services/INSPIRE/AM_BathingWaters/MapServer/0/query?where=1%3D1&outFields=*&returnGeometry=false&f=json"
+   },
+   {
+    "nome": "SNIRH — histórico de classificações e boletins de análise por praia",
+    "existe": "SIM, verificado. Cada praia tem uma página própria: https://snirh.apambiente.pt/snirh/_dadossintese/zbalnear/janela/par_graficos.php?code_cee=PTCX2C&ano=2026 . Testei com a Mareta e devolveu HTTP 200 com a tabela de análises de 2026 (datas 25/05, 22/06, 20/07, laboratório ARH-Algarve, parâmetros Enterococos Intestinais e Escherichia coli) mais o histórico de classificações de 2006 a 2025 — vinte anos.",
+    "licenca": "Sistema da APA. Sem termos publicados no próprio SNIRH (robots.txt dá 404, não há página de termos). Enquadrável no DL 26/2016 (reutilização de informação do sector público) e coerente com o CC BY 4.0 declarado pela APA no dados.gov, mas é uma INFERÊNCIA minha, não uma licença verificada.",
+    "valor_seo": "MÉDIO-ALTO em profundidade (vinte anos batem os onze da AEA), mas BAIXO em relação custo-benefício face à AEA, que dá quase o mesmo com licença explícita e numa única chamada.",
+    "esforco": "ALTO. Obriga a ~680 pedidos HTTP e a fazer parsing de HTML antigo em latin-1 (a página vem com acentos partidos). É frágil: qualquer redesenho parte o scraper.",
+    "nota": "NÃO recomendo como fonte primária. Recomendo como LINK de saída — cada página de praia deve ligar ao SNIRH dessa praia. Isso dá credibilidade ao utilizador, dá um sinal de qualidade ao Google, e não cria nenhuma dúvida de manutenção. O URL já vem pronto dentro do campo 'url' do perfil InfoÁgua, portanto é de graça.",
+    "url": "https://snirh.apambiente.pt/snirh/_dadossintese/zbalnear/janela/par_graficos.php?code_cee=PTCX2C&ano=2026"
+   },
+   {
+    "nome": "ABAAE / Bandeira Azul Portugal",
+    "existe": "SIM, mas SEM dados abertos. Verificado: a lista de 2026 em https://bandeiraazul.abaae.pt/galardoados/galardoados-2026/ é uma interface HTML interactiva com cartões e filtros, sem CSV, sem Excel, sem JSON, sem qualquer licença ou termos de reutilização publicados na página. Números de 2026 confirmados por várias fontes: 396 praias galardoadas (350 costeiras, 46 interiores), 438 galardões no total incluindo 21 marinas, 21 embarcações e 31 Centros Azuis, em 100 concelhos.",
+    "licenca": "NENHUMA declarada. A lista é propriedade da ABAAE e o galardão 'Bandeira Azul' é uma marca registada. O robots.txt existe e bloqueia SemrushBot e dotbot, o que mostra que se importam com scraping. Risco legal de raspar e republicar a lista: MÉDIO — factos não são protegidos por direito de autor, mas a base de dados pode estar protegida pelo direito sui generis do fabricante de bases de dados (Directiva 96/9/CE, transposta em PT pelo DL 122/2000), e o uso do logótipo/marca é uma questão separada e mais séria.",
+    "valor_seo": "MÉDIO. 'Praias com Bandeira Azul em [concelho]' é uma pesquisa com volume real, mas é também a consulta mais disputada do sector — dirportugal.com, guiadepraias.pt, praiasdeportugal.com e a própria ABAAE já a servem, e a ABAAE ganha sempre por ser a fonte.",
+    "esforco": "MÉDIO se se raspar; ZERO se se usar o campo bandeira_azul da APA, que já vem no InfoÁgua e cobre 318 das nossas 482 praias com perfil oficial.",
+    "nota": "RECOMENDAÇÃO CLARA: não raspar a ABAAE. Usar o campo bandeira_azul da APA (CC BY, sem risco), NUNCA reproduzir o logótipo da Bandeira Azul, e escrever o facto por palavras próprias com link à ABAAE como fonte. E resolver primeiro a discrepância dos 447 (APA) contra 396 (ABAAE) — publicar um número errado sobre um galardão é o tipo de erro que mata a confiança.",
+    "url": "https://bandeiraazul.abaae.pt/galardoados/galardoados-2026/"
+   },
+   {
+    "nome": "IPMA — API open-data (previsão, estado do mar, avisos, UV)",
+    "existe": "SIM, a API está viva. Testei quatro endpoints, todos HTTP 200: distrits-islands.json, sea-locations.json, forecast/warnings/warnings_www.json e forecast/meteorology/uv/uv.json. O de estado do mar (hp-daily-sea-forecast-day0.json) devolve altura e período de onda, direcção e temperatura da superfície do mar (sstMin/sstMax) — hoje, por exemplo, 23,8-24,8 °C na Madeira.",
+    "licenca": "NÃO-COMERCIAL, tal como a Open-Meteo. Verificado nas Condições de Utilização do IPMA: o utilizador pode «copiar, importar ou utilizar gratuitamente informações» desde que o uso não tenha «finalidades lucrativas ou ofensivas», deve «referir, sempre, a fonte de informação», e o IPMA pede o uso do seu logótipo com ligação ao site sempre que a informação seja incluída em páginas de hipertexto. Pedem ainda um e-mail a webmaster@ipma.pt a declarar o uso.",
+    "valor_seo": "BAIXO A MÉDIO, e MUITO abaixo do que se poderia esperar. O problema é a resolução: o sea-locations.json tem cerca de vinte pontos para o país inteiro ('Porto, costa', 'Lisboa, costa', 'Faro, costa', 'Sagres, costa'...). Isso NÃO substitui nem complementa utilmente a Open-Meteo para 996 praias — é uma grelha mil vezes mais grosseira. O que vale mesmo a pena é OUTRA coisa: os AVISOS METEOROLÓGICOS por área (warnings_www.json, com awarenessTypeName='Agitação Marítima', 'Tempo Quente', 'Nevoeiro' e nível verde/amarelo/laranja/vermelho por idAreaAviso). Um aviso laranja de agitação marítima do IPMA numa página de praia é informação de segurança oficial que nenhum índice calculado substitui, e encaixa exactamente na secção de vetos do MODELO.md. O índice UV é o segundo mais útil.",
+    "esforco": "BAIXO tecnicamente (JSON simples, sem chave). MÉDIO na integração correcta: os avisos vêm por área de aviso (distrito), portanto é preciso mapear cada praia ao seu idAreaAviso — o que exige o concelho/distrito, que por sua vez exige a CAOP ou a APA. É outra razão para fazer o concelho primeiro.",
+    "nota": "RESPOSTA DIRECTA À PERGUNTA 'pode substituir ou complementar a Open-Meteo?': para a PREVISÃO, não — é grosseira demais e traz a MESMA restrição não-comercial, portanto não compra liberdade nenhuma. Trocar Open-Meteo por IPMA não desbloqueia publicidade. Para os AVISOS, sim, complementa e vale a pena. ARMADILHA JURÍDICA IMPORTANTE: a restrição do IPMA recai sobre os DADOS, não só sobre o acesso à API. Logo, dados do IPMA NÃO PODEM entrar num ficheiro publicado sob ODbL ou CC BY (que obrigam a permitir uso comercial) — se se enriquecer o data/praias.json com valores do IPMA, cria-se uma incompatibilidade de licenças no repositório público. Manter os dados do IPMA em runtime, no browser, nunca no ficheiro estático publicado.",
+    "url": "https://api.ipma.pt/"
+   },
+   {
+    "nome": "Instituto Hidrográfico — tábuas de maré",
+    "existe": "NÃO, não como dados abertos. Verificado: as Tabelas de Marés Vol I e Vol II são um PRODUTO PAGO, vendido em formato digital na Loja do Navegante do IH. Não há API pública documentada, não há download aberto, e o dados.gov não tem nenhum dataset de marés utilizável (a pesquisa por 'marés' devolve apenas um PDF de caracterização do regime de marés do Tejo e um dataset sem relação).",
+    "licenca": "Produto comercial. Sem licença de reutilização. Além disso, o robots.txt de https://www.hidrografico.pt bloqueia explicitamente ClaudeBot, anthropic-ai, GPTBot, Amazonbot e meta-externalagent — a casa está fechada a acesso automatizado e isso deve ser respeitado.",
+    "valor_seo": "ALTO se existisse, e é por isso que dói. 'maré cheia praia X' e 'tabela de marés [praia]' são consultas de volume grande e intenção clara, e a maré é genuinamente decisiva em praias como o Barril, a Ria Formosa, a Foz do Arelho ou qualquer praia de Tavira. É a maior lacuna de conteúdo identificada neste inventário.",
+    "esforco": "ALTO por qualquer caminho legítimo. Caminho realista: constantes harmónicas do modelo global FES2022 (CNES/AVISO) com o algoritmo oficial PyFES, tudo pré-calculado no build — a previsão sai localmente, offline, sem servidor. Requer registo no AVISO+ e aceitação da licença deles, que é preciso ler antes de assumir seja o que for.",
+    "nota": "NÃO raspar o Instituto Hidrográfico: é produto pago, o robots.txt proíbe robôs, e o valor não compensa o risco. NÃO usar APIs de terceiros tipo TidesAtlas ou TideCheck sem ler os termos — vendem acesso e a redistribuição costuma estar vedada. Se as marés forem prioridade, o FES2022 é o único caminho que verifiquei como plausível, e classifico-o como POR VERIFICAR: não li a licença do AVISO+ nesta sessão e não afirmo que permite republicação.",
+    "url": "https://www.hidrografico.pt/paginas-genericas/dt/doc/previsao-oceanografica/"
+   },
+   {
+    "nome": "Open-Meteo — Archive (ERA5), Marine e Climate para climatologia pré-computada",
+    "existe": "SIM, os três endpoints respondem e aceitam datas passadas. Testei todos: archive-api.open-meteo.com/v1/archive (200, devolveu Agosto de 2020 no Furadouro), climate-api.open-meteo.com/v1/climate (200, CMIP6), e marine-api.open-meteo.com/v1/marine com start_date/end_date passados (200, devolveu temperatura da superfície do mar horária de Agosto de 2024).",
+    "licenca": "Duas coisas DIFERENTES que é essencial não confundir, e verifiquei ambas em https://open-meteo.com/en/terms. (1) O ACESSO à API gratuita é não-comercial: «You may only use the free API services for non-commercial purposes», e são explicitamente comerciais «websites or apps that have subscriptions or display advertisements». (2) Os DADOS obtidos são CC BY 4.0: «You accept to the CC-BY 4.0 licence». A CC BY 4.0 permite uso comercial. RESPOSTA DIRECTA À PERGUNTA: pré-computar no build NÃO viola a licença enquanto o site não tiver publicidade nem subscrições — o que hoje é o caso. E, INFERÊNCIA MINHA (não verificada com a Open-Meteo, e vale a pena confirmar por e-mail antes de apostar nisto): como os dados já descarregados ficam sob CC BY 4.0, mantê-los publicados se o site um dia levar anúncios parece defensável; o que deixaria de ser permitido é continuar a CHAMAR a API gratuita a partir desse momento. Isto é relevante porque é a única via que vi para o site poder um dia ter conteúdo climatológico e receita ao mesmo tempo.",
+    "valor_seo": "MUITO ALTO, e provavelmente o melhor retorno por euro gasto de todo o inventário. Climatologia por praia e por mês é conteúdo original, estável, indexável, e responde a intenção de pesquisa que a previsão a 5 dias não toca: 'como está o mar na Praia X em Junho', 'quando é que a água está mais quente no Algarve', 'praia sem nortada em Agosto'. Ao contrário da previsão — que caduca e que o Google não indexa bem — a climatologia é texto permanente. E cruzada com a orientação da costa derivada localmente dá a frase que mais nenhum site português tem: 'Nos últimos cinco Agostos, esta praia teve vento acima de 22 km/h em 61% das tardes, e como está virada a sul a nortada entra de lado.'",
+    "esforco": "MÉDIO, e mais barato do que parece por causa de um achado. Contagem de chamadas da Open-Meteo: pedidos com mais de 2 semanas ou mais de 10 variáveis contam como fracções múltiplas (2 semanas com 15 variáveis = 1,5 chamadas; 4 semanas = 3,0). Cinco anos com 4 variáveis daria ~130 chamadas por praia, ou seja ~130.000 chamadas para as 996 praias — muito acima do limite de 10.000/dia. MAS: medi a resolução real das grelhas. O archive encaixa em células de ~0,128° (verificado: pedidos a -8,70 / -8,65 / -8,60 / -8,55 devolveram todos o MESMO ponto 40,878735/-8,577515) e o marine em células de 1/12° (verificado). Resultado da desduplicação que calculei sobre as 996 praias: apenas 258 células distintas no archive e 165 células no marine para as praias de mar. Isso corta o custo para ~34.000 chamadas de archive — dois a quatro dias de build repartido, ou um único dia se se reduzir a janela a 3 anos e aos meses de época balnear. É perfeitamente exequível numa GitHub Action nocturna.",
+    "nota": "Atribuição obrigatória à Open-Meteo (já está no rodapé; verificar que também fica junto aos números climatológicos). Ser honesto na página: a climatologia é de reanálise em grelha, não de observação na praia, e a célula de ~0,128° não distingue duas praias a 5 km uma da outra — dizer isso, como o MODELO.md já faz para a temperatura da água. E não inventar precisão: 'nos últimos cinco Agostos' é verdade; 'esta praia tem 61% de dias ventosos' não é, porque a célula não é a praia.",
+    "url": "https://archive-api.open-meteo.com/v1/archive"
+   },
+   {
+    "nome": "Wikimedia Commons + Wikidata — fotografias com licença livre",
+    "existe": "SIM, e já temos as chaves em casa: 261 praias com tag wikidata, 145 com wikimedia_commons (categoria) e 122 com wikipedia no _source/osm-praias.json. Testei os dois lados. Na Wikidata, numa amostra de 50 entidades: 42 têm P18 (imagem) e 39 têm P373 (categoria Commons) — extrapolando, ~200 das 261. Na API do Commons, o generator=categorymembers com prop=imageinfo&iiprop=url|extmetadata devolve numa só chamada o URL da miniatura no tamanho pedido MAIS a licença completa: LicenseShortName, LicenseUrl, UsageTerms, Artist, Credit e AttributionRequired.",
+    "licenca": "VARIÁVEL FICHEIRO A FICHEIRO — é o ponto crítico e o erro clássico. Na amostra que puxei (Category:Praia do Tamariz) apareceram CC BY 2.0 e CC BY-SA 3.0, ambas com AttributionRequired=true. Há também CC0 e domínio público no acervo. Não existe 'a licença do Commons': cada ficheiro tem a sua e TEM de ser lida do extmetadata em tempo de build e gravada junto da imagem. CC BY-SA obriga a share-alike sobre ADAPTAÇÕES da imagem (recortes, filtros, composições) — incorporar a foto tal e qual numa página não contamina o site, mas mexer-lhe cria uma obra derivada que tem de sair sob a mesma licença.",
+    "valor_seo": "MÉDIO. Uma foto real melhora o CTR nos resultados, dá og:image por praia (hoje há uma única og.png para o site inteiro, e ainda apontada ao domínio antigo github.io) e alimenta o campo image do JSON-LD. Mas cobertura ~20% (≈200 de 996) significa que 80% das páginas ficam sem foto — e páginas visualmente desiguais são piores do que páginas uniformemente sem foto.",
+    "esforco": "MÉDIO. Uma chamada à API do Commons por praia com categoria (~145-200 chamadas), guardar URL da miniatura + autor + licença + link do ficheiro, e servir por hotlink ao upload.wikimedia.org ou por cópia local. RISCO DE QUALIDADE QUE VERIFIQUEI E QUE É PRECISO LEVAR A SÉRIO: pedi os 3 primeiros ficheiros da Category:Praia do Tamariz e vieram 'Cascais NEAR Lisbon, Portugal', 'Cascais photo 0005' e 'Cascais znimok 5' — fotos genéricas de Cascais, não necessariamente do areal do Tamariz. A pertença à categoria NÃO garante que a foto seja da praia. Publicar automaticamente a primeira foto da categoria vai pôr imagens erradas em páginas com o nome de praias reais.",
+    "nota": "REGRAS NÃO NEGOCIÁVEIS: (1) mostrar sempre autor + licença + link, visíveis, junto da foto ou em legenda — AttributionRequired=true na maioria; (2) nunca usar o campo image do OSM (só 2 praias, e apontam para ficheiros externos de licença desconhecida); (3) curadoria humana antes de publicar, ou pelo menos filtrar por ficheiros cujo título contenha o nome da praia; (4) preferir CC0/PD e CC BY a CC BY-SA se se pensar em recortar. Flickr CC é possível mas dá muito mais trabalho de verificação de licença por foto e a API exige chave — o Commons já faz essa curadoria por nós.",
+    "url": "https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=categorymembers&gcmtitle=Category:Praia%20do%20Tamariz&gcmtype=file&prop=imageinfo&iiprop=url%7Cextmetadata"
+   },
+   {
+    "nome": "DGT — Carta Administrativa Oficial de Portugal (CAOP 2025)",
+    "existe": "SIM, verificado no dados.gov com download directo em GeoPackage para Continente, RAM e RAA. Há também repositório oficial em github.com/dgterritorio/CAOP (HTTP 200) e um OGC API em ogcapi.dgterritorio.gov.pt.",
+    "licenca": "CC BY 4.0, confirmado nos três registos do dados.gov (licença 'cc-by', editor Direção-Geral do Território). Uso comercial permitido, atribuição à DGT obrigatória.",
+    "valor_seo": "ALTO por via indirecta, e é a peça que falta para o site ter arquitectura. Dá concelho, distrito e freguesia por point-in-polygon offline para as 996 praias, incluindo as ~514 que não têm água balnear oficial e que portanto não herdam o concelho da APA. Isso desbloqueia as páginas de agregação ('Praias de Odemira', 'Praias do concelho de Cascais'), que são o nível intermédio entre a homepage e as 996 páginas de praia — sem elas, as páginas de praia ficam órfãs e o Google não as descobre nem lhes atribui autoridade. Também resolve o mapeamento praia→idAreaAviso necessário para os avisos do IPMA e o problema dos 38 nomes ambíguos do ambiguos.json.",
+    "esforco": "MÉDIO-BAIXO, mas é o único item que traz uma dependência nova ao build. O repositório hoje orgulha-se de não ter passo de compilação e de os testes correrem em Node sem dependências; ler um GeoPackage obriga a shapely/fiona ou a converter uma vez para GeoJSON simplificado e comprometer só esse ficheiro. Recomendo o segundo: converter uma vez, guardar um GeoJSON leve de concelhos no repositório, e fazer o point-in-polygon com ~40 linhas de Python puro (ray casting). Fica sem dependências e determinístico.",
+    "nota": "Fazer PRIMEIRO. Quase tudo o resto neste inventário melhora quando existe concelho: os URLs, as páginas de agregação, os avisos do IPMA, a desambiguação dos nomes duplicados, e o schema.org Place com address. É barato, é CC BY, não caduca (uma actualização por ano) e não tem risco legal nenhum.",
+    "url": "https://geo2.dgterritorio.gov.pt/caop/CAOP_Continente_2025-gpkg.zip"
+   },
+   {
+    "nome": "OpenStreetMap — re-extracção com geometria, e a obrigação ODbL",
+    "existe": "SIM. A query em /Users/renatovalente/Websites/Praiometro/_source/overpass.txt precisa de uma alteração de uma palavra: trocar 'out center tags' por 'out geom'. Testei o resultado com uma query real ao overpass-api.de para 8 praias e confirmei que a geometria vem completa (25 a 103 pontos por praia) e que o PCA sobre ela dá orientações correctas.",
+    "licenca": "ODbL 1.0. Atribuição obrigatória: «© OpenStreetMap contributors» com ligação a openstreetmap.org/copyright, visível (já está no rodapé — verificar que continua visível nas novas páginas de praia). O SHARE-ALIKE é o ponto a que é preciso prestar atenção a sério neste projecto.",
+    "valor_seo": "ALTO, e é o único item que produz conteúdo que literalmente ninguém em Portugal tem: orientação da costa e exposição à nortada por praia, calculadas. Verificado com casos que conheço — Mareta virada a sul (refúgio da nortada), Carcavelos virada a sul, Furadouro e Amado viradas a oeste, Guincho a NW. Junta-se ao comprimento do areal e ao tipo de superfície (607 praias de areia, 45 de calhau) para dar 3 a 4 factos concretos por página sem depender de fonte externa nenhuma.",
+    "esforco": "BAIXO-MÉDIO. Uma query Overpass, PCA em ~30 linhas, e a desambiguação do lado do mar (ou pela API de elevação da Open-Meteo — testada, mar=0.0 e terra=5.0, aceita muitas coordenadas por chamada — ou pelas ways natural=coastline do OSM, offline). Fazer no build, guardar o resultado, nunca calcular em runtime.",
+    "nota": "ARMADILHA JURÍDICA QUE VALE A PENA PERCEBER ANTES DE ESCREVER CÓDIGO: acrescentar campos ao data/praias.json (concelho, orientação, bandeira azul, classificação da água) transforma-o numa Derivative Database do OSM, e o repositório é público no GitHub — ou seja, essa base ENRIQUECIDA passa a ter de ser oferecida sob ODbL. Isso é gratuito e não é problema, mas tem duas consequências práticas: (a) é preciso declará-lo no README e na LICENSE (hoje o LICENSE diz MIT, que cobre o código mas não a base de dados); (b) a ODbL obriga a permitir uso comercial, portanto NADA com restrição não-comercial pode entrar nesse ficheiro — o IPMA fica de fora, e a APA (CC BY), a AEA (CC BY), a DGT (CC BY) e a Open-Meteo (dados CC BY) ficam todas dentro sem conflito. As páginas HTML geradas são 'Produced Work' e só exigem atribuição, não share-alike — o problema é só o ficheiro de dados publicado.",
+    "url": "https://www.openstreetmap.org/copyright"
+   },
+   {
+    "nome": "Gazetteer para 'localidade mais próxima' (OSM places / GeoNames)",
+    "existe": "SIM, por dois caminhos, nenhum deles no repositório hoje. (a) nodes place=city|town|village do OSM via Overpass, mesma licença e mesmo pipeline que já existe. (b) GeoNames, CC BY 4.0, com dumps para download.",
+    "licenca": "OSM = ODbL (share-alike, ver a nota da entrada anterior). GeoNames = CC BY 4.0 (sem share-alike, mais confortável se se quiser evitar contaminar a base com ODbL — mas como a base já vem do OSM, a questão é discutível).",
+    "valor_seo": "MÉDIO. 'Praia a X km de Aveiro' ou 'a praia mais próxima de Viseu' são consultas com intenção real e mal servidas. Mas é claramente secundário face ao concelho, que resolve o grosso do problema de agregação.",
+    "esforco": "BAIXO. Uma query, um k-nearest, feito.",
+    "nota": "Fazer só depois do concelho e da orientação. E cuidado com a redacção: 'a praia mais próxima de X' é uma afirmação que se pode verificar e desmentir facilmente — usar 'a cerca de N km de X' e arredondar.",
+    "url": "https://www.geonames.org/"
+   }
+  ],
+  "recomendacao": "ORDEM RECOMENDADA, e o raciocínio por trás dela.\n\nO diagnóstico é simples: o Praiómetro tem hoje 996 praias e 2 URLs. Não falta conteúdo — falta conteúdo COLADO A UM URL. E, ao contrário do que eu esperava quando comecei, a maior parte do que é preciso já está no disco ou está a uma chamada HTTP de distância, com licença limpa.\n\nFASE 0 — decidir os slugs ANTES de tudo (custo: uma tarde de pensamento, zero de código). O _source/ambiguos.json lista 38 nomes duplicados, incluindo uma praia chamada literalmente \"Praia\". Mudar URLs depois de indexados destrói o trabalho todo. Decidir agora se é /praia/carcavelos/ ou /cascais/carcavelos/ e nunca mais mexer.\n\nFASE 1 — o que não precisa de rede nenhuma e não tem risco legal nenhum:\n1. CAOP da DGT (CC BY 4.0) → concelho e distrito para as 996 praias, point-in-polygon offline. Desbloqueia as páginas de agregação, que são o andar do meio que falta entre a homepage e as praias.\n2. Overpass com \"out geom\" (uma palavra alterada no ficheiro que já existe) → orientação da costa por PCA. Testei em 8 praias conhecidas e acertou nas 8. Isto apaga uma das limitações que o MODELO.md confessa em texto, melhora o modelo e dá conteúdo único ao mesmo tempo — é o único item do inventário que faz as duas coisas.\n3. Vizinhas por haversine → 706 praias com ≥3 vizinhas a 5 km, malha interna de links de graça.\n4. Ressuscitar as tags OSM que o pipeline deitou fora: superfície (735 praias), nomes alternativos (102), descrições em português (18).\n\nFASE 2 — as duas fontes externas que valem mesmo a pena, ambas CC BY, ambas uma chamada HTTP:\n5. AEA/WISE → histórico de 11 épocas balneares para 397 das nossas praias, com licença que permite USO COMERCIAL. Preferir sempre esta à APA para histórico, precisamente por causa disso.\n6. APA/InfoÁgua → o perfil oficial (vigilância, bandeira azul, acessibilidade, cadeira anfíbia, época balnear por praia, concelho, risco de derrocada, webcam) para 482 praias, 48% do catálogo.\n\nFASE 3 — climatologia pré-computada da Open-Meteo. É o melhor conteúdo de SEO do lote, porque é original, é estável e responde a intenções que a previsão a 5 dias não toca. Custo real muito menor do que parece: desduplicando por célula de grelha, 996 praias caem para 258 células no archive e 165 no marine. Uma GitHub Action nocturna resolve.\n\nO QUE NÃO FAZER, e porquê:\n- Não raspar a ABAAE (sem licença, marca registada, e o campo bandeira_azul da APA dá o mesmo de graça). Antes disso, resolver a discrepância 447 vs 396 — publicar um número errado sobre um galardão é caro.\n- Não raspar o Instituto Hidrográfico (produto pago, e o robots.txt bloqueia explicitamente ClaudeBot e anthropic-ai). As marés são a maior lacuna de conteúdo que encontrei e não têm solução barata e legal.\n- Não trocar Open-Meteo por IPMA à espera de desbloquear publicidade: o IPMA tem a MESMA restrição não-comercial, e por cima é mil vezes mais grosseiro (vinte pontos de mar para o país inteiro). Do IPMA só vale a pena os AVISOS e o UV.\n- Não publicar automaticamente fotos do Commons sem curadoria: pedi a Category:Praia do Tamariz e vieram três fotos genéricas de Cascais.\n\nDUAS COISAS QUE PRECISAM DE DECISÃO EXPLÍCITA, não são detalhes técnicos:\n\n(a) LICENÇA DO REPOSITÓRIO. Enriquecer o data/praias.json torna-o uma Derivative Database do OSM, e o repositório é público — logo esse ficheiro tem de sair sob ODbL. Isso é gratuito, mas obriga a actualizar o LICENSE (que hoje só diz MIT) e cria uma regra dura: nada com restrição não-comercial pode entrar nesse ficheiro. APA, AEA, DGT e os dados da Open-Meteo (que são CC BY 4.0) entram todos sem conflito. O IPMA NÃO — tem de ficar em runtime, no browser, fora do ficheiro publicado.\n\n(b) QUALIDADE DA ÁGUA É SAÚDE PÚBLICA. O README e o MODELO.md dizem hoje, com todas as letras, que o site não sabe da qualidade da água. No dia em que passar a dizer, ganha o dever de a manter fresca. Publicar \"água adequada a banhos\" em cache de três semanas quando a APA já desaconselhou é pior do que ficar calado. Se se avançar: carimbar sempre a data da última análise ao lado do valor, ligar ao SNIRH dessa praia (o URL já vem pronto no perfil da APA), e rebuild diário durante a época balnear.\n\nVERIFICADO vs INFERIDO — para não haver ilusões: verifiquei com chamadas reais os endpoints da APA INSPIRE (671 registos), do InfoÁgua (760), da AEA (682 para PT), do SNIRH, do IPMA (4 endpoints), da Open-Meteo (archive, climate, marine, elevation), do Commons e do Overpass; e verifiquei as licenças da AEA (CC BY, comercial permitido), da APA e da DGT no dados.gov (cc-by), da Open-Meteo (não-comercial no acesso, CC BY 4.0 nos dados) e do IPMA (não-comercial). São INFERÊNCIAS minhas, e devem ser tratadas como tal: (i) que o JSON embutido do InfoÁgua está coberto pelo mesmo CC BY do registo do dados.gov — a página não publica termos próprios, e recomendo um e-mail à APA a declarar o uso; (ii) que dados da Open-Meteo já descarregados continuam utilizáveis sob CC BY 4.0 se o site um dia levar publicidade, deixando de ser permitido apenas continuar a chamar a API gratuita — vale a pena confirmar directamente com eles antes de fazer planos de monetização em cima disso; (iii) que o FES2022 do AVISO+ é o caminho viável para marés — não li a licença deles nesta sessão e não afirmo que permite republicação."
+ }
+}

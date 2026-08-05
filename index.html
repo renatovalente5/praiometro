@@ -3,24 +3,64 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Praiómetro — o tempo na praia, sem termos técnicos</title>
-  <meta name="description" content="Escolhe uma praia de Portugal e vê logo se hoje e nos próximos 5 dias vale a pena ir. Sem saber nada de meteorologia: verde é bom, amarelo é assim-assim, vermelho fica para outro dia." />
+  <title>Vale a pena ir à praia hoje? — Praiómetro</title>
+  <meta name="description" content="Escolhe entre 996 praias de Portugal e vê a nota de hoje e dos próximos 5 dias: vento, sol, calor e temperatura da água num semáforo. Sem termos técnicos." />
   <meta name="theme-color" content="#0891b2" />
   <meta name="color-scheme" content="light dark" />
 
+  <!-- Obrigatório, e não decorativo: este alojamento serve /privacidade e
+       /privacidade.html com 200 nos dois casos, sem redirect. Sem canonical,
+       são duas páginas iguais a competir uma com a outra. -->
+  <link rel="canonical" href="https://praiometro.pt/" />
+
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="pt_PT" />
-  <meta property="og:title" content="Praiómetro" />
+  <meta property="og:site_name" content="Praiómetro" />
+  <meta property="og:url" content="https://praiometro.pt/" />
+  <meta property="og:title" content="Vale a pena ir à praia hoje? — Praiómetro" />
   <meta property="og:description" content="Escolhe uma praia de Portugal e vê logo se vale a pena ir, hoje e nos próximos 5 dias." />
-  <meta property="og:image" content="https://renatovalente5.github.io/praiometro/assets/img/og.png" />
+  <!-- Absoluto e no domínio novo. Estava no renatovalente5.github.io, e os
+       robôs do WhatsApp e do LinkedIn não seguem o redirect para ir buscá-la. -->
+  <meta property="og:image" content="https://praiometro.pt/assets/img/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Praiómetro — semáforo verde, amarelo e vermelho para saber se vale a pena ir à praia." />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://praiometro.pt/assets/img/og.png" />
 
-  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="assets/img/icon-180.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <!-- Caminhos absolutos, todos. As páginas de praia vão viver em /praia/x/, e
+       daí um caminho relativo aponta para o sítio errado.
+       NÃO usar <base href="/">: transformaria o «Saltar para o resultado»
+       (href="#resultado") numa navegação para /#resultado. -->
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preconnect" href="https://api.open-meteo.com" />
-  <link rel="preconnect" href="https://marine-api.open-meteo.com" />
-  <link rel="stylesheet" href="assets/css/estilo.css" />
+  <!-- A api.open-meteo fica em preconnect porque os cinco atalhos existem para
+       serem clicados. A marine-api só é chamada em praias de mar, e por isso
+       desce a dns-prefetch: poupa o handshake sem o pagar adiantado. -->
+  <link rel="dns-prefetch" href="https://marine-api.open-meteo.com" />
+  <link rel="stylesheet" href="/assets/css/estilo.css" />
+  <!-- O `crossorigin` é obrigatório: o fetch() usa modo cors, um preload sem
+       ele é no-cors, os modos não casam e o ficheiro vem DUAS vezes. O href
+       tem de ser igual, letra a letra, ao argumento do fetch em app.js. -->
+  <link rel="preload" href="/data/praias.json" as="fetch" crossorigin />
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@graph":[
+   {"@type":"WebSite","@id":"https://praiometro.pt/#site",
+    "url":"https://praiometro.pt/","name":"Praiómetro","alternateName":"Praiometro",
+    "inLanguage":"pt-PT","publisher":{"@id":"https://praiometro.pt/#autor"}},
+   {"@type":"Person","@id":"https://praiometro.pt/#autor","name":"Renato Valente",
+    "sameAs":["https://github.com/renatovalente5"]},
+   {"@type":"WebApplication","@id":"https://praiometro.pt/#app",
+    "name":"Praiómetro","url":"https://praiometro.pt/",
+    "applicationCategory":"WeatherApplication","operatingSystem":"Web",
+    "inLanguage":"pt-PT","isAccessibleForFree":true,
+    "author":{"@id":"https://praiometro.pt/#autor"},
+    "areaServed":{"@type":"Country","name":"Portugal"}}
+  ]}
+  </script>
 </head>
 <body>
   <a class="salta" href="#resultado">Saltar para o resultado</a>
@@ -58,65 +98,11 @@
       </details>
     </div>
 
-    <!-- ================================================ PERFIL ========= -->
-    <dialog class="painel" id="perfil" aria-labelledby="perfil-t">
-      <div class="painel__topo">
-        <h2 class="painel__titulo" id="perfil-t">Perfil</h2>
-        <button class="painel__x" id="perfil-fechar" type="button" aria-label="Fechar o perfil">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-
-      <div class="painel__corpo">
-        <section class="painel__bloco">
-          <h3 class="painel__sub">Conta</h3>
-          <p class="conta__quem"><strong id="perfil-nome"></strong><span id="perfil-email"></span></p>
-          <p class="painel__nota">As tuas praias ficam guardadas na conta e aparecem em qualquer aparelho
-            onde entres com este email.</p>
-        </section>
-
-        <section class="painel__bloco">
-          <h3 class="painel__sub">As tuas praias</h3>
-          <p class="painel__linha"><span id="perfil-quantas">—</span></p>
-          <p class="painel__nota">O limite são 15.</p>
-        </section>
-
-        <section class="painel__bloco">
-          <h3 class="painel__sub">Privacidade</h3>
-          <p class="painel__nota">Não há cookies nem publicidade, e não seguimos ninguém entre sites.
-            O que guardamos e porquê está na <a href="privacidade.html">política de privacidade</a>.</p>
-        </section>
-
-        <!-- Zona separada, com moldura própria: a diferença entre «Terminar
-             sessão» e «apagar tudo para sempre» tem de se ver antes do clique. -->
-        <section class="painel__bloco painel__bloco--perigo">
-          <h3 class="painel__sub">Apagar a conta</h3>
-          <p class="painel__nota">Apaga o email, a ligação ao Google e as praias guardadas na conta.
-            Não há forma de recuperar. As praias guardadas neste aparelho ficam.</p>
-          <button class="conta__botao conta__botao--perigo" id="conta-apagar" type="button">Apagar a conta e os dados</button>
-        </section>
-      </div>
-    </dialog>
-
-    <!-- ============================================ CONFIRMAÇÃO ======== -->
-    <dialog class="painel painel--curto" id="confirmar" aria-labelledby="confirmar-t">
-      <div class="painel__corpo">
-        <h2 class="painel__titulo" id="confirmar-t">Apagar a conta e os dados?</h2>
-        <p class="painel__nota" id="confirmar-texto">Isto apaga o email, a ligação ao Google e as praias
-          guardadas na conta. <strong>Não há forma de recuperar.</strong> As praias guardadas neste
-          aparelho ficam.</p>
-        <div class="painel__accoes">
-          <button class="conta__botao" id="confirmar-nao" type="button">Cancelar</button>
-          <button class="conta__botao conta__botao--perigo" id="confirmar-sim" type="button">Apagar para sempre</button>
-        </div>
-      </div>
-    </dialog>
-
     <h1 class="marca">
       <span class="marca__icone" aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="6" fill="currentColor"/><path d="M2 24c3 0 3-2 6-2s3 2 6 2 3-2 6-2 3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
       </span>
-      Praiómetro
+      Praiómetro<span class="marca__claim"> — vale a pena ir à praia hoje?</span>
     </h1>
     <p class="marca__lead">Escolhe a praia. Dizemos-te se vale a pena ir.</p>
   </header>
@@ -124,7 +110,7 @@
   <main>
     <!-- ============================================ ESCOLHER A PRAIA -->
     <section class="procura" aria-labelledby="procura-t">
-      <h2 class="visually-hidden" id="procura-t">Escolher a praia</h2>
+      <h2 class="visually-hidden" id="procura-t">Escolher uma praia de Portugal</h2>
       <div class="procura__caixa">
         <svg class="procura__lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input class="procura__input" id="procura" type="search" autocomplete="off"
@@ -150,7 +136,7 @@
 
     <!-- ================================================== RESULTADO -->
     <section class="resultado" id="resultado" aria-labelledby="resultado-t" tabindex="-1" hidden>
-      <h2 class="visually-hidden" id="resultado-t">Previsão</h2>
+      <h2 class="visually-hidden" id="resultado-t">Previsão para hoje e para os próximos 5 dias</h2>
 
       <!-- veredicto do dia escolhido -->
       <!-- É o painel do dia escolhido na tira de baixo. O aria-labelledby é
@@ -201,42 +187,124 @@
     <!-- estado inicial / erro -->
     <section class="vazio" id="vazio">
       <p class="vazio__texto">Começa por escrever o nome de uma praia — ou carrega no alfinete para usar a tua localização.</p>
-      <div class="vazio__sugestoes" id="atalhos"></div>
+      <!-- Escritos no HTML e não montados pelo JavaScript: eram a última coisa
+           a aparecer e empurravam a página já depois de ela estar à vista.
+           A chave é a coordenada com 4 casas, a mesma do F.id() — o índice em
+           PRAIAS não existe antes do fetch. -->
+      <div class="vazio__sugestoes" id="atalhos">
+        <button class="atalho" type="button" data-id="41.1765,-8.6936">Matosinhos</button>
+        <button class="atalho" type="button" data-id="40.6361,-8.7489">Barra</button>
+        <button class="atalho" type="button" data-id="39.5971,-9.0749">Nazaré</button>
+        <button class="atalho" type="button" data-id="38.6793,-9.3361">Carcavelos</button>
+        <button class="atalho" type="button" data-id="37.1157,-8.5362">Rocha</button>
+      </div>
+    </section>
+
+    <!-- ================================================ COMO DECIDE -->
+    <!-- Estava no <footer>, colapsado, depois do fim do <main>. São as únicas
+         200 palavras de texto real da página — a seguir a elas o <main> tinha
+         59. Fica dentro do <main>, com um <h2> a sério.
+         QUANDO a página /metodologia/ existir: encurtar isto para um resumo de
+         ~80 palavras com uma ligação para lá, senão a página de entrada, que
+         tem toda a autoridade do domínio, rouba-lhe as próprias pesquisas que
+         ela existe para ganhar. -->
+    <section class="comofunciona-zona" aria-labelledby="como-t">
+      <h2 class="visually-hidden" id="como-t">Como decidimos se vale a pena ir</h2>
+      <details class="comofunciona">
+        <summary>Como é que isto decide?</summary>
+        <div class="comofunciona__corpo">
+          <p>Cada dia leva uma nota de 0 a 100, a partir de cinco coisas: <strong>vento</strong>
+          (34 pontos), <strong>sol</strong> (26), <strong>calor que se sente</strong> (18),
+          <strong>temperatura da água</strong> (14) e <strong>chuva</strong> (8).</p>
+          <p>O vento é o que pesa mais, porque em Portugal é o que mais dias estraga — a partir
+          dos 20-25 km/h começa a levantar areia, e é aí que se fala de <em>nortada</em>. E um
+          dia mesmo calmo é premiado: com tudo o resto igual, 6 km/h vale mais 19 pontos do que
+          22 km/h.</p>
+          <p>A escala da água é portuguesa, não mediterrânica: no Atlântico, 19 °C é uma
+          temperatura normal de Verão, não é um dia mau.</p>
+          <p>Há condições que sozinhas chumbam o dia, faça o sol que fizer: trovoada, chuva a
+          sério, vento acima de 45 km/h, sensação abaixo de 16 °C, ou mar acima de 2,5 m.</p>
+          <p>O vento é a média de <strong>quatro modelos meteorológicos</strong> (ECMWF, ICON,
+          GFS e UKMO), e o valor mostrado é o da parte ventosa da tarde — não a média do dia
+          inteiro, que esconderia a nortada. Por isso pode ser diferente do que vês noutros
+          sites: uns mostram o máximo do dia, outros as rajadas.</p>
+        </div>
+      </details>
     </section>
   </main>
 
   <footer class="rodape">
-    <details class="comofunciona">
-      <summary>Como é que isto decide?</summary>
-      <div class="comofunciona__corpo">
-        <p>Cada dia leva uma nota de 0 a 100, a partir de cinco coisas: <strong>vento</strong>
-        (34 pontos), <strong>sol</strong> (26), <strong>calor que se sente</strong> (18),
-        <strong>temperatura da água</strong> (14) e <strong>chuva</strong> (8).</p>
-        <p>O vento é o que pesa mais, porque em Portugal é o que mais dias estraga — a partir
-        dos 20-25 km/h começa a levantar areia, e é aí que se fala de <em>nortada</em>. E um
-        dia mesmo calmo é premiado: com tudo o resto igual, 6 km/h vale mais 19 pontos do que
-        22 km/h.</p>
-        <p>A escala da água é portuguesa, não mediterrânica: no Atlântico, 19 °C é uma
-        temperatura normal de Verão, não é um dia mau.</p>
-        <p>Há condições que sozinhas chumbam o dia, faça o sol que fizer: trovoada, chuva a
-        sério, vento acima de 45 km/h, sensação abaixo de 16 °C, ou mar acima de 2,5 m.</p>
-        <p>O vento é a média de <strong>quatro modelos meteorológicos</strong> (ECMWF, ICON,
-        GFS e UKMO), e o valor mostrado é o da parte ventosa da tarde — não a média do dia
-        inteiro, que esconderia a nortada. Por isso pode ser diferente do que vês noutros
-        sites: uns mostram o máximo do dia, outros as rajadas.</p>
-      </div>
-    </details>
-
     <p class="rodape__fontes">
       Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
       praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
-      <a href="privacidade.html">Privacidade</a>
+      <a href="/privacidade.html">Privacidade</a>
     </p>
   </footer>
 
-  <script src="assets/js/modelo.js"></script>
-  <script src="assets/js/favoritos.js"></script>
-  <script src="assets/js/conta.js"></script>
-  <script src="assets/js/app.js" defer></script>
+  <!-- Os diálogos vivem aqui, e não dentro do <header>, para não porem um
+       <h2>Perfil> e quatro <h3> ANTES do <h1> da página. São chamados só
+       por getElementById, e o showModal() promove-os ao top layer venham
+       de onde vierem no documento. -->
+    <!-- ================================================ PERFIL ========= -->
+    <dialog class="painel" id="perfil" aria-labelledby="perfil-t">
+      <div class="painel__topo">
+        <h2 class="painel__titulo" id="perfil-t">Perfil</h2>
+        <button class="painel__x" id="perfil-fechar" type="button" aria-label="Fechar o perfil">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="painel__corpo">
+        <section class="painel__bloco">
+          <h3 class="painel__sub">Conta</h3>
+          <p class="conta__quem"><strong id="perfil-nome"></strong><span id="perfil-email"></span></p>
+          <p class="painel__nota">As tuas praias ficam guardadas na conta e aparecem em qualquer aparelho
+            onde entres com este email.</p>
+        </section>
+
+        <section class="painel__bloco">
+          <h3 class="painel__sub">Praias guardadas</h3>
+          <p class="painel__linha"><span id="perfil-quantas">—</span></p>
+          <p class="painel__nota">O limite são 15.</p>
+        </section>
+
+        <section class="painel__bloco">
+          <h3 class="painel__sub">Privacidade</h3>
+          <p class="painel__nota">Não há cookies nem publicidade, e não seguimos ninguém entre sites.
+            O que guardamos e porquê está na <a href="/privacidade.html">política de privacidade</a>.</p>
+        </section>
+
+        <!-- Zona separada, com moldura própria: a diferença entre «Terminar
+             sessão» e «apagar tudo para sempre» tem de se ver antes do clique. -->
+        <section class="painel__bloco painel__bloco--perigo">
+          <h3 class="painel__sub">Apagar a conta</h3>
+          <p class="painel__nota">Apaga o email, a ligação ao Google e as praias guardadas na conta.
+            Não há forma de recuperar. As praias guardadas neste aparelho ficam.</p>
+          <button class="conta__botao conta__botao--perigo" id="conta-apagar" type="button">Apagar a conta e os dados</button>
+        </section>
+      </div>
+    </dialog>
+
+    <!-- ============================================ CONFIRMAÇÃO ======== -->
+    <dialog class="painel painel--curto" id="confirmar" aria-labelledby="confirmar-t">
+      <div class="painel__corpo">
+        <h2 class="painel__titulo" id="confirmar-t">Apagar a conta e os dados?</h2>
+        <p class="painel__nota" id="confirmar-texto">Isto apaga o email, a ligação ao Google e as praias
+          guardadas na conta. <strong>Não há forma de recuperar.</strong> As praias guardadas neste
+          aparelho ficam.</p>
+        <div class="painel__accoes">
+          <button class="conta__botao" id="confirmar-nao" type="button">Cancelar</button>
+          <button class="conta__botao conta__botao--perigo" id="confirmar-sim" type="button">Apagar para sempre</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- O <h1> diz a marca E a pergunta a que o site responde. Sozinha, a
+         palavra «Praiómetro» só é procurável por quem já a conhece. -->
+
+  <script src="/assets/js/modelo.js"></script>
+  <script src="/assets/js/favoritos.js"></script>
+  <script src="/assets/js/conta.js"></script>
+  <script src="/assets/js/app.js" defer></script>
 </body>
 </html>

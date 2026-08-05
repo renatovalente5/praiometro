@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sem `changefreq` nem `priority`: o Google deixou de os usar e confirmou-o em
+  2023. Só `loc` e `lastmod` contam.
+
+  Regra do `lastmod`, que não se negoceia: é a data da última alteração de
+  CONTEÚDO, nunca a data em que o site foi publicado. Se um dia um gerador
+  puser aqui a data de hoje em centenas de URLs todos os dias, o Google aprende
+  em duas semanas que o `lastmod` deste site não quer dizer nada — e esse sinal
+  não se recupera depois.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://praiometro.pt/</loc>
+    <lastmod>2026-08-05</lastmod>
+  </url>
+  <url>
+    <loc>https://praiometro.pt/privacidade.html</loc>
+    <lastmod>2026-08-05</lastmod>
+  </url>
+</urlset>

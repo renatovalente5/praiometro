@@ -330,6 +330,113 @@ try:
     if not tem_aviso: erro('sem JS: falta o aviso das bandeiras')
 finally: c.fechar()
 
+print('\n== 8. SEO: o que não pode desfazer-se sozinho ==')
+# Isto não testa o site: testa os ficheiros. São correcções de higiene que uma
+# refactorização distraída desfaz sem partir nada de visível — e que só se
+# dariam por elas meses depois, no Search Console.
+#
+# NOTA: três verificações não cabem aqui e vivem em `verificar_producao()`, mais
+# abaixo. O `python3 -m http.server` serve TUDO; é o Jekyll do GitHub Pages que
+# esconde o /MODELO.md e a pasta _source, e o Jekyll só corre lá.
+import re as _re
+_ler = lambda n: open(os.path.join(RAIZ, n), encoding='utf-8').read()
+# Os comentários deste projecto explicam o que ficou para trás e por isso citam
+# o domínio antigo e nomes de etiquetas. Uma asserção que tropeça na prosa que
+# a explica não vale nada — o que conta é o que o browser recebe.
+_sem_comentarios = lambda n: _re.sub(r'<!--.*?-->', '', _ler(n), flags=_re.S)
+
+for nome in ('robots.txt', 'sitemap.xml', '404.html', '_config.yml'):
+    if not os.path.exists(os.path.join(RAIZ, nome)):
+        erro('falta o ficheiro %s' % nome)
+    else:
+        print('  %-18s ✓ existe' % nome)
+
+for pagina, esperado in (('index.html', 'https://praiometro.pt/'),
+                         ('privacidade.html', 'https://praiometro.pt/privacidade.html')):
+    h = _sem_comentarios(pagina)
+    m = _re.search(r'<link rel="canonical" href="([^"]+)"', h)
+    if not m:
+        erro('%s sem canonical' % pagina)
+    elif m.group(1) != esperado:
+        erro('%s: canonical é %s, esperado %s' % (pagina, m.group(1), esperado))
+    else:
+        print('  %-18s ✓ canonical %s' % (pagina, m.group(1)))
+    # A imagem de partilha tem de estar no domínio novo: os robôs do WhatsApp e
+    # do LinkedIn não seguem o 301 do renatovalente5.github.io para a ir buscar.
+    for og in _re.findall(r'<meta property="og:image" content="([^"]+)"', h):
+        if not og.startswith('https://praiometro.pt/'):
+            erro('%s: og:image fora do domínio — %s' % (pagina, og))
+    if 'renatovalente5.github.io' in h:
+        erro('%s ainda aponta para o domínio antigo' % pagina)
+
+# Caminhos relativos numa página que vai ser servida a partir de /praia/x/
+# apontam para o sítio errado. Já não pode haver nenhum.
+for pagina in ('index.html', 'privacidade.html', '404.html'):
+    maus = _re.findall(r'(?:href|src)="(?!https?:|/|#|mailto:|data:)([^"]+)"', _sem_comentarios(pagina))
+    if maus:
+        erro('%s com caminhos relativos: %s' % (pagina, maus))
+    else:
+        print('  %-18s ✓ sem caminhos relativos' % pagina)
+
+# O href do preload e o argumento do fetch têm de ser iguais LETRA A LETRA.
+# Se divergirem, o preload é descartado e o ficheiro é descarregado duas vezes.
+pre = _re.search(r'<link rel="preload" href="([^"]+)"[^>]*as="fetch"([^>]*)>', _sem_comentarios('index.html'))
+fet = _re.search(r"fetch\('([^']+praias\.json)'\)", _ler('assets/js/app.js'))
+if not pre or not fet:
+    erro('não encontrei o par preload/fetch do praias.json')
+elif pre.group(1) != fet.group(1):
+    erro('preload (%s) != fetch (%s)' % (pre.group(1), fet.group(1)))
+elif 'crossorigin' not in pre.group(2):
+    erro('o preload do praias.json não tem crossorigin — vem duas vezes')
+else:
+    print('  preload/fetch      ✓ %s, com crossorigin' % pre.group(1))
+
+# Todas as URLs do sitemap têm de responder.
+mapa = _ler('sitemap.xml')
+for loc in _re.findall(r'<loc>([^<]+)</loc>', mapa):
+    caminho = loc.replace('https://praiometro.pt', '') or '/'
+    alvo = 'index.html' if caminho == '/' else caminho.lstrip('/')
+    if not os.path.exists(os.path.join(RAIZ, alvo)):
+        erro('sitemap aponta para %s, que não existe' % loc)
+    else:
+        print('  sitemap            ✓ %s' % loc)
+if 'https://praiometro.pt/sitemap.xml' not in _ler('robots.txt'):
+    erro('o robots.txt não indica o sitemap')
+
+# Um <h1> e um só, e nada de <h2>/<h3> antes dele. Os diálogos da conta
+# estavam dentro do <header>, e punham lá cinco.
+h = _sem_comentarios('index.html')
+if h.count('<h1') != 1:
+    erro('index.html tem %d <h1>' % h.count('<h1'))
+elif _re.search(r'<h[23]', h[:h.index('<h1')]):
+    erro('index.html tem um <h2> ou <h3> antes do <h1>')
+else:
+    print('  index.html         ✓ um <h1>, e nada de <h2>/<h3> antes dele')
+
+
+def verificar_producao():
+    """As três que só se podem medir em https://praiometro.pt.
+
+       Correr DEPOIS de publicar: `python3 -c "import sys; sys.path.insert(0,'_source');
+       import verificar; verificar.verificar_producao()"` — ou à mão com curl."""
+    import urllib.request, urllib.error
+    def codigo(caminho):
+        pedido = urllib.request.Request('https://praiometro.pt' + caminho, method='HEAD')
+        try:
+            return urllib.request.urlopen(pedido, timeout=15).status
+        except urllib.error.HTTPError as e:
+            return e.code
+    for caminho in ('/MODELO.md', '/MONETIZACAO.md', '/README.md', '/LICENSE',
+                    '/_source/verificar.py'):
+        c = codigo(caminho)
+        print('  %-24s %s %s' % (caminho, c, '✓' if c == 404 else '✗ TEM DE DAR 404'))
+    for caminho in ('/robots.txt', '/sitemap.xml', '/'):
+        c = codigo(caminho)
+        print('  %-24s %s %s' % (caminho, c, '✓' if c == 200 else '✗ TEM DE DAR 200'))
+    print('  %-24s %s %s' % ('/nao-existe-xpto', codigo('/nao-existe-xpto'),
+                             '✓' if codigo('/nao-existe-xpto') == 404 else '✗'))
+
+
 srv.shutdown()
 print('\n'+'='*54)
 print('FALHAS: %d' % len(falhas))

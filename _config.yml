@@ -1,0 +1,34 @@
+# Configuração do Jekyll, que é o que o GitHub Pages corre por omissão.
+#
+# Existe por uma razão só: tirar da web os ficheiros que são documentação
+# interna. Verificado a 5 de Agosto de 2026 — /MODELO.md, /MONETIZACAO.md,
+# /README.md e /LICENSE devolviam 200 e eram indexáveis. Um .md sem front
+# matter é copiado tal e qual para o site.
+#
+# ATENÇÃO: o `exclude` do Jekyll SUBSTITUI a lista por omissão, não lhe
+# acrescenta. Por isso os valores de fábrica (Gemfile, node_modules, vendor)
+# têm de ser repetidos aqui, senão voltam a ser publicados.
+#
+# `_source` já fica de fora por começar por underscore — é um mecanismo
+# diferente do `exclude` e está aqui só para deixar a intenção escrita.
+# Pela mesma razão, a pasta do gerador chamar-se-á `_build` e não `build`:
+# assim está protegida por construção, e não por esta linha, que alguém pode
+# apagar sem perceber o que faz.
+#
+# NÃO criar um ficheiro `.nojekyll`. É o Jekyll que hoje esconde o `_source/`;
+# sem ele, o `cdp.py`, o `verificar.py` e 300 KB de JSON em bruto passavam a
+# estar acessíveis.
+exclude:
+  - README.md
+  - MODELO.md
+  - MONETIZACAO.md
+  - LICENSE
+  - .gitignore
+  - _source
+  - _build
+  - _site
+  - medicoes
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor

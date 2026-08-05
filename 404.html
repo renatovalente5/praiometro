@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Página não encontrada — Praiómetro</title>
+  <meta name="theme-color" content="#0891b2" />
+  <meta name="color-scheme" content="light dark" />
+  <!--
+    Esta página é servida a partir de QUALQUER endereço que não exista, a
+    qualquer profundidade: /praia/xpto/, /a/b/c/. Por isso todos os caminhos
+    aqui são absolutos — com caminhos relativos, um 404 servido em /a/b/c/
+    procuraria o CSS em /a/b/c/assets/ e ficava sem estilo nenhum.
+
+    Sem JavaScript de propósito: a caixa de procura precisa do app.js e da
+    lista das 996 praias, e uma página de erro é o pior sítio para uma cadeia
+    de carregamento poder falhar outra vez. Quem se perdeu volta à entrada.
+
+    O GitHub Pages serve isto com o código 404 (verificado), que é o que o
+    Google lê — não é preciso `noindex`.
+  -->
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/assets/css/estilo.css" />
+</head>
+<body>
+  <main class="texto">
+    <h1>Não encontrámos essa página</h1>
+    <p class="texto__lead">O endereço não existe, ou existiu e mudou. Não há nada de errado
+    com a tua ligação — é mesmo aqui que não está nada.</p>
+
+    <h2>Para onde queres ir</h2>
+    <ul>
+      <li><a href="/">Procurar uma praia</a> — escreve o nome, ou usa a tua localização</li>
+      <li><a href="/privacidade.html">Política de privacidade</a></li>
+    </ul>
+
+    <p class="texto__data">Se chegaste aqui a partir de uma ligação nossa, é um erro
+    nosso. Diz onde é que a encontraste para
+    <a href="mailto:renato.l.valente@gmail.com">renato.l.valente@gmail.com</a>.</p>
+
+    <p class="texto__voltar"><a href="/">← Voltar ao Praiómetro</a></p>
+  </main>
+</body>
+</html>

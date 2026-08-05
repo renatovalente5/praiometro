@@ -1,0 +1,17 @@
+# Nenhum robô é bloqueado, incluindo os das inteligências artificiais. É uma
+# decisão e não um esquecimento: a licença não-comercial da Open-Meteo impede
+# publicidade neste site, por isso não se perde nada quando alguém obtém a
+# resposta sem clicar — e ganha-se tudo em ser citado como fonte.
+#
+# Não há blocos `User-agent:` com nomes próprios de propósito. Em robots.txt um
+# robô obedece APENAS ao grupo mais específico que lhe serve: bastaria um
+# `Disallow` futuro no grupo `*` para deixar silenciosamente de se aplicar aos
+# que estivessem nomeados, e quem o escrevesse daqui a um ano não ia saber.
+#
+# Nunca acrescentar `Disallow: /data/`: o praias.json é preciso para o
+# Googlebot conseguir renderizar a página de entrada.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://praiometro.pt/sitemap.xml

@@ -2,6 +2,11 @@
 .claude/
 _source/osm-praias.json
 
+# saída do Jekyll e do gerador — nunca commitada. Quinhentos ficheiros
+# regerados todos os dias fariam o repositório crescer sem parar, e o
+# histórico do git não encolhe.
+_site/
+
 # segredos — nunca no repositório
 *.env
 sb.env

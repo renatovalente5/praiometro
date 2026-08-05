@@ -15,6 +15,22 @@
   var el = function (id) { return doc.getElementById(id); };
   var M = window.Modelo;
 
+  /* Ligar um ouvinte a um elemento que pode não existir nesta página.
+     Hoje o ficheiro faz `el('perto').addEventListener(...)` quinze vezes ao
+     nível de cima. Basta faltar UM desses id para dar `TypeError: null is not
+     an object` — e, como isto corre tudo dentro do mesmo IIFE, nada a seguir
+     chega a correr, incluindo o fetch do praias.json que está no fim. A página
+     fica com o HTML e mais nada, sem erro nenhum à vista.
+     As páginas de praia que aí vêm não vão ter os diálogos da conta. Replicar
+     o esqueleto inteiro em cada uma delas era a outra saída, e era pior: o
+     mesmo texto literal repetido em centenas de páginas é exactamente o que
+     não se quer. */
+  function on(id, ev, fn) {
+    var n = el(id);
+    if (n) n.addEventListener(ev, fn);
+    return n;
+  }
+
   var PRAIAS = [];
   var praiaActual = null;
   var dias = [];          /* dados agregados por dia */
@@ -227,7 +243,7 @@
 
   /* --------------------------------------------------------- geolocalização */
 
-  el('perto').addEventListener('click', function () {
+  on('perto', 'click', function () {
     var b = this;
     if (!navigator.geolocation) {
       estado.textContent = 'O teu browser não permite saber onde estás.';
@@ -395,14 +411,14 @@
     }).join('');
   }
 
-  el('dias').addEventListener('click', function (e) {
+  on('dias', 'click', function (e) {
     var b = e.target.closest('.dia');
     if (!b) return;
     diaEscolhido = +b.dataset.i;
     desenhar();
   });
 
-  el('dias').addEventListener('keydown', function (e) {
+  on('dias', 'keydown', function (e) {
     var n = dias.length;
     if (!n) return;
     var novo = null;
@@ -551,7 +567,7 @@
     b.setAttribute('aria-label', 'Guardar ' + praiaActual.n + ' nas tuas praias');
   }
 
-  el('v-estrela').addEventListener('click', function () {
+  on('v-estrela', 'click', function () {
     if (!praiaActual) return;
     var r = F.alternar(praiaActual);
     /* Quando dá 'cheio' nada muda, e portanto o F.aoMudar não dispara: sem esta
@@ -585,7 +601,7 @@
     }).join('');
   }
 
-  el('favoritos-lista').addEventListener('click', function (e) {
+  on('favoritos-lista', 'click', function (e) {
     var b = e.target.closest('.fav');
     if (!b) return;
     var p = PRAIAS.find(function (x) { return F.id(x) === b.dataset.id; });
@@ -624,6 +640,9 @@
   var C = window.Conta;
 
   function desenharConta() {
+    /* As páginas de praia não vão ter a caixa da conta. Sem esta guarda, a
+       primeira linha rebentava e levava atrás tudo o que corre depois. */
+    if (!el('conta')) return;
     var quem = C.quem();
     el('conta-entrar').hidden = !!quem || !C.disponivel();
     /* Sem nada para mostrar, não se reserva a altura: só faz sentido guardá-la
@@ -638,7 +657,7 @@
     el('conta-menu').querySelector('summary').setAttribute('aria-label', 'A tua conta: ' + nome);
   }
 
-  el('conta-entrar').addEventListener('click', function () {
+  on('conta-entrar', 'click', function () {
     this.disabled = true;
     /* Antes de sair da página, guarda a lista que existe agora: é ela que
        volta se a pessoa terminar sessão neste aparelho. */
@@ -665,7 +684,7 @@
     if (alvo) alvo.focus();
   }
 
-  el('conta-sair').addEventListener('click', function () {
+  on('conta-sair', 'click', function () {
     C.sair().then(function () { fecharSessao('Sessão terminada.'); });
   });
 
@@ -700,18 +719,18 @@
       : (n === 1 ? '1 praia guardada' : n + ' praias guardadas');
   }
 
-  el('conta-perfil').addEventListener('click', function () {
+  on('conta-perfil', 'click', function () {
     el('conta-menu').open = false;
     desenharPerfil();
     abrirPainel('perfil');
   });
-  el('perfil-fechar').addEventListener('click', function () { fecharPainel('perfil'); });
+  on('perfil-fechar', 'click', function () { fecharPainel('perfil'); });
   /* Clicar fora, no backdrop: o clique cai no próprio <dialog>, porque o corpo
      está num filho. Sem isto só se fechava pelo X ou pelo Escape. */
-  el('perfil').addEventListener('click', function (e) {
+  on('perfil', 'click', function (e) {
     if (e.target === this) fecharPainel('perfil');
   });
-  el('perfil').addEventListener('close', function () {
+  on('perfil', 'close', function () {
     if (focoAntesDoPainel && doc.contains(focoAntesDoPainel)) focoAntesDoPainel.focus();
   });
 
@@ -720,15 +739,15 @@
      confirmação é um painel e não o `confirm()` do browser: o nativo aparece
      desenraizado da página, no telemóvel dá-se-lhe «OK» sem ler, e em algumas
      situações o browser simplesmente não o mostra. */
-  el('conta-apagar').addEventListener('click', function () {
+  on('conta-apagar', 'click', function () {
     abrirPainel('confirmar');
   });
-  el('confirmar-nao').addEventListener('click', function () { fecharPainel('confirmar'); });
-  el('confirmar').addEventListener('click', function (e) {
+  on('confirmar-nao', 'click', function () { fecharPainel('confirmar'); });
+  on('confirmar', 'click', function (e) {
     if (e.target === this) fecharPainel('confirmar');
   });
 
-  el('confirmar-sim').addEventListener('click', function () {
+  on('confirmar-sim', 'click', function () {
     var b = this, nao = el('confirmar-nao'), texto = el('confirmar-texto');
     b.disabled = nao.disabled = true;
     b.textContent = 'A apagar…';
@@ -872,17 +891,31 @@
         || PRAIAS.find(function (x) { return x.n === nome; }) || null;
   }
 
+  /* O que fica por cumprir enquanto a lista de praias não chegou. Quem carrega
+     num atalho nos primeiros instantes clicava no vazio; agora a intenção
+     fica guardada e cumpre-se assim que o fetch acabar. */
+  var atalhoPendente = null;
+
+  /* Os botões já vêm escritos no index.html — este ficheiro deixou de os
+     montar. Eram a última coisa a aparecer e empurravam a página com ela já à
+     vista. A chave passou a ser a coordenada (F.id) em vez do índice em
+     PRAIAS, porque esse índice não existe antes do ficheiro ter chegado. */
   function atalhos() {
-    var caixaA = el('atalhos');
-    caixaA.innerHTML = ATALHOS.map(function (nome) {
-      var p = PRAIAS.find(function (x) { return x.n === nome && x.m === 1; });
-      return p ? '<button class="atalho" type="button" data-i="' + PRAIAS.indexOf(p) + '">' + esc(p.n.replace(/^Praia (da |de |do |dos )?/, '')) + '</button>' : '';
-    }).join('');
-    caixaA.addEventListener('click', function (e) {
+    on('atalhos', 'click', function (e) {
       var b = e.target.closest('.atalho');
-      if (b) escolher(PRAIAS[+b.dataset.i]);
+      if (!b) return;
+      var p = porId(b.dataset.id);
+      if (p) escolher(p); else atalhoPendente = b.dataset.id;
     });
   }
+  function porId(id) {
+    if (!id || !PRAIAS.length) return null;
+    return PRAIAS.find(function (x) { return F.id(x) === id; }) || null;
+  }
+
+  /* Ligado ANTES do fetch, e já não lá dentro: os botões estão no HTML desde o
+     primeiro instante, e sem isto um clique nesses instantes não fazia nada. */
+  atalhos();
 
   /* A troca do código do Google não depende da lista de praias para nada, e
      estava presa ao mesmo .then: se o praias.json falhasse — deploy a meio,
@@ -895,19 +928,34 @@
     })
     .then(function () { desenharConta(); });
 
-  fetch('data/praias.json')
+  /* Absoluto, e é a única linha do ficheiro com um pedido relativo. De uma
+     página em /praia/x/ isto ia pedir /praia/x/data/praias.json e dar 404 —
+     com a agravante de o GitHub Pages devolver HTML no 404, portanto o erro
+     que aparecia era um SyntaxError de JSON, que não diz nada a ninguém.
+     Tem de continuar igual, letra a letra, ao href do <link rel=preload>. */
+  fetch('/data/praias.json')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       PRAIAS = d;
-      atalhos();
       desenharFavoritos();
       /* A troca do código já foi feita no arranque, fora desta cadeia. Aqui só
-         falta juntar as listas, que precisa das praias carregadas. */
+         falta juntar as listas, que precisa das praias carregadas.
+         Fica ANTES da escolha da praia e nunca depois de um `return`: é o que
+         sincroniza os favoritos com a conta, e não tem nada que ver com qual é
+         a praia que se vai abrir. */
       regresso
         .then(function () { return sincronizar().catch(function () { }); })
         .then(function () { coresDosFavoritos(); });
+
+      /* Um atalho carregado antes de a lista ter chegado fica à espera aqui, e
+         ganha a quem for: foi um clique de agora, contra uma praia guardada da
+         última visita. */
+      var p = null;
+      if (atalhoPendente) { p = porId(atalhoPendente); atalhoPendente = null; }
+      if (p) { escolher(p); return; }
+
       /* Volta à última praia: quem abre isto abre-o quase sempre para a mesma. */
-      var p = doEndereco((location.hash || '').slice(1));
+      p = doEndereco((location.hash || '').slice(1));
       if (!p) {
         try {
           var g = JSON.parse(localStorage.getItem('pm:praia') || '{}');

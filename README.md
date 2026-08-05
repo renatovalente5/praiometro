@@ -7,7 +7,7 @@ se hoje e nos próximos cinco dias vale a pena ir. Verde é bom, amarelo é
 assim-assim, vermelho fica para outro dia. Se quiseres perceber porquê, abres o
 detalhe e vês cada número traduzido para português corrente.
 
-**→ [renatovalente5.github.io/praiometro](https://renatovalente5.github.io/praiometro/)**
+**→ [praiometro.pt](https://praiometro.pt)**
 
 ## Porque é que isto não é mais um site de meteorologia
 
@@ -35,8 +35,8 @@ browser de quem visita.
 
 - **Previsão:** [Open-Meteo](https://open-meteo.com) — gratuita, sem chave, CORS
   aberto. Uma chamada à API de meteorologia e outra à API marinha.
-- **Praias:** 999 praias portuguesas do [OpenStreetMap](https://www.openstreetmap.org/copyright),
-  785 de mar e 214 de rio, com coordenadas. A separação entre mar e rio foi
+- **Praias:** 996 praias portuguesas do [OpenStreetMap](https://www.openstreetmap.org/copyright),
+  761 de mar e 235 de rio, com coordenadas. A separação entre mar e rio foi
   feita a perguntar à própria API marinha quais os pontos que têm dados de mar.
 - **Modelo:** [MODELO.md](MODELO.md) — a especificação completa, com a origem de
   cada limiar. Vale a pena ler se quiseres discordar com fundamento.

@@ -2,6 +2,10 @@
 .claude/
 _source/osm-praias.json
 
+# A CAOP em bruto: 9 MB para produzir uma tabela de 74 KB. O
+# _source/gerar-concelhos.py volta a descarregá-la sozinho se faltar.
+_source/caop-municipios.geojson
+
 # saída do Jekyll e do gerador — nunca commitada. Quinhentos ficheiros
 # regerados todos os dias fariam o repositório crescer sem parar, e o
 # histórico do git não encolhe.

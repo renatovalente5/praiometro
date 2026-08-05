@@ -35,8 +35,8 @@ browser de quem visita.
 
 - **Previsão:** [Open-Meteo](https://open-meteo.com) — gratuita, sem chave, CORS
   aberto. Uma chamada à API de meteorologia e outra à API marinha.
-- **Praias:** 996 praias portuguesas do [OpenStreetMap](https://www.openstreetmap.org/copyright),
-  761 de mar e 235 de rio, com coordenadas. A separação entre mar e rio foi
+- **Praias:** 995 praias portuguesas do [OpenStreetMap](https://www.openstreetmap.org/copyright),
+  760 de mar e 235 de rio, com coordenadas. A separação entre mar e rio foi
   feita a perguntar à própria API marinha quais os pontos que têm dados de mar.
 - **Modelo:** [MODELO.md](MODELO.md) — a especificação completa, com a origem de
   cada limiar. Vale a pena ler se quiseres discordar com fundamento.

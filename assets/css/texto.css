@@ -142,3 +142,42 @@
 }
 .g-legenda li { display: flex; align-items: center; gap: .35rem; margin: 0; }
 .g-bola { width: .7rem; height: .18rem; border-radius: 99px; flex: none; }
+
+/* --------------------------------------------------- hubs de região */
+/* `.texto ul` (classe + elemento) é mais específico do que `.regioes`, e o
+   disc voltava. Daí o `.texto` à frente das duas listas desta secção. */
+.texto .regioes { list-style: none; padding: 0; margin: 1.2rem 0 2rem; display: grid; gap: .6rem; }
+@media (min-width: 30rem) { .texto .regioes { grid-template-columns: 1fr 1fr; } }
+.regioes li { margin: 0; }
+.regioes a {
+  display: block; padding: .8rem 1rem; background: var(--carta);
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  text-decoration: none; transition: border-color var(--t);
+}
+.regioes a:hover { border-color: var(--mar); }
+.regioes strong { display: block; color: var(--tinta); font-size: 1.05rem; }
+.regioes span { display: block; font-size: .85rem; color: var(--tinta-2); }
+.regioes .regiao__mar { color: var(--tinta-3); font-size: .8rem; }
+
+.concelho { margin-top: 1.6rem; }
+.concelho h3 {
+  font-size: 1rem; font-weight: 700; margin-bottom: .4rem;
+  display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap;
+}
+.concelho__n { font-size: .78rem; font-weight: 500; color: var(--tinta-3); }
+
+/* Colunas, porque um concelho com 40 praias numa coluna só é uma parede.
+   `break-inside: avoid` para um nome não ficar partido entre colunas. */
+.texto .lista-praias {
+  list-style: none; padding: 0; margin: 0;
+  columns: 2; column-gap: 1.4rem; font-size: .93rem;
+}
+@media (max-width: 26rem) { .texto .lista-praias { columns: 1; } }
+.lista-praias li { margin-bottom: .18rem; break-inside: avoid; }
+.lista-praias a { color: var(--mar); text-decoration: none; }
+.lista-praias a:hover { text-decoration: underline; }
+.etiq {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--tinta-3); background: var(--carta-2); border: 1px solid var(--borda);
+  border-radius: 99px; padding: 0 .35rem; vertical-align: 1px;
+}

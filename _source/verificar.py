@@ -354,7 +354,9 @@ for nome in ('robots.txt', 'sitemap.xml', '404.html', '_config.yml'):
 for pagina, esperado in (('index.html', 'https://praiometro.pt/'),
                          ('privacidade.html', 'https://praiometro.pt/privacidade.html'),
                          ('metodologia/index.html', 'https://praiometro.pt/metodologia/'),
-                         ('nortada/index.html', 'https://praiometro.pt/nortada/')):
+                         ('nortada/index.html', 'https://praiometro.pt/nortada/'),
+                         ('praias/index.html', 'https://praiometro.pt/praias/'),
+                         ('praias/centro/index.html', 'https://praiometro.pt/praias/centro/')):
     h = _sem_comentarios(pagina)
     m = _re.search(r'<link rel="canonical" href="([^"]+)"', h)
     if not m:
@@ -374,7 +376,8 @@ for pagina, esperado in (('index.html', 'https://praiometro.pt/'),
 # Caminhos relativos numa página que vai ser servida a partir de /praia/x/
 # apontam para o sítio errado. Já não pode haver nenhum.
 for pagina in ('index.html', 'privacidade.html', '404.html',
-               'metodologia/index.html', 'nortada/index.html'):
+               'metodologia/index.html', 'nortada/index.html',
+               'praias/index.html', 'praias/centro/index.html'):
     maus = _re.findall(r'(?:href|src)="(?!https?:|/|#|mailto:|data:)([^"]+)"', _sem_comentarios(pagina))
     if maus:
         erro('%s com caminhos relativos: %s' % (pagina, maus))

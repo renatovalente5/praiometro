@@ -122,3 +122,23 @@
    ir da entrada para outro sítio era o rodapé. */
 .migalhas { font-size: .85rem; color: var(--tinta-3); margin-bottom: .6rem; }
 .migalhas a { color: var(--mar); }
+
+/* --------------------------------------------------------- gráfico */
+/* Gerado a partir de _build/dados/nortada.json pelo _source/gerar-nortada.py.
+   Não se desenha à mão: se os dados mudarem e o desenho não, a página passa a
+   mostrar uma coisa e a dizer outra. */
+.grafico { width: 100%; height: auto; margin: 1rem 0 .4rem; overflow: visible; }
+.g-linha { stroke: var(--borda); stroke-width: 1; }
+.g-eixo { font-size: 11px; fill: var(--tinta-3); font-family: var(--f); }
+.g-nome { font-size: 11px; font-weight: 700; font-family: var(--f); }
+.g-janela { fill: var(--amarelo-luz); opacity: .5; }
+/* Num telemóvel os nomes das regiões à direita não cabem; o gráfico rola. */
+.grafico-rolo { overflow-x: auto; margin: 1rem 0 1.4rem; }
+.grafico-rolo .grafico { min-width: 34rem; margin: 0; }
+.grafico-fonte { font-size: .8rem; color: var(--tinta-3); margin-top: .2rem; }
+.g-legenda {
+  display: flex; flex-wrap: wrap; gap: .3rem 1rem; list-style: none; padding: 0;
+  margin: .2rem 0 0; font-size: .82rem; color: var(--tinta-2);
+}
+.g-legenda li { display: flex; align-items: center; gap: .35rem; margin: 0; }
+.g-bola { width: .7rem; height: .18rem; border-radius: 99px; flex: none; }

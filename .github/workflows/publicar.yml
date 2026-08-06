@@ -69,6 +69,7 @@ jobs:
           node _source/testar-favoritos.js
           node _source/testar-slugs.js
           node _source/testar-metodologia.js
+          node _source/gerar-nortada.js --verificar
 
       - name: Montar o _site/
         run: node _build/gerar.js
@@ -116,7 +117,7 @@ jobs:
         run: |
           sleep 20
           for u in / /robots.txt /sitemap.xml /404.html /privacidade.html \
-                   /metodologia/ /data/praias.json /assets/css/estilo.css \
+                   /metodologia/ /nortada/ /data/praias.json /assets/css/estilo.css \
                    /assets/css/texto.css /manifest.webmanifest; do
             c=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://praiometro.pt$u")
             echo "  $u -> $c"

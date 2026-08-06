@@ -39,7 +39,7 @@ const ALLOW = [
   'sitemap.xml',
   'manifest.webmanifest',
 ];
-const ALLOW_PASTAS = ['assets', 'data', 'metodologia'];
+const ALLOW_PASTAS = ['assets', 'data', 'metodologia', 'nortada'];
 
 /* Nunca, aconteça o que acontecer. É uma rede por baixo da ALLOW: se alguém
    um dia acrescentar 'MODELO.md' à lista de cima por engano, isto apanha. */
@@ -94,7 +94,8 @@ if (intrusos.length) {
 }
 for (const obrigatorio of ['CNAME', 'index.html', 'robots.txt', 'sitemap.xml',
                            'assets/css/estilo.css', 'assets/css/texto.css',
-                           'data/praias.json', 'metodologia/index.html']) {
+                           'data/praias.json', 'metodologia/index.html',
+                           'nortada/index.html']) {
   if (!saiu.includes(obrigatorio)) {
     console.error(`NÃO PUBLICAR — falta ${obrigatorio} no _site/`);
     process.exit(1);

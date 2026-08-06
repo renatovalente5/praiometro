@@ -6,6 +6,11 @@ _source/osm-praias.json
 # _source/gerar-concelhos.py volta a descarregá-la sozinho se faltar.
 _source/caop-municipios.geojson
 
+# Dez Verões de vento hora a hora em 29 praias: ~20 MB de ERA5 em bruto
+# para produzir uma tabela de poucos KB. O recolher-nortada.py volta a
+# buscá-los se faltarem, e não repete o que já tem em disco.
+_source/nortada-bruto.json
+
 # saída do Jekyll e do gerador — nunca commitada. Quinhentos ficheiros
 # regerados todos os dias fariam o repositório crescer sem parar, e o
 # histórico do git não encolhe.

@@ -276,13 +276,35 @@
        a interface trata-os de outra maneira. Um aviso de trovoada dito no mesmo
        tom que «a água está fria» é um aviso que ninguém lê. */
     var vetos = [];
-    if (d.trovoada) vetos.push({ t: 'trovoada prevista', perigo: true });
     if (d.chuva != null && d.chuva > 70) vetos.push({ t: 'chuva quase certa' });
     if (d.mm != null && d.mm >= 2) vetos.push({ t: 'chuva a sério' });
     if (d.vento != null && d.vento > 45) vetos.push({ t: 'vento demasiado forte', perigo: true });
     if (d.rajada != null && d.rajada > 65) vetos.push({ t: 'rajadas perigosas', perigo: true });
     if (d.ar != null && d.ar < 16) vetos.push({ t: 'frio a mais' });
     if (mar && d.ondas != null && d.ondas > 2.5) vetos.push({ t: 'mar muito cavado', perigo: true });
+
+    /* ------- avisos de segurança: informam, não decidem -------
+       A TROVOADA esteve aqui como veto até 6 de Agosto de 2026, e foi medida
+       antes de sair. Em 720 dias-praia reais: 22 tinham trovoada marcada, em
+       11 delas era o ÚNICO veto — e esses 11 seriam TODOS verdes sem ela, com
+       nota média de 85, entre 21 % e 44 % de nuvens e 12 a 20 km/h de vento.
+       Nenhum era amarelo ou vermelho.
+
+       Ou seja: o veto não apanhava dias maus. Um dia com trovoada a sério já é
+       chumbado pela chuva (>70 % de probabilidade, ou 2 mm acumulados) — foi o
+       que aconteceu nos outros 11. O único efeito que tinha era transformar
+       dias de 80 a 91 pontos num «Hoje não» sem nota.
+
+       E a razão é o gatilho: `temTrovoada` usa `.some()` sobre a janela das
+       11h às 19h, e o consenso entre modelos usa o MÁXIMO do código. São nove
+       horas vezes quatro modelos — 36 oportunidades para um único 95 chumbar
+       o dia inteiro.
+
+       O aviso fica, e fica no tom de perigo. O que muda é quem decide: as
+       cores dizem se vale a pena ir, não se é seguro estar. Está escrito na
+       própria interface, ao lado do veredicto. */
+    var avisos = [];
+    if (d.trovoada) avisos.push({ t: 'pode haver trovoada', perigo: true });
 
     /* ------- factor limitante -------
        A soma ponderada tem um defeito conhecido, e é a crítica que a
@@ -351,7 +373,8 @@
     return {
       nota: vetos.length ? null : nota, notaBruta: nota,
       cor: cor, frase: frase, vetos: vetos.map(function (v) { return v.t; }),
-      perigo: vetos.some(function (v) { return v.perigo; }), factores: f,
+      avisos: avisos.map(function (a) { return a.t; }),
+      perigo: vetos.concat(avisos).some(function (v) { return v.perigo; }), factores: f,
       nortada: nortada, pior: pior ? pior.id : null, melhor: melhor ? melhor.id : null,
       limitante: (limitante && pior_racio < 0.20) ? limitante.id : null
     };

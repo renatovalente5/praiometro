@@ -178,6 +178,7 @@ console.log('\n== 5. os vetos publicados são os do código ==');
   const fonte = fs.readFileSync(path.join(RAIZ, 'assets/js/modelo.js'), 'utf8');
   const limiares = [
     [/d\.chuva > (\d+)/, /acima de (\d+) % de probabilidade/, 'chuva'],
+    [/d\.mm != null && d\.mm >= (\d+)/, /ou (\d+) mm acumulados/, 'chuva acumulada'],
     [/d\.vento > (\d+)/, /Vento acima de (\d+) km\/h/, 'vento'],
     [/d\.rajada > (\d+)/, /rajadas acima de (\d+) km\/h/, 'rajadas'],
     [/d\.ar < (\d+)/, /abaixo de (\d+) °C/, 'frio'],
@@ -192,7 +193,31 @@ console.log('\n== 5. os vetos publicados são os do código ==');
       erro(`veto de ${nome}: o código diz ${c[1]}, a página diz ${p[1]}`); mau++;
     }
   }
-  if (!mau) ok('os 5 limiares de veto batem certo com o modelo.js');
+  if (!mau) ok(`os ${limiares.length} limiares de veto batem certo com o modelo.js`);
+
+  /* Cada `vetos.push` do código tem de ter o seu limiar na tabela. A contagem
+     de LINHAS não serve: a página agrupa por leitura — «chuva acima de 70 %
+     ou 2 mm» é uma linha e são dois vetos —, e isso é escrita, não erro. */
+  const vetosNoCodigo = (fonte.match(/vetos\.push\(/g) || []).length;
+  if (limiares.length !== vetosNoCodigo) {
+    erro(`o modelo.js tem ${vetosNoCodigo} vetos e este teste confere ${limiares.length}. ` +
+         'Apareceu ou desapareceu um veto — acrescenta-o aqui e à página.');
+  } else ok(`os ${vetosNoCodigo} vetos do código estão todos conferidos`);
+
+  /* E a trovoada em concreto: é um AVISO, não um veto. Se voltar a ser veto,
+     a página tem de voltar a dizê-lo. */
+  const trovoadaVeta = /vetos\.push\([^)]*trovoada/.test(fonte);
+  const paginaDizVeto = /Condições que vetam o dia[\s\S]*?<\/table>/.exec(corrido);
+  const naTabela = paginaDizVeto && /trovoada/i.test(paginaDizVeto[0]);
+  if (trovoadaVeta !== !!naTabela) {
+    erro(trovoadaVeta
+      ? 'a trovoada voltou a vetar no código e não está na tabela dos vetos'
+      : 'a trovoada já não veta, mas a página ainda a lista como veto');
+  } else if (!trovoadaVeta) {
+    const explica = /A trovoada avisa, mas não decide/.test(corrido);
+    if (!explica) erro('a trovoada deixou de vetar e a página não explica porquê');
+    else ok('a trovoada é aviso e não veto, nos dois sítios');
+  }
 }
 
 /* ------------------------------------------------------------------- 6 */

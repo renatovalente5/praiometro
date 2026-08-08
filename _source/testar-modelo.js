@@ -25,6 +25,25 @@ eq('água 13 °C', Modelo._pontos.agua(13), 0);
 eq('ar 28 °C', Modelo._pontos.ar(28), 18);
 eq('céu 10 %', Modelo._pontos.ceu(10), 26);
 
+console.log('\n== a trovoada avisa, não decide ==');
+{
+  const bom = {ceu:10, vento:8, ar:29, agua:22, chuva:40, mm:1, ondas:0.5,
+               rajada:20, dirVento:200, lat:37.08, lon:-8.25, mar:true};
+  const semT = Modelo.classificarDia({...bom, trovoada:false});
+  const comT = Modelo.classificarDia({...bom, trovoada:true});
+  eq('a nota não muda com a trovoada', comT.nota, semT.nota);
+  eq('a cor não muda com a trovoada', comT.cor, semT.cor);
+  eq('a nota continua visível', comT.nota !== null, true);
+  eq('o aviso de segurança existe', comT.avisos, ['pode haver trovoada']);
+  eq('e está marcado como perigo', comT.perigo, true);
+  eq('sem trovoada não há aviso', comT.avisos.length - semT.avisos.length, 1);
+  // mas um dia mesmo mau continua chumbado, e pela chuva
+  const mau = Modelo.classificarDia({...bom, trovoada:true, chuva:85, mm:6, ceu:90});
+  eq('dia de tempestade a sério continua vermelho', mau.cor, 'vermelho');
+  eq('e sem nota', mau.nota, null);
+  eq('vetado pela chuva, não pela trovoada', mau.vetos.indexOf('chuva quase certa') >= 0, true);
+}
+
 console.log('\n== dias reais ==');
 // Um dia bom de Agosto em Carcavelos: sol, pouco vento, água a 18 °C
 cor('Carcavelos, dia bom', {ceu:15, vento:14, ar:27, agua:18.3, chuva:5, mm:0, ondas:0.9,
@@ -35,9 +54,14 @@ cor('Carcavelos com nortada', {ceu:15, vento:31, ar:24, agua:18.0, chuva:5, mm:0
 // Nortada muito forte
 cor('Nortada muito forte', {ceu:20, vento:38, ar:22, agua:17.5, chuva:5, mm:0, ondas:2.0,
   rajada:60, dirVento:355, lat:38.68, lon:-9.34, mar:true, trovoada:false}, 'vermelho');
-// Trovoada: veto mesmo com tudo o resto bom
-cor('Trovoada (veto)', {ceu:10, vento:8, ar:29, agua:22, chuva:40, mm:1, ondas:0.5,
-  rajada:20, dirVento:200, lat:37.08, lon:-8.25, mar:true, trovoada:true}, 'vermelho');
+// Trovoada NÃO chumba um dia bom. Foi veto até 6 de Agosto de 2026 e mediu-se
+// antes de sair: em 720 dias-praia reais, as 11 vezes em que era o único veto
+// seriam TODAS verdes sem ele, com nota média de 85. Um dia com trovoada a
+// sério já é chumbado pela chuva — o veto só apanhava dias bons.
+// (amarelo por causa dos 40 % de chuva e do factor limitante, NÃO da trovoada:
+// o teste de baixo prova que sem ela a cor é exactamente a mesma.)
+cor('Trovoada num dia bom', {ceu:10, vento:8, ar:29, agua:22, chuva:40, mm:1, ondas:0.5,
+  rajada:20, dirVento:200, lat:37.08, lon:-8.25, mar:true, trovoada:true}, 'amarelo');
 // Algarve sotavento em Agosto: o melhor cenário do país
 cor('Monte Gordo, Agosto', {ceu:5, vento:11, ar:30, agua:22.5, chuva:0, mm:0, ondas:0.4,
   rajada:18, dirVento:180, lat:37.17, lon:-7.45, mar:true, trovoada:false}, 'verde');
@@ -94,13 +118,14 @@ if (dirs != null) {
   if (!bom) { falhas++; console.log(`  ✗ média de 350° e 10° deu ${dirs.toFixed(0)}°, devia dar ~0°`); }
   else console.log(`  ✓ média circular de 350° e 10° dá ${dirs.toFixed(0)}°`);
 }
-// um veto não pode deixar a nota à vista
+// Um veto não pode deixar a nota à vista. O exemplo era a trovoada; desde que
+// ela deixou de vetar, usa-se um veto a sério — rajadas acima de 65 km/h.
 const vt = Modelo.classificarDia({ceu:5, vento:8, ar:29, agua:23, chuva:0, mm:0, ondas:0.4,
-  rajada:15, dirVento:180, lat:37.08, lon:-8.25, mar:true, trovoada:true});
+  rajada:80, dirVento:180, lat:37.08, lon:-8.25, mar:true, trovoada:false});
 if (vt.nota !== null) { falhas++; console.log('  ✗ dia vetado ainda mostra nota ' + vt.nota); }
 else console.log(`  ✓ dia vetado não mostra nota (bruta era ${vt.notaBruta})`);
-if (!vt.perigo) { falhas++; console.log('  ✗ trovoada devia marcar perigo'); }
-else console.log('  ✓ trovoada marcada como aviso de segurança');
+if (!vt.perigo) { falhas++; console.log('  ✗ rajadas perigosas deviam marcar perigo'); }
+else console.log('  ✓ veto de segurança marcado como perigo');
 if (!/^Não vá/.test(vt.frase)) { falhas++; console.log('  ✗ frase de perigo devia ser mais forte: ' + vt.frase); }
 else console.log(`  ✓ frase de perigo: «${vt.frase}»`);
 // frio não é perigo, é desconforto

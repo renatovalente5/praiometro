@@ -471,9 +471,23 @@
     var av = el('v-aviso');
     av.hidden = !avisos.length;
     av.textContent = avisos.join(' · ');
-    /* Um veto de segurança não é um aviso amarelo: muda de cor e de tom. */
+    /* Um aviso de segurança não é um aviso amarelo: muda de cor e de tom.
+       Pode vir de um veto (o dia está chumbado) ou de um aviso (o dia está
+       bom E há um risco) — desde que a trovoada deixou de vetar, o segundo
+       caso existe e é o mais comum. Ler `v.vetos[0]` às cegas dava
+       «Aviso de segurança: undefined» num dia de nota 86. */
     av.classList.toggle('veredicto__aviso--perigo', !!v.perigo);
-    if (v.perigo) { av.hidden = false; av.textContent = 'Aviso de segurança: ' + v.vetos[0] + '. ' + avisos.join(' · '); }
+    if (v.perigo) {
+      var perigos = (v.vetos || []).concat(v.avisos || []);
+      var texto = 'Aviso de segurança: ' + perigos[0] + '.';
+      /* Um aviso que não diz o que fazer não serve de nada a quem já está na
+         areia — e este agora aparece ao lado de «Dia de praia». */
+      if ((v.avisos || []).indexOf('pode haver trovoada') >= 0) {
+        texto += ' Se ouvires trovões, sai da água e da praia.';
+      }
+      av.hidden = false;
+      av.textContent = texto + (avisos.length ? ' · ' + avisos.join(' · ') : '');
+    }
   }
 
   function desenharDetalhe() {

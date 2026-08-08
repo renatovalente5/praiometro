@@ -226,13 +226,32 @@ corte dos 40 % se quiser tão apertado como antes, é este número que se afina.
 Estas condições mandam o dia para **vermelho** sozinhas, independentemente da
 pontuação. Um dia com trovoada não é um dia "médio".
 
-- Trovoada prevista na janela (códigos 95, 96, 99) — **aviso de segurança**
 - Probabilidade de chuva > 70 % ou **acumulado ≥ 2 mm dentro da janela**
   (era o acumulado do dia inteiro: 79 % dos vetos vinham de chuva de madrugada
   ou de noite, e chumbavam tardes de sol)
 - Vento > 45 km/h ou rajadas > 65 km/h — **aviso de segurança**
 - Sensação térmica máxima < 16 °C
 - Ondulação máxima > 2,5 m (só em praias de mar) — **aviso de segurança**
+
+### A trovoada não é veto (desde 6 ago 2026)
+
+Era, e mediu-se antes de sair. Em **720 dias-praia reais**, 22 tinham trovoada
+prevista; em 11 era o **único** veto, e esses 11 seriam **todos verdes** sem ela,
+com nota média de **85** (21-44 % de nuvens, 12-20 km/h de vento). Nenhum
+amarelo, nenhum vermelho.
+
+O veto não apanhava dias maus: um dia com trovoada a sério já é chumbado pela
+chuva (>70 % de probabilidade ou ≥2 mm na janela), e foi o que aconteceu nos
+outros 11. O único efeito era transformar dias de 80 a 91 pontos num «Hoje não»
+sem nota.
+
+A causa é o gatilho: `temTrovoada` usa `.some()` sobre a janela das 11h-19h e o
+consenso usa o **máximo** do código — 9 horas × 4 modelos = 36 oportunidades
+para um único 95 chumbar o dia.
+
+Passa a **aviso de segurança**: aparece no tom de perigo, com o que fazer («se
+ouvires trovões, sai da água e da praia»), e não mexe na cor nem esconde a nota.
+As cores dizem se vale a pena ir, não se é seguro estar.
 
 Os vetos marcados como aviso de segurança são ditos noutro tom e noutra cor: um
 aviso de trovoada no mesmo amarelo que «a água está fria» é um aviso que

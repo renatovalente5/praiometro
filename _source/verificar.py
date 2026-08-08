@@ -324,10 +324,22 @@ try:
     doc=c.cmd('DOM.getDocument', depth=-1)
     html=c.cmd('DOM.getOuterHTML', nodeId=doc['root']['nodeId'])['outerHTML']
     tem_aviso = 'bandeira' in html.lower()
-    tem_explica = 'Como é que isto decide' in html
+    # A explicação do modelo saiu da entrada a 6 de Agosto de 2026 e vive em
+    # /metodologia/. O que a entrada tem de ter, sem JavaScript, é o CAMINHO
+    # para lá — senão quem não corre JS fica sem forma de lá chegar.
+    tem_caminho = '/metodologia/' in html
     print('  aviso das bandeiras presente :', tem_aviso)
-    print('  explicação do modelo presente:', tem_explica)
+    print('  caminho para /metodologia/   :', tem_caminho)
     if not tem_aviso: erro('sem JS: falta o aviso das bandeiras')
+    if not tem_caminho: erro('sem JS: a entrada não tem ligação para /metodologia/')
+
+    # e a própria /metodologia/ tem de abrir sem JavaScript nenhum
+    c.abrir('http://127.0.0.1:%d/metodologia/'%PORTA, espera=1.6)
+    doc2=c.cmd('DOM.getDocument', depth=-1)
+    m=c.cmd('DOM.getOuterHTML', nodeId=doc2['root']['nodeId'])['outerHTML']
+    tem_pesos = '34' in m and 'Vento' in m
+    print('  /metodologia/ sem JS         :', tem_pesos)
+    if not tem_pesos: erro('sem JS: a /metodologia/ não mostra os pesos')
 finally: c.fechar()
 
 print('\n== 8. SEO: o que não pode desfazer-se sozinho ==')

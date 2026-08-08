@@ -245,9 +245,20 @@ chuva (>70 % de probabilidade ou ≥2 mm na janela), e foi o que aconteceu nos
 outros 11. O único efeito era transformar dias de 80 a 91 pontos num «Hoje não»
 sem nota.
 
-A causa é o gatilho: `temTrovoada` usa `.some()` sobre a janela das 11h-19h e o
-consenso usa o **máximo** do código — 9 horas × 4 modelos = 36 oportunidades
-para um único 95 chumbar o dia.
+A causa é o gatilho, e são duas coisas. Basta **uma hora** da janela com código
+de trovoada, e — pior — o consenso entre os quatro modelos usava o **máximo** do
+código, pelo que bastava **um** modelo para os outros três serem ignorados.
+
+Medido a 8 ago 2026, em 21 dias-praia com aviso: **1 modelo em 4 concordava em
+19 deles (90 %)**, 2 em 4 num, 3 em 4 noutro, e nunca os quatro. Em Caminha
+nesse dia, às 18h: UKMO via trovoada, ECMWF dizia chuvisco, ICON dizia nuvens,
+GFS dizia céu limpo.
+
+Passou a exigir **dois modelos em quatro na mesma hora** (`temTrovoada` conta
+`trovoada_modelos`, que o `consenso` emite ao lado do `weather_code`). Efeito
+medido: de **22 avisos para 2** em 720 dias-praia, e esses dois em dias que a
+chuva já vetava. Com um só modelo disponível, um chega — senão a regra
+desligava-se sozinha em vez de ficar mais exigente.
 
 Passa a **aviso de segurança**: aparece no tom de perigo, com o que fazer («se
 ouvires trovões, sai da água e da praia»), e não mexe na cor nem esconde a nota.

@@ -228,8 +228,24 @@
   }
 
   /* Códigos de tempo do WMO que são trovoada. */
-  function temTrovoada(codigos) {
-    return codigos.some(function (c) { return c === 95 || c === 96 || c === 99; });
+  var CODIGOS_TROVOADA = [95, 96, 99];
+
+  /* Exige que pelo menos DOIS modelos vejam trovoada na mesma hora.
+     Medido a 8 de Agosto de 2026, em 21 dias-praia com aviso de trovoada:
+       1 modelo em 4 concorda ..... 19  (90 %)
+       2 modelos ..................  1
+       3 modelos ..................  1
+       4 modelos ..................  0
+     Ou seja, nove em cada dez avisos vinham de um modelo isolado a contrariar
+     os outros três. Em Caminha, nesse dia: o UKMO via trovoada às 18h, e às
+     mesmas 18h o ECMWF dizia chuvisco, o ICON dizia nuvens e o GFS dizia céu
+     limpo. O site avisava; mais nenhum sítio avisava, e com razão.
+
+     Com um único modelo disponível, um chega — senão a regra desligava-se
+     sozinha em vez de ficar mais exigente. */
+  function temTrovoada(contagens, quantosModelos) {
+    var precisa = Math.min(2, quantosModelos || 1);
+    return contagens.some(function (q) { return (q || 0) >= precisa; });
   }
 
   /* A nortada tem definição operacional: vento de 315°-45° com 7 m/s ou mais.
@@ -450,16 +466,26 @@
     saida.wind_direction_10m = dir.length ? h[dir[0]] : null;
     var cod = colunas('weather_code');
     if (cod.length) {
-      var oc = new Array(n);
+      var oc = new Array(n), ot = new Array(n);
       for (var i2 = 0; i2 < n; i2++) {
-        var m = null;
+        var m = null, quantos = 0;
         for (var j2 = 0; j2 < cod.length; j2++) {
           var v2 = h[cod[j2]][i2];
-          if (v2 != null && (m == null || v2 > m)) m = v2;
+          if (v2 == null) continue;
+          if (m == null || v2 > m) m = v2;
+          if (CODIGOS_TROVOADA.indexOf(v2) >= 0) quantos++;
         }
         oc[i2] = m;
+        ot[i2] = quantos;
       }
       saida.weather_code = oc;
+      /* Quantos modelos vêem trovoada NESTA hora. O weather_code é colapsado
+         para o máximo — «erra do lado da segurança» — e isso apaga a
+         informação de que só um dos quatro é que a viu. Sem esta coluna, o
+         `temTrovoada` não tem como saber a diferença entre um modelo isolado
+         e os quatro de acordo. */
+      saida.trovoada_modelos = ot;
+      saida.n_modelos = cod.length;
     }
     /* o diário vem por modelo; a chuva acumulada pela média, o código pelo pior */
     var dl = resposta.daily || {}, nd = (dl.time || []).length, sd = { time: dl.time };
@@ -534,7 +560,9 @@
         mmDia: (tempo.daily.precipitation_sum || [])[iDia],
         ondas: ondas,
         uv: maximo(fatia(tempo.hourly.uv_index, ix)),
-        trovoada: temTrovoada(fatia(tempo.hourly.weather_code, ix).filter(function (x) { return x != null; })),
+        trovoada: temTrovoada(
+          fatia(tempo.hourly.trovoada_modelos || [], ix).filter(function (x) { return x != null; }),
+          tempo.hourly.n_modelos),
         codigo: (tempo.daily.weather_code || [])[iDia],
         lat: praia.la, lon: praia.lo, mar: praia.m === 1
       };

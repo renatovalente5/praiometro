@@ -44,6 +44,49 @@ console.log('\n== a trovoada avisa, não decide ==');
   eq('vetado pela chuva, não pela trovoada', mau.vetos.indexOf('chuva quase certa') >= 0, true);
 }
 
+console.log('\n== a trovoada exige acordo entre modelos ==');
+{
+  /* Constrói uma resposta da API com quatro modelos e faz variar quantos é
+     que vêem trovoada às 15h. Testa o caminho a sério — consenso + agregar —
+     e não uma função interna, porque foi no consenso que o defeito viveu:
+     ele colapsava os quatro códigos no MÁXIMO, e a partir daí ninguém
+     conseguia saber que só um deles é que tinha visto trovoada. */
+  const MOD = ['ecmwf_ifs025', 'icon_seamless', 'gfs_seamless', 'ukmo_seamless'];
+  const HORAS = 24;
+  function resposta(quantosVeem) {
+    const h = { time: [] };
+    for (let i = 0; i < HORAS; i++) h.time.push(`2026-08-08T${String(i).padStart(2,'0')}:00`);
+    const serie = (v) => new Array(HORAS).fill(v);
+    for (const m of MOD) {
+      h['temperature_2m_' + m] = serie(26);
+      h['apparent_temperature_' + m] = serie(27);
+      h['wind_speed_10m_' + m] = serie(12);
+      h['wind_gusts_10m_' + m] = serie(20);
+      h['wind_direction_10m_' + m] = serie(300);
+      h['cloud_cover_' + m] = serie(15);
+      h['precipitation_' + m] = serie(0);
+      h['precipitation_probability_' + m] = serie(10);
+      h['uv_index_' + m] = serie(6);
+      h['weather_code_' + m] = serie(1);
+    }
+    /* às 15h, os `quantosVeem` primeiros modelos vêem trovoada */
+    for (let k = 0; k < quantosVeem; k++) h['weather_code_' + MOD[k]][15] = 95;
+    return { hourly: h, daily: { time: ['2026-08-08'], weather_code: [1], precipitation_sum: [0] } };
+  }
+  const praia = { la: 41, lo: -8.8, m: 1 };
+  const trovoadaCom = (n) => Modelo.agregar(Modelo.consenso(resposta(n), MOD), null, praia)[0].trovoada;
+
+  eq('0 modelos: sem trovoada', trovoadaCom(0), false);
+  eq('1 modelo em 4: NÃO conta', trovoadaCom(1), false);
+  eq('2 modelos em 4: conta', trovoadaCom(2), true);
+  eq('3 modelos: conta', trovoadaCom(3), true);
+  eq('4 modelos: conta', trovoadaCom(4), true);
+
+  /* e o weather_code continua a ser o máximo, que é usado noutro sítio */
+  const c = Modelo.consenso(resposta(1), MOD);
+  eq('o weather_code continua a ser o pior dos quatro', c.hourly.weather_code[15], 95);
+}
+
 console.log('\n== dias reais ==');
 // Um dia bom de Agosto em Carcavelos: sol, pouco vento, água a 18 °C
 cor('Carcavelos, dia bom', {ceu:15, vento:14, ar:27, agua:18.3, chuva:5, mm:0, ondas:0.9,

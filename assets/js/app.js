@@ -1029,9 +1029,9 @@
       + '</svg>';
 
     tela.innerHTML = svg;
-    var pe = el('mapa-pe');
-    if (pe) pe.textContent = 'Contornos da CAOP (Direcção-Geral do Território). '
-      + 'O mapa é desenhado aqui — não há pedidos a servidores de mapas.';
+    /* A atribuição da CAOP é obrigatória pela licença e vive no rodapé, ao pé
+       das outras duas. Debaixo do mapa era uma linha que ninguém lê e que
+       roubava espaço ao que interessa. */
     caixa.hidden = false;
   }
 

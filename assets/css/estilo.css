@@ -654,4 +654,3 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 }
 .m-halo { fill: var(--mar); opacity: .25; }
 .m-ponto { fill: var(--mar); stroke: var(--carta); stroke-width: 2; }
-.mapa__pe { font-size: .78rem; color: var(--tinta-3); margin-top: .45rem; }

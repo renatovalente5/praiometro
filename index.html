@@ -166,15 +166,14 @@
       <!-- os 6 dias -->
       <div class="dias" id="dias" role="tablist" aria-label="Escolher o dia"></div>
 
-      <!-- O aviso das bandeiras estava no rodapé, onde ninguém chega. Este site
-           usa o MESMO semáforo que as praias portuguesas usam para outra coisa
-           — segurança para nadar — e isso tem de ser dito ao pé do veredicto,
-           não no fundo da página. -->
-      <p class="aviso-bandeiras">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>
-        <span>Estas cores dizem se <strong>vale a pena ir</strong> — não se o mar está seguro.
-        Na praia, a bandeira do nadador-salvador manda sempre.</span>
-      </p>
+      <!-- detalhe -->
+      <details class="detalhe" id="detalhe">
+        <summary>
+          <span>Ver os números</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="detalhe__corpo" id="detalhe-corpo"></div>
+      </details>
 
       <!-- ================================================= ONDE FICA -->
       <!-- O contorno é desenhado a partir de /data/mapa.json, que é servido
@@ -186,17 +185,18 @@
       <section class="mapa" id="mapa" aria-labelledby="mapa-t" hidden>
         <h3 class="mapa__titulo" id="mapa-t">Onde fica</h3>
         <div class="mapa__tela" id="mapa-tela"></div>
-        <p class="mapa__pe" id="mapa-pe"></p>
       </section>
 
-      <!-- detalhe -->
-      <details class="detalhe" id="detalhe">
-        <summary>
-          <span>Ver os números</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </summary>
-        <div class="detalhe__corpo" id="detalhe-corpo"></div>
-      </details>
+      <!-- O aviso das bandeiras estava no rodapé, onde ninguém chega. Este site
+           usa o MESMO semáforo que as praias portuguesas usam para outra coisa
+           — segurança para nadar — e isso tem de ser dito ao pé do veredicto,
+           não no fundo da página. -->
+      <p class="aviso-bandeiras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>
+        <span>Estas cores dizem se <strong>vale a pena ir</strong> — não se o mar está seguro.
+        Na praia, a bandeira do nadador-salvador manda sempre.</span>
+      </p>
+
     </section>
 
     <!-- estado inicial / erro -->
@@ -226,6 +226,8 @@
     <p class="rodape__fontes">
       Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
       praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
+      mapa da <abbr title="Carta Administrativa Oficial de Portugal">CAOP</abbr>,
+      <a href="https://www.dgterritorio.gov.pt" target="_blank" rel="noopener">DGT</a> ·
       <a href="/privacidade.html">Privacidade</a>
     </p>
   </footer>

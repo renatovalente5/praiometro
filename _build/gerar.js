@@ -94,7 +94,7 @@ if (intrusos.length) {
 }
 for (const obrigatorio of ['CNAME', 'index.html', 'robots.txt', 'sitemap.xml',
                            'assets/css/estilo.css', 'assets/css/texto.css',
-                           'data/praias.json', 'metodologia/index.html',
+                           'data/praias.json', 'data/mapa.json', 'metodologia/index.html',
                            'nortada/index.html', 'praias/index.html',
                            'praias/norte/index.html', 'praias/algarve/index.html']) {
   if (!saiu.includes(obrigatorio)) {

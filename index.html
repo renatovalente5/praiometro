@@ -176,6 +176,19 @@
         Na praia, a bandeira do nadador-salvador manda sempre.</span>
       </p>
 
+      <!-- ================================================= ONDE FICA -->
+      <!-- O contorno é desenhado a partir de /data/mapa.json, que é servido
+           por este site. NÃO se usa um mapa de tiles — Google, Mapbox ou
+           OpenStreetMap — porque cada quadrado desses manda o endereço IP de
+           quem visita para um servidor de outra pessoa, e este site promete
+           no painel do Perfil que «não seguimos ninguém entre sites».
+           O ficheiro só é pedido quando alguém escolhe uma praia. -->
+      <section class="mapa" id="mapa" aria-labelledby="mapa-t" hidden>
+        <h3 class="mapa__titulo" id="mapa-t">Onde fica</h3>
+        <div class="mapa__tela" id="mapa-tela"></div>
+        <p class="mapa__pe" id="mapa-pe"></p>
+      </section>
+
       <!-- detalhe -->
       <details class="detalhe" id="detalhe">
         <summary>

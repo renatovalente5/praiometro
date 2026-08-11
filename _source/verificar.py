@@ -315,6 +315,39 @@ for w,h,mob,rot in [(375,812,True,'telemóvel'),(1280,900,False,'computador')]:
         if d['pendentes']: erro('privacidade: %d bloco(s) ainda por preencher'%d['pendentes'])
     finally: c.fechar()
 
+print('\n== 6b. o mapa «Onde fica» ==')
+c=novo(375,812,True)
+try:
+    c.js("document.querySelector('.atalho').click()"); time.sleep(7.0)
+    d=json.loads(c.js('''JSON.stringify({
+      visivel: !document.getElementById('mapa').hidden,
+      formas: document.querySelectorAll('.m-terra').length,
+      rotulos: [...document.querySelectorAll('.m-nome')].map(t=>t.textContent),
+      ponto: !!document.querySelector('.m-ponto'),
+      fora: [...document.querySelectorAll('.m-nome')].filter(t=>{
+        const b=t.getBBox(); return b.x<0 || b.x+b.width>640; }).map(t=>t.textContent),
+      transbordo: document.documentElement.scrollWidth+'/'+innerWidth})'''))
+    print('  desenhado    %s  %d formas, %d rótulos' % ('✓' if d['visivel'] else '✗', d['formas'], len(d['rotulos'])))
+    if not d['visivel']: erro('o mapa não apareceu')
+    if d['formas'] < 3: erro('o mapa tem só %d formas — a vista está vazia' % d['formas'])
+    if not d['ponto']: erro('o mapa não marca a praia')
+    if d['fora']: erro('rótulos fora da tela: %s' % d['fora'])
+    else: print('  rótulos      ✓ todos dentro da tela')
+    if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
+        erro('o mapa faz a página transbordar: %s' % d['transbordo'])
+
+    # A PROMESSA: o mapa existe para não haver pedidos a terceiros. Se um dia
+    # alguém trocar isto por tiles, o site passa a mandar o IP de quem visita
+    # para outro servidor — e a página do Perfil promete o contrário.
+    hosts=json.loads(c.js('''JSON.stringify([...new Set(
+      performance.getEntriesByType('resource')
+        .map(r=>new URL(r.name).host).filter(h=>h!==location.host))])'''))
+    permitidos={'api.open-meteo.com','marine-api.open-meteo.com'}
+    intrusos=[h for h in hosts if h not in permitidos]
+    if intrusos: erro('o site contactou servidores que não devia: %s' % intrusos)
+    else: print('  sem terceiros ✓ só %s' % ', '.join(sorted(hosts)))
+finally: c.fechar()
+
 print('\n== 7. sem JavaScript ==')
 c=Chrome(porta=livre())
 try:

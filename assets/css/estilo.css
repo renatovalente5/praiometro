@@ -622,3 +622,36 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 }
 .aviso-bandeiras svg { width: 20px; height: 20px; flex: none; color: var(--mar); margin-top: .1rem; }
 .aviso-bandeiras strong { color: var(--tinta); }
+
+/* =========================================================== ONDE FICA == */
+/* O mapa é SVG desenhado no browser a partir de data/mapa.json. Sem tiles e
+   sem pedidos a terceiros — ver o comentário no index.html. */
+.mapa {
+  max-width: 640px; margin: 1.1rem auto 0; padding: 0 var(--gutter);
+}
+.mapa__titulo {
+  font-size: .74rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--tinta-3); margin-bottom: .5rem;
+}
+.mapa__tela {
+  background: var(--carta); border: 1px solid var(--borda);
+  border-radius: var(--raio-g); overflow: hidden; line-height: 0;
+}
+.mapa__tela svg { width: 100%; height: auto; display: block; }
+/* O mar tem de se ler como mar. Com o --carta-2 no fundo e o --fundo na terra
+   — que diferem em três valores de cinzento — o mapa parecia uma mancha só. */
+.m-mar  { fill: color-mix(in oklab, var(--mar) 14%, var(--carta)); }
+.m-terra {
+  fill: var(--carta); stroke: color-mix(in oklab, var(--mar) 28%, var(--carta));
+  stroke-width: .8; stroke-linejoin: round;
+}
+.m-nome {
+  font-family: var(--f); font-weight: 700; fill: var(--tinta-3);
+  text-anchor: middle;
+  /* `paint-order: stroke` desenha o contorno ANTES do preenchimento: o nome
+     fica legível por cima do traço do concelho sem uma caixa por trás. */
+  paint-order: stroke; stroke: var(--carta); stroke-width: 3px; stroke-linejoin: round;
+}
+.m-halo { fill: var(--mar); opacity: .25; }
+.m-ponto { fill: var(--mar); stroke: var(--carta); stroke-width: 2; }
+.mapa__pe { font-size: .78rem; color: var(--tinta-3); margin-top: .45rem; }

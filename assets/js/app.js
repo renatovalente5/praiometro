@@ -389,6 +389,9 @@
     desenharDias();
     desenharVeredicto();
     desenharDetalhe();
+    /* Fica para o fim e é assíncrono: o mapa é a coisa menos urgente do ecrã,
+       e o ficheiro dos contornos só se pede na primeira praia escolhida. */
+    if (praiaActual) mostrarMapa(praiaActual);
   }
 
   function desenharDias() {
@@ -930,6 +933,118 @@
   /* Ligado ANTES do fetch, e já não lá dentro: os botões estão no HTML desde o
      primeiro instante, e sem isto um clique nesses instantes não fazia nada. */
   atalhos();
+
+
+  /* =========================================================== ONDE FICA ===
+     Desenha o contorno dos concelhos à volta da praia, em SVG, a partir de
+     /data/mapa.json. Sem tiles e sem pedidos a terceiros: um mapa de tiles
+     manda o IP de quem visita para um servidor de outra pessoa a cada
+     quadrado, e este site promete que não segue ninguém entre sites.
+
+     Os polígonos da CAOP acabam na linha de costa, por isso o fundo da tela é
+     o mar e as formas são a terra — o litoral desenha-se sozinho. */
+
+  var MAPA = null, mapaPedido = null;
+
+  function carregarMapa() {
+    if (mapaPedido) return mapaPedido;
+    mapaPedido = fetch('/data/mapa.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) { MAPA = d; return d; })
+      .catch(function () { MAPA = null; return null; });
+    return mapaPedido;
+  }
+
+  /* Meia-largura da vista, em graus de longitude. 0,26 dá ~44 km a 40° de
+     latitude: chega para se ver a praia, a costa e os concelhos à volta. */
+  var MAPA_MEIA = 0.26;
+  var MAPA_W = 640, MAPA_H = 420;
+
+  function desenharMapa(praia) {
+    var caixa = el('mapa'), tela = el('mapa-tela');
+    if (!caixa || !tela || !MAPA) return;
+
+    var lat = praia.la, lon = praia.lo;
+    var kx = Math.cos(lat * Math.PI / 180);          /* graus de lon são mais curtos */
+    var meiaLon = MAPA_MEIA, meiaLat = meiaLon * kx * (MAPA_H / MAPA_W);
+    var x0 = lon - meiaLon, x1 = lon + meiaLon;
+    var y0 = lat - meiaLat, y1 = lat + meiaLat;
+    var px = function (lo) { return (lo - x0) / (x1 - x0) * MAPA_W; };
+    var py = function (la) { return (1 - (la - y0) / (y1 - y0)) * MAPA_H; };
+
+    var formas = [], rotulos = [];
+    MAPA.concelhos.forEach(function (c) {
+      var b = c.b;
+      if (b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1) return;   /* fora da vista */
+      c.f.forEach(function (anel) {
+        var d = '';
+        for (var i = 0; i < anel.length; i++) {
+          d += (i ? 'L' : 'M') + px(anel[i][0]).toFixed(1) + ' ' + py(anel[i][1]).toFixed(1);
+        }
+        formas.push('<path class="m-terra" d="' + d + 'Z"/>');
+      });
+      /* O rótulo vai ao centro da caixa, limitado à parte visível: um concelho
+         que entra pela borda deve escrever o nome DENTRO da tela, não fora. */
+      var cx = px(Math.min(x1, Math.max(x0, (Math.max(b[0], x0) + Math.min(b[2], x1)) / 2)));
+      var cy = py(Math.min(y1, Math.max(y0, (Math.max(b[1], y0) + Math.min(b[3], y1)) / 2)));
+      if (cy < 20 || cy > MAPA_H - 14) return;
+      /* Meia largura do nome, estimada. Sem isto a verificação olhava só para
+         o CENTRO do texto, e «Oliveira de Azeméis» — 19 letras — saía pela
+         borda com o centro ainda dentro da tela. */
+      /* 5,4 px por letra: são MAIÚSCULAS a negrito a 15 px. Com 4,4 — a
+         estimativa de minúsculas — o «AROUCA» ainda saía pela borda. */
+      var meia = c.n.length * 5.4;
+      if (cx - meia < 4 || cx + meia > MAPA_W - 4) {
+        cx = Math.min(MAPA_W - 4 - meia, Math.max(4 + meia, cx));
+        if (cx - meia < 4) return;      /* nome maior do que a tela: desiste */
+      }
+      rotulos.push({ n: c.n, x: cx, y: cy, meia: meia });
+    });
+
+    /* Nomes a mais numa tela pequena é ruído. Fica-se pelos que não se tocam,
+       e os primeiros são os concelhos maiores — o ficheiro já vem por tamanho. */
+    var postos = [];
+    rotulos.forEach(function (r) {
+      if (postos.length >= 6) return;
+      for (var i = 0; i < postos.length; i++) {
+        /* Sobreposição a sério: compara as larguras dos dois nomes, e não uma
+           distância fixa que trata «Ovar» como se fosse «Vila Nova de Gaia». */
+        if (Math.abs(postos[i].x - r.x) < postos[i].meia + r.meia + 12
+            && Math.abs(postos[i].y - r.y) < 30) return;
+      }
+      postos.push(r);
+    });
+
+    var pontoX = px(lon), pontoY = py(lat);
+    var svg = '<svg viewBox="0 0 ' + MAPA_W + ' ' + MAPA_H + '" role="img" aria-label="'
+      + esc('Mapa: ' + praia.n + ' fica no litoral, com os concelhos à volta assinalados.') + '">'
+      + '<rect class="m-mar" width="' + MAPA_W + '" height="' + MAPA_H + '"/>'
+      + formas.join('')
+      + postos.map(function (r) {
+          return '<text class="m-nome" x="' + r.x.toFixed(0) + '" y="' + r.y.toFixed(0)
+            + '" font-size="15">' + esc(r.n.toUpperCase()) + '</text>';
+        }).join('')
+      + '<circle class="m-halo" cx="' + pontoX.toFixed(1) + '" cy="' + pontoY.toFixed(1) + '" r="18"/>'
+      + '<circle class="m-ponto" cx="' + pontoX.toFixed(1) + '" cy="' + pontoY.toFixed(1) + '" r="7"/>'
+      + '</svg>';
+
+    tela.innerHTML = svg;
+    var pe = el('mapa-pe');
+    if (pe) pe.textContent = 'Contornos da CAOP (Direcção-Geral do Território). '
+      + 'O mapa é desenhado aqui — não há pedidos a servidores de mapas.';
+    caixa.hidden = false;
+  }
+
+  function mostrarMapa(praia) {
+    var caixa = el('mapa');
+    if (!caixa) return;
+    if (MAPA) { desenharMapa(praia); return; }
+    /* Só se pede o ficheiro quando alguém escolhe uma praia: a página de
+       entrada não paga os 78 KB de quem nunca chega aqui. */
+    carregarMapa().then(function () {
+      if (MAPA && praiaActual === praia) desenharMapa(praia);
+    });
+  }
 
   /* A troca do código do Google não depende da lista de praias para nada, e
      estava presa ao mesmo .then: se o praias.json falhasse — deploy a meio,

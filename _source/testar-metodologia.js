@@ -116,11 +116,23 @@ console.log('\n== 3. os cortes e a janela ==');
   if (amareloDe !== 45) erro(`a página diz que amarelo começa em ${amareloDe}`);
   if (verde === 70 && amareloDe === 45) ok('cortes 70 e 45, como no modelo.js:312');
 
-  const m = corrido.match(/entre as <strong>(\d+)h e as (\d+)h<\/strong>/);
-  if (!m) erro('não encontrei a janela horária na página');
-  else if (num(m[1]) !== M.HORA_INI || num(m[2]) !== M.HORA_FIM) {
-    erro(`a página diz ${m[1]}h–${m[2]}h, o modelo usa ${M.HORA_INI}h–${M.HORA_FIM}h`);
-  } else ok(`janela ${M.HORA_INI}h–${M.HORA_FIM}h`);
+  /* A janela deixou de ser um intervalo contínuo: são dois blocos com um
+     buraco no meio. A página tem de publicar os dois, e tem de dizer que as
+     horas do buraco ficam de fora — senão «das 9h às 19h» lia-se como onze
+     horas seguidas, que é o que o modelo NÃO faz. */
+  {
+    const blocos = (corrido.match(/<strong>das (\d+)h às (\d+)h<\/strong>/g) || [])
+      .map((b) => b.match(/(\d+)h às (\d+)h/).slice(1, 3).map(Number));
+    const esperados = M.BLOCOS_DIA;
+    if (JSON.stringify(blocos) !== JSON.stringify(esperados)) {
+      erro(`a página publica ${JSON.stringify(blocos)} e o modelo usa ${JSON.stringify(esperados)}`);
+    } else ok(`as duas janelas batem certo: ${esperados.map((b) => b[0] + 'h–' + b[1] + 'h').join(' e ')}`);
+    const buracoDe = M.PARTES[0].fim, buracoAte = M.PARTES[1].ini;
+    const re = new RegExp('<strong>' + buracoDe + 'h–' + buracoAte + 'h<\\/strong>');
+    if (!re.test(corrido)) {
+      erro(`a página não diz que as ${buracoDe}h–${buracoAte}h ficam de fora`);
+    } else ok(`e a página diz que as ${buracoDe}h–${buracoAte}h ficam de fora`);
+  }
 }
 
 /* ------------------------------------------------------------------- 4 */
@@ -223,7 +235,7 @@ console.log('\n== 5. os vetos publicados são os do código ==');
 /* ------------------------------------------------------------------- 6 */
 console.log('\n== 6. a página está inteira ==');
 {
-  const ancoras = ['pesos', 'janela', 'direccao', 'curvas', 'vento', 'ceu', 'calor',
+  const ancoras = ['pesos', 'janela', 'partes', 'direccao', 'curvas', 'vento', 'ceu', 'calor',
                    'agua', 'chuva', 'limitante', 'vetos', 'cortes', 'rio',
                    'limitacoes', 'fontes'];
   const faltam = ancoras.filter(a => !html.includes(`id="${a}"`));
@@ -234,12 +246,97 @@ console.log('\n== 6. a página está inteira ==');
   if (noIndice.length) erro(`sem entrada no índice: ${noIndice.join(', ')}`);
   else ok('todas estão no índice');
 
+  /* #metades é uma âncora MORTA que se mantém de propósito: houve ligações
+     publicadas para /metodologia/#metades e um endereço partilhado não deve
+     deixar de aterrar em lado nenhum. Não é secção, não vai ao índice — mas
+     tem de continuar a existir. */
+  if (!html.includes('id="metades"')) {
+    erro('a âncora antiga #metades desapareceu — endereços já partilhados deixam de aterrar');
+  } else ok('a âncora antiga #metades continua a aterrar');
+
   if (!html.includes('rel="canonical" href="https://praiometro.pt/metodologia/"'))
     erro('falta o canonical');
   if (!html.includes('"@type":"BreadcrumbList"')) erro('falta o BreadcrumbList');
   if (/href="(?!https?:|\/|#|mailto:)/.test(html.replace(/<!--[\s\S]*?-->/g, '')))
     erro('há caminhos relativos na página');
   if (!falhas) ok('canonical, dados estruturados e caminhos absolutos');
+}
+
+console.log('\n== 7. os portões das metades do dia ==');
+{
+  /* Os quatro números que decidem quando o site abre a boca sobre a manhã e a
+     tarde. São afináveis — e é exactamente por isso que estão aqui: quem os
+     afinar no modelo.js e não vier cá acima deixa a página a citar os
+     antigos, e não há erro nenhum à vista. */
+  /* As TRÊS partes, lidas do HTML e comparadas com o modelo uma a uma. Cobre
+     os nomes e as horas ao mesmo tempo: se alguém mexer num bloco no
+     modelo.js, a página passa a citar o antigo e isto apanha. */
+  {
+    /* Sem distinguir maiúsculas: a página escreve «Manhã» a abrir uma frase e
+       «da manhã» a meio de outra, e as duas contam. */
+    const baixo = corrido.toLowerCase();
+    for (const nome of M.PARTES.map((x) => x.nome)) {
+      if (!baixo.includes(nome.toLowerCase())) erro(`a página não nomeia a parte «${nome}»`);
+    }
+    if (/meio-dia solar/.test(baixo) === false && /meio-dia/.test(baixo)) {
+      erro('a página ainda fala de uma parte «meio-dia», que já não existe');
+    }
+  }
+
+  /* A regra de juntar ou partir é a COR, e não um limiar: se alguém puser um
+     número aqui, a página tem de o publicar — e este teste obriga a que não
+     haja número nenhum para publicar. */
+  if (/diferem <strong>\d+ pontos<\/strong>/.test(corrido)) {
+    erro('a página voltou a publicar um limiar em pontos para partir o cartão');
+  } else ok('não há limiar em pontos: quem manda é a cor');
+
+  /* E o desvio-padrão do desacordo entre modelos continua a ser a razão pela
+     qual não há limiar. É o único número desta secção, e é medido. */
+  if (!/<strong>5,4 pontos<\/strong> de desvio-padrão/.test(corrido)) {
+    erro('a página não publica o desvio-padrão do desacordo entre modelos');
+  } else ok('publica os 5,4 pontos de desacordo entre modelos');
+
+  /* A regra antiga dos 7 km/h saiu do código. Se ficar viva em qualquer
+     documento público, o site passa a prometer uma coisa que já não faz — e
+     foi a /nortada/ que quase ficou de fora desta limpeza. */
+  const vestigios = [
+    'assets/js/app.js', 'assets/js/modelo.js',
+    'metodologia/index.html', 'nortada/index.html', 'MODELO.md',
+  ];
+  for (const f of vestigios) {
+    const t = fs.readFileSync(path.join(RAIZ, f), 'utf8');
+    /* Nos ficheiros de código o comentário que explica a remoção pode citar a
+       frase antiga; o que não pode é ela continuar viva. */
+    const corpo = f.endsWith('.js') ? t.replace(/\/\*[\s\S]*?\*\//g, '') : t;
+    if (/vale a pena ir cedo/.test(corpo)) erro(`${f} ainda publica «vale a pena ir cedo»`);
+    if (/ventoManha|ventoTarde/.test(corpo)) erro(`${f} ainda usa ventoManha/ventoTarde`);
+  }
+  if (!falhas) ok('a regra dos 7 km/h não sobreviveu em lado nenhum');
+
+  /* A afirmação que originou o redesenho todo: a nota do dia É a média das
+     três partes. É uma identidade e não uma promessa, e a página tem de a
+     dizer — se alguém voltar a fazer a nota do dia sair da sua própria soma, o
+     ecrã volta a mostrar um número que contradiz as suas partes. */
+  if (!/nota do dia é a <strong>média aritmética<\/strong> das duas/.test(corrido)
+      && !/A nota do dia é a média das duas partes/.test(corrido)) {
+    erro('a página não afirma que a nota do dia é a média das duas partes');
+  } else ok('a página afirma que a nota do dia é a média das duas');
+  if (/não é a média das duas metades/.test(corrido)) {
+    erro('a página ainda descreve o modelo antigo das duas metades');
+  }
+  /* Os números da frase são medidos, e a medição depende das JANELAS. Se
+     alguém mexer nas horas e não voltar a correr o medir-portao.js, a página
+     fica a publicar percentagens de um modelo que já não existe — e isso não
+     tem erro nenhum à vista. Aqui pelo menos fica registado que os números
+     publicados e as janelas publicadas têm de vir da mesma corrida. */
+  /* O detector da frase saiu do modelo. A página pode contar a história — e
+     conta — mas não pode voltar a prometer uma frase que já não existe. */
+  if ('conselhoMetades' in M) {
+    erro('o detector da frase voltou ao modelo sem a página ser reescrita');
+  }
+  if (!/Foi apagado quando o cartão passou a mostrar as duas notas sempre/.test(corrido)) {
+    erro('a página não conta que o detector saiu, e porquê');
+  } else ok('a página conta a história do detector que saiu');
 }
 
 console.log('\n' + '='.repeat(54));

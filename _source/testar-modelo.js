@@ -200,5 +200,170 @@ const a = Modelo.classificarDia({ceu:15, vento:31, ar:24, agua:22, chuva:5, mm:0
 if (a.nortada) { falhas++; console.log('  ✗ não devia chamar nortada no sotavento algarvio'); }
 else console.log('  ✓ no sotavento algarvio não chama nortada');
 
+console.log('\n== a janela parte-se, e o dia não muda ==');
+{
+  /* Uma resposta de quatro modelos com 24 horas, para exercitar o caminho a
+     sério: consenso -> agregar / agregarJanela. */
+  const MOD = ['ecmwf_ifs025', 'icon_seamless', 'gfs_seamless', 'ukmo_seamless'];
+  const BASES = ['temperature_2m', 'apparent_temperature', 'wind_speed_10m', 'wind_gusts_10m',
+                 'cloud_cover', 'precipitation', 'precipitation_probability', 'uv_index',
+                 'wind_direction_10m'];
+  const PADRAO = { temperature_2m: 26, apparent_temperature: 28, wind_speed_10m: 8,
+                   wind_gusts_10m: 18, cloud_cover: 15, precipitation: 0,
+                   precipitation_probability: 0, uv_index: 7, wind_direction_10m: 200 };
+  const PRAIA = { n: 'Teste', la: 41.0, lo: -8.65, m: 1 };
+
+  /* horasPorDia: função (dia) -> lista de horas inteiras a incluir */
+  function resposta(dias, horasPorDia) {
+    const h = { time: [] };
+    dias.forEach((d) => (horasPorDia ? horasPorDia(d) : [...Array(24).keys()])
+      .forEach((i) => h.time.push(`${d}T${String(i).padStart(2, '0')}:00`)));
+    MOD.forEach((m) => {
+      BASES.forEach((b) => { h[b + '_' + m] = h.time.map(() => PADRAO[b]); });
+      h['weather_code_' + m] = h.time.map(() => 1);
+    });
+    return { hourly: h, daily: { time: dias, precipitation_sum: dias.map(() => 0),
+                                weather_code: dias.map(() => 1) } };
+  }
+  function marOndas(dias) {
+    const t = [];
+    dias.forEach((d) => { for (let i = 0; i < 24; i++) t.push(`${d}T${String(i).padStart(2, '0')}:00`); });
+    return { hourly: { time: t, sea_surface_temperature: t.map(() => 19), wave_height: t.map(() => 0.6) } };
+  }
+
+  const D = '2026-08-08';
+  const cons = Modelo.consenso(resposta([D]), MOD);
+  const mar = marOndas([D]);
+
+  /* O refactor não pode ter mudado um número: a janela inteira pela função
+     nova, mais os dois campos que vêm do bloco diário, tem de dar exactamente
+     o que a agregar() dá. Isto apanha alguém a trocar um `media` por um
+     `maximo`, a perder um arredondamento ou a esquecer um campo ao mexer
+     naquele corpo. */
+  const viaAgregar = Modelo.agregar(cons, mar, PRAIA)[0];
+  const viaJanela = Modelo.agregarBlocos(cons, mar, PRAIA, D, Modelo.BLOCOS_DIA);
+  viaJanela.mmDia = 0; viaJanela.codigo = 1;
+  eq('agregarBlocos(a janela toda) === agregar()', viaJanela, viaAgregar);
+
+  /* ...mas a identidade acima compara o código consigo próprio, e por isso não
+     apanha uma alteração que mexa nos DOIS lados ao mesmo tempo. Provado por
+     mutação: trocar `media` por `maximo` nas nuvens sobrevivia a tudo o que
+     estava escrito aqui. O que fecha esse buraco são valores FIXADOS, sobre um
+     fixture em que cada estatística dá um número diferente das outras — se
+     média, máximo, soma e percentil derem todos o mesmo, o teste não distingue
+     nenhuma delas. */
+  const variado = resposta([D]);
+  MOD.forEach((m) => {
+    const porHora = (f) => variado.hourly.time.map((t) => f(+t.slice(11, 13)));
+    /* Os valores crescem com a hora, e a janela do dia são DEZ horas
+       (9-13 e 15-19; as 14h ficam de fora). Se alguém voltar a agregar o
+       intervalo contínuo 9h-19h, as 14h entram e estes números mudam todos —
+       que é precisamente o que estas asserções existem para apanhar. */
+    variado.hourly['cloud_cover_' + m] = porHora((hr) => (hr - 9) * 10);
+    variado.hourly['wind_speed_10m_' + m] = porHora((hr) => hr * 2);
+    variado.hourly['apparent_temperature_' + m] = porHora((hr) => 20 + (hr - 9));
+    variado.hourly['precipitation_' + m] = porHora(() => 0.1);
+    variado.hourly['precipitation_probability_' + m] = porHora((hr) => (hr - 9) * 5);
+  });
+  const cv = Modelo.consenso(variado, MOD);
+  const jv = Modelo.agregarBlocos(cv, null, PRAIA, D, Modelo.BLOCOS_DIA);
+  eq('nuvens pela MÉDIA das dez horas (0..100, sem as 14h)', jv.ceu, 50);
+  eq('calor pelo MÁXIMO (20..30)', jv.ar, 30);
+  eq('vento pelo p75 (18..38)', jv.vento, 34);
+  eq('vento mínimo pelo p10', jv.ventoMin, 20);
+  eq('vento máximo pelo máximo', jv.ventoMax, 38);
+  eq('milímetros pela SOMA dentro da janela', Math.round(jv.mm * 100) / 100, 1);
+  eq('probabilidade de chuva pelo MÁXIMO', jv.chuva, 50);
+  /* E a prova de que as 14h ficam MESMO de fora: com o intervalo contínuo, as
+     dez horas passam a onze e cada uma destas estatísticas muda. */
+  const contiguo = Modelo.agregarJanela(cv, null, PRAIA, D, Modelo.HORA_INI, Modelo.HORA_FIM);
+  eq('o intervalo contínuo 9h-19h vê MAIS uma hora (as 14h)',
+     [contiguo.ceu, contiguo.ar, Math.round(contiguo.mm * 100) / 100], [50, 30, 1.1]);
+  eq('  e por isso o dia NÃO se agrega assim', contiguo.mm !== jv.mm, true);
+
+  /* A guarda que impede o «vermelho confiante»: sem horas no intervalo, a
+     função devolve null e quem chama tem de decidir. Um objecto vazio passado
+     ao classificarDia sai de lá VERMELHO, com frase e sem um único veto. */
+  eq('intervalo sem horas nenhumas -> null', Modelo.agregarJanela(cons, mar, PRAIA, D, 25, 26), null);
+  eq('dia que a resposta não cobre -> null',
+     Modelo.agregarJanela(cons, mar, PRAIA, '2031-01-01', Modelo.HORA_INI, Modelo.HORA_FIM), null);
+  eq('e é por isso que a guarda existe: classificarDia({}) diz',
+     Modelo.classificarDia({}).cor, 'vermelho');
+
+  /* Mas a agregar() NÃO pode propagar esse null: o array é indexado pelo dia
+     escolhido e o app.js lê d.uv sem perguntar. Um null no meio deixava a
+     página com o HTML e mais nada. */
+  const soMadrugada = Modelo.consenso(resposta([D], () => [0, 1, 2, 3, 4, 5]), MOD);
+  const vazio = Modelo.agregar(soMadrugada, null, PRAIA)[0];
+  eq('dia sem horas na janela continua a ser um objecto', vazio !== null && typeof vazio === 'object', true);
+  eq('  com os campos todos a null', [vazio.vento, vazio.ceu, vazio.ar, vazio.uv], [null, null, null, null]);
+  eq('  e sem trovoada inventada', vazio.trovoada, false);
+
+  /* As metades medem-se com as mesmas contas, e cada uma nas SUAS horas.
+     Uma resposta em que o vento é 10 até às 14h e 40 a partir das 15h: se o
+     corte estiver no sítio certo, a manhã não vê um único 40 e a tarde não vê
+     um único 10. Com um fixture uniforme este teste passaria sempre — foi
+     assim que ele estava escrito à primeira. */
+  const porHora = resposta([D]);
+  MOD.forEach((m) => {
+    porHora.hourly['wind_speed_10m_' + m] = porHora.hourly.time.map((t) =>
+      +t.slice(11, 13) >= Modelo.PARTES[1].ini ? 40 : 10);
+  });
+  const consH = Modelo.consenso(porHora, MOD);
+  const aH = Modelo.avaliarDia(consH, mar, PRAIA, D);
+  eq('a manhã só vê as horas antes do corte',
+     [aH.partes[0].d.ventoMin, aH.partes[0].d.ventoMax], [10, 10]);
+  eq('e a tarde só vê as de depois',
+     [aH.partes[1].d.ventoMin, aH.partes[1].d.ventoMax], [40, 40]);
+  eq('o dia inteiro vê as duas', [Modelo.agregarBlocos(consH, mar, PRAIA, D, Modelo.BLOCOS_DIA).ventoMin,
+                                  Modelo.agregarBlocos(consH, mar, PRAIA, D, Modelo.BLOCOS_DIA).ventoMax], [10, 40]);
+
+  /* A RAZÃO, sem o prefixo da frase. É o que a interface usa quando é uma
+     PARTE do dia a falar: «Dá para ir, mas está muito vento» dito por cima de
+     uma tarde vermelha seria mentira, e um segundo gerador de frases a dizer o
+     mesmo de outra maneira foi como se chegou a ter quatro na mesma caixa. */
+  const BASE_RAZAO = { vento: 12, ar: 27, agua: 20, chuva: 0, mm: 0, ondas: 0.6,
+                       rajada: 22, dirVento: 350, lat: 38.68, lon: -9.34,
+                       mar: true, trovoada: false };
+  const semRazao = [];
+  [['verde limpo', { vento: 8, ceu: 10 }],
+   ['verde com ressalva', { vento: 8, ceu: 10, agua: 15 }],
+   ['amarelo', { vento: 31 }],
+   ['vermelho', { vento: 40 }],
+   ['vetado', { chuva: 90 }]].forEach(([rot, extra]) => {
+    const v = Modelo.classificarDia({ ...BASE_RAZAO, ...extra });
+    if (typeof v.razao !== 'string' || !v.razao.length) semRazao.push(rot + ' -> ' + JSON.stringify(v.razao));
+    /* A razão é só a razão: sem o veredicto colado à frente. É esse o defeito
+       que ela existe para evitar — «Dá para ir, mas está muito vento» impresso
+       por cima de uma tarde vermelha diz uma coisa e o bloco diz a contrária.
+       (A razão pode ser MAIS específica do que a frase, e isso é bom: num dia
+       verde com uma ressalva ligeira a frase é «Bom dia de praia.» e a razão
+       diz qual é o factor mais fraco.) */
+    if (/^(dá para ir|fica para outro dia|não vale a pena|não vá|bom dia de praia|está tudo a favor,)/i.test(v.razao)) {
+      semRazao.push(rot + ': a razão traz o veredicto colado — «' + v.razao + '»');
+    }
+    if (/[.]$/.test(v.razao)) semRazao.push(rot + ': a razão acaba em ponto — «' + v.razao + '»');
+  });
+  eq('toda a classificação tem razão, e a razão é só a razão', semRazao, []);
+
+  /* O detector das horas saiu, e com ele a maquinaria toda. Se voltar sem
+     medição, isto lembra que a medição existe em _source/medir-portao.js. */
+  /* A armadilha: `dias.map(classificarDia)` passa o ÍNDICE como segundo
+     argumento. Quando esse argumento era um número, o dia 0 saía com nota 0 —
+     em silêncio, com cor e frase de dia péssimo. Um objecto torna-o inócuo. */
+  {
+    const d3 = { ...BASE_RAZAO };
+    const porMap = [d3, d3, d3].map(Modelo.classificarDia);
+    eq('map(classificarDia) não impõe o índice como nota',
+       porMap.map((x) => x.nota), [porMap[0].notaPropria, porMap[0].notaPropria, porMap[0].notaPropria]);
+    eq('  e a nota imposta continua a funcionar pela via certa',
+       Modelo.classificarDia(d3, { nota: 42 }).nota, 42);
+  }
+
+  eq('o detector da frase das horas já não existe',
+     ['metadesDoDia', 'conselhoMetades', 'LIMIAR_METADES', 'PRAZO_METADES']
+       .filter((k) => k in Modelo), []);
+}
+
 console.log(`\n${falhas === 0 ? '✓ TODOS OS TESTES PASSARAM' : '✗ ' + falhas + ' FALHAS'}\n`);
 process.exit(falhas ? 1 : 0);

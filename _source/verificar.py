@@ -28,11 +28,24 @@ CONTRASTE = r"""(function(){
     const cs=getComputedStyle(n);
     if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0)return;
     const r=n.getBoundingClientRect(); if(!r.width||!r.height)return;
+    /* Texto escondido à vista (.visually-hidden): 1px recortado, lido só por
+       leitores de ecrã. Ninguém o VÊ, logo não tem contraste que medir — e
+       media-se, e dava falsos positivos no tema escuro. */
+    if(r.width<=2&&r.height<=2)return;
+    if(cs.clipPath&&cs.clipPath.indexOf('inset(50%')===0)return;
     const f=px(cs.color),b=fundo(n); const a=lum(sobre(f,b)),bb=lum(b);
     const rc=(Math.max(a,bb)+.05)/(Math.min(a,bb)+.05);
     const s=parseFloat(cs.fontSize),g=s>=24||(s>=18.66&&+cs.fontWeight>=700);
     if(rc<(g?3:4.5))maus.push(t.slice(0,28)+' @'+Math.round(s)+'px '+rc.toFixed(2));});
   return JSON.stringify(maus.slice(0,8));})()"""
+
+# Quantas partes tem o dia, lido do próprio modelo: um número à mão aqui
+# passaria a mentir no dia em que o modelo mudasse.
+import subprocess as _sp
+M_PARTES = json.loads(_sp.run(['node','-e',
+  "require('%s/assets/js/modelo.js');"
+  "process.stdout.write(JSON.stringify(globalThis.Modelo.PARTES.map(function(p){return p.nome;})))" % RAIZ],
+  capture_output=True, text=True).stdout)
 
 falhas=[]
 def erro(m): falhas.append(m); print('   ✗ '+m)
@@ -52,19 +65,26 @@ for w,h,mob,rot in [(375,812,True,'telemóvel 375'),(1280,900,False,'computador 
         c.js("document.querySelector('.atalho').click()"); time.sleep(5.0)
         d=json.loads(c.js("""JSON.stringify({
           resultado:!document.getElementById('resultado').hidden,
-          palavra:document.getElementById('v-palavra').textContent,
+          /* a palavra do veredicto vive dentro da caixa das partes (junto) ou
+             na frase da divisão (partido) — o selo saiu */
+          palavra:(document.querySelector('.partes__palavra')||{}).textContent
+                  || document.getElementById('v-resposta').textContent,
           dias:document.querySelectorAll('.dia').length,
           transbordo:document.documentElement.scrollWidth+'/'+innerWidth})"""))
         ok = d['resultado'] and d['dias']==6 and d['transbordo'].split('/')[0]==d['transbordo'].split('/')[1]
         print('  %-16s %s %s' % (rot, '✓' if ok else '✗', json.dumps(d, ensure_ascii=False)))
         if not ok: erro('%s: %s'%(rot,d))
-        # contraste fechado e aberto
+        # Contraste com os painéis fechados e com um aberto. Esta segunda
+        # medição abria o antigo <details id="detalhe">, que já não existe: a
+        # chamada passou a falhar em silêncio e o teste media duas vezes a
+        # mesma coisa. Agora abre um bloco, que é onde os números vivem.
         con=json.loads(c.js(CONTRASTE))
-        c.js("document.getElementById('detalhe').open=true"); time.sleep(.6)
+        c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()")
+        time.sleep(.6)
         con2=json.loads(c.js(CONTRASTE))
         print('  %-16s contraste fechado=%d aberto=%d' % ('', len(con), len(con2)))
         if con: erro('%s contraste: %s'%(rot,con))
-        if con2: erro('%s contraste (detalhe): %s'%(rot,con2))
+        if con2: erro('%s contraste (com um bloco aberto): %s'%(rot,con2))
     finally: c.fechar()
 
 print('\n== 2. teclado na procura ==')
@@ -111,12 +131,15 @@ try:
     time.sleep(.8)
     c.js("document.querySelector('.sugestao[data-i]').click()"); time.sleep(5.0)
     d=json.loads(c.js("""JSON.stringify({praia:document.getElementById('v-praia').textContent,
-      palavra:document.getElementById('v-palavra').textContent,
-      factores:[...document.querySelectorAll('.factor__nome')].map(x=>x.textContent),
-      nota:document.getElementById('v-nota').textContent})"""))
-    c.js("document.getElementById('detalhe').open=true"); time.sleep(.5)
-    d['factores']=json.loads(c.js("JSON.stringify([...document.querySelectorAll('.factor__nome')].map(x=>x.textContent))"))
-    rodape=c.js("(document.querySelector('.detalhe__rodape')||{}).textContent||''")
+      palavra:(document.querySelector('.partes__palavra')||{}).textContent
+              || document.getElementById('v-resposta').textContent,
+      nota:document.getElementById('v-total').textContent})"""))
+    # Os factores vivem agora dentro do painel de cada parte, e só quando aberto.
+    c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()"); time.sleep(.5)
+    d['factores']=json.loads(c.js("JSON.stringify([...document.querySelectorAll('.nums__nome')].map(x=>x.textContent))"))
+    # A explicação da praia de rio mudou-se do rodapé do painel para a linha da
+    # fonte dos dados, no fim do cartão: são duas coisas sobre a mesma origem.
+    rodape=c.js("(document.getElementById('v-fonte')||{}).textContent||''")
     print('  praia:', d['praia'], '|', d['palavra'], '|', d['nota'])
     print('  factores:', d['factores'])
     if 'Água do mar' in d['factores']: erro('praia de rio não devia ter factor água')
@@ -346,6 +369,269 @@ try:
     intrusos=[h for h in hosts if h not in permitidos]
     if intrusos: erro('o site contactou servidores que não devia: %s' % intrusos)
     else: print('  sem terceiros ✓ só %s' % ', '.join(sorted(hosts)))
+finally: c.fechar()
+
+print('\n== 6c. as duas partes do dia ==')
+c=novo(375,812,True)
+try:
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    modos={'junto':0,'partido':0,'sem':0}
+    for dia in range(6):
+        c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.4)
+        d=json.loads(c.js(r"""JSON.stringify({
+          classe: document.getElementById('v-partes').className,
+          resposta: document.getElementById('v-resposta').textContent,
+          fatias: [...document.querySelectorAll('.fatia')].map(x => ({
+            nome: (x.querySelector('.fatia__nome')||{}).textContent,
+            nota: (x.querySelector('.fatia__nota')||{}).textContent,
+            lido: (x.querySelector('.visually-hidden')||{}).textContent})),
+          blocos: [...document.querySelectorAll('.bloco')].map(x => ({
+            nome: (x.querySelector('.bloco__nome')||{}).textContent,
+            palavra: (x.querySelector('.bloco__palavra')||{}).textContent,
+            nota: ((x.querySelector('.bloco__nota')||{}).textContent) || '',
+            cor: [...x.classList].filter(k => k.indexOf('parte--') === 0 && k !== 'parte--passou')[0] || '',
+            temIcone: !!x.querySelector('.bloco__icone svg'),
+            lido: (x.querySelector('.visually-hidden')||{}).textContent})),
+          palavraJunto: (document.querySelector('.partes__palavra')||{}).textContent || '',
+          iconeJunto: !!document.querySelector('.partes__icone svg'),
+          total: document.getElementById('v-total').textContent,
+          frase: document.getElementById('v-frase').textContent,
+          transbordo: document.documentElement.scrollWidth+'/'+innerWidth})"""))
+        # A MANHÃ E A TARDE SÃO SEMPRE DOIS BLOCOS. Houve uma versão em que os
+        # dias iguais vinham num bloco só, e o cartão mudava de feitio
+        # consoante o dia. Se voltar, isto apanha.
+        if not d['blocos']:
+            print('  dia %d        · sem previsão para as duas partes' % dia)
+            modos['sem'] += 1; continue
+        if len(d['blocos']) != 2:
+            erro('dia %d: %d blocos, deviam ser sempre 2' % (dia, len(d['blocos']))); continue
+        if d['fatias']:
+            erro('dia %d: voltou o estado de bloco único (%d fatias)' % (dia, len(d['fatias'])))
+        for b in d['blocos']:
+            if not b['palavra']: erro('dia %d: bloco sem palavra' % dia)
+            if b['nota'] and not b['temIcone']: erro('dia %d: bloco com nota e sem ícone' % dia)
+        notas = [b['nota'] for b in d['blocos'] if b['nota']]
+        nomes = [b['nome'] for b in d['blocos']]
+        cores = [b['cor'] for b in d['blocos']]
+        difere = cores[0] != cores[1]
+        modos['partido' if difere else 'junto'] += 1
+        # A frase por cima só quando uma das partes NÃO TEM número: aí não há
+        # nada no bloco que explique porquê. Quando as duas têm nota, os dois
+        # blocos já dizem qual é a melhor, e repeti-lo por extenso («A manhã
+        # está melhor») era dizer duas vezes a mesma coisa — saiu a pedido.
+        semNumero = any(not b['nota'] for b in d['blocos'])
+        if semNumero and not d['resposta']:
+            erro('dia %d: uma parte sem número e sem frase a explicar porquê' % dia)
+        if not semNumero and d['resposta']:
+            erro('dia %d: as duas partes têm nota mas há frase por cima: %r' % (dia, d['resposta']))
+
+        if [n.split(' ·')[0] for n in nomes] != ['Manhã','Tarde']:
+            erro('dia %d: nomes das partes: %s' % (dia, nomes))
+
+        # A ARITMÉTICA FECHA À VISTA. É a queixa que originou este desenho, e
+        # esta é a asserção que impede que volte. floor(x+0.5) e não round():
+        # o Python arredonda 80,5 para 80 e o Math.round do JS para 81.
+        import re as _re
+        m = _re.search(r'Nota do dia\s+(\d+)\s+em 100', d['total'])
+        if m and len(notas) == 2:
+            media = int(sum(int(n) for n in notas)/2 + 0.5)
+            if int(m.group(1)) != media:
+                erro('dia %d: o total diz %s e a média das duas é %d — %s'
+                     % (dia, m.group(1), media, notas))
+        elif not m:
+            # sem número, tem de haver razão escrita — nunca um total mudo
+            if 'não tem nota' not in d['total']:
+                erro('dia %d: sem total e sem razão: %r' % (dia, d['total']))
+            if any(b.get('nota') for b in d['blocos']) and len(notas) == 2:
+                erro('dia %d: as duas partes têm nota mas o dia não mostra total' % dia)
+
+        if not d['frase']: erro('dia %d: sem razão escrita' % dia)
+        if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
+            erro('dia %d: o cartão faz transbordar (%s)' % (dia, d['transbordo']))
+    print('  6 dias        ✓ sempre dois blocos — %d com cores iguais, %d diferentes, %d sem dados'
+          % (modos['junto'], modos['partido'], modos['sem']))
+
+    # A LEI: NENHUM NÚMERO SEM A SUA PALAVRA AO LADO. É o que cura o 76 amarelo
+    # encostado ao 73 verde — deixa de ser contradição e passa a classificação.
+    orfaos=json.loads(c.js(r"""(function(){
+      var maus = [];
+      document.querySelectorAll('.fatia').forEach(function (x) {
+        if (x.querySelector('.fatia__nota') && !x.querySelector('.fatia__nome')) maus.push('fatia');
+      });
+      document.querySelectorAll('.bloco').forEach(function (x) {
+        if (x.querySelector('.bloco__nota') && !x.querySelector('.bloco__palavra')) maus.push('bloco');
+      });
+      document.querySelectorAll('.dia').forEach(function (x) {
+        if (x.querySelector('.dia__nota') && !x.querySelector('.dia__palavra')) maus.push('dia');
+      });
+      return JSON.stringify(maus);})()"""))
+    if orfaos: erro('há números sem palavra ao lado: %s' % orfaos)
+    else: print('  a lei          ✓ nenhum número aparece sem a sua palavra')
+
+    # As partes dizem-se por nome, nunca por hora de relógio.
+    horas=json.loads(c.js(r"""JSON.stringify(
+      (document.getElementById('veredicto').innerText.match(/\d+\s*h\b(?!\/)/g) || []))"""))
+    if horas: erro('o cartão mostra horas de relógio: %s' % horas)
+    else: print('  sem relógio   ✓ diz «Manhã» e «Tarde», e mais nada')
+
+    # O «✕» saiu: lê-se como avaria ou como «fechado», nunca como «não vale a pena».
+    if '✕' in c.js("document.getElementById('resultado').innerText"):
+        erro('o ✕ voltou ao ecrã')
+    else: print('  sem ✕          ✓ onde não há nota, há palavras')
+
+    con=json.loads(c.js(CONTRASTE))
+    if con: erro('contraste no cartão: %s' % con)
+    else: print('  contraste     ✓ limpo')
+
+    d=json.loads(c.js(r"""JSON.stringify({
+      dias: document.querySelectorAll('.dia').length,
+      colunas: getComputedStyle(document.getElementById('dias')).gridTemplateColumns.split(' ').length,
+      rolo: document.getElementById('dias').scrollWidth > document.getElementById('dias').clientWidth + 1,
+      palavras: [...document.querySelectorAll('.dia__palavra')].map(x => x.textContent).filter(Boolean).length})"""))
+    if d['dias'] != 6: erro('a tira deixou de ter 6 dias: %d' % d['dias'])
+    if d['colunas'] != 3: erro('a tira devia ser de 3 colunas a 375px, é de %d' % d['colunas'])
+    if d['rolo']: erro('a tira voltou a ter rolo horizontal')
+    if d['palavras'] != 6: erro('só %d dos 6 dias têm palavra' % d['palavras'])
+    print('  tira          ✓ 6 dias em 3 colunas, sem rolo, todos com palavra')
+finally: c.fechar()
+
+print('\n== 6c-ter. o tema escuro ==')
+# O medidor corria só em tema claro, e por isso nunca soube que o atalho
+# «Saltar para o resultado» estava a 2,14:1 no escuro. Um site que se pinta
+# sozinho conforme o telemóvel tem de ser medido nos dois.
+c=Chrome(porta=livre())
+try:
+    c.cmd('Emulation.setDeviceMetricsOverride', width=375, height=812, deviceScaleFactor=1, mobile=True)
+    c.cmd('Emulation.setEmulatedMedia', features=[{'name':'prefers-color-scheme','value':'dark'}])
+    c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    mau=[]
+    for dia in range(6):
+        c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.3)
+        mau += json.loads(c.js(CONTRASTE))
+    # Com um bloco ABERTO: é onde os números vivem, e é a zona mais apertada do
+    # ficheiro — texto pequeno sobre o fundo pastel. Esta medição já apanhou o
+    # «já passou» a 3,96:1, que só existia no escuro e só depois das 13h.
+    c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()")
+    time.sleep(.6)
+    mau += json.loads(c.js(CONTRASTE))
+    # e com o atalho em foco, que é a única altura em que se vê
+    c.js("document.querySelector('.salta').focus()"); time.sleep(.3)
+    mau += json.loads(c.js(CONTRASTE))
+    if mau: erro('contraste no tema escuro: %s' % sorted(set(mau))[:6])
+    else: print('  contraste     ✓ limpo no escuro, 6 dias, painel aberto e atalho em foco')
+finally: c.fechar()
+
+print('\n== 6c-bis. os números, dentro de cada parte ==')
+c=novo(375,812,True)
+try:
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    d=json.loads(c.js(r"""JSON.stringify({
+      cabs: [...document.querySelectorAll('.bloco__cabeca')].map(function(x){return {
+        tag: x.tagName.toLowerCase(), exp: x.getAttribute('aria-expanded'),
+        controla: x.getAttribute('aria-controls'), parte: x.parentNode.getAttribute('data-parte'),
+        alto: Math.round(x.getBoundingClientRect().height)};}),
+      abertos: document.querySelectorAll('.bloco__numeros:not([hidden])').length,
+      pista: document.getElementById('v-pista') ? !document.getElementById('v-pista').hidden : null,
+      fonte: (document.getElementById('v-fonte')||{}).textContent || '',
+      detalheMorreu: !document.getElementById('detalhe')})"""))
+    if d['cabs'] and any(x['tag'] != 'button' for x in d['cabs']):
+        print('  · há partes sem números — a cabeça não é botão, como deve')
+    if not all(x['exp'] == 'false' for x in d['cabs'] if x['tag'] == 'button'):
+        erro('ao chegar, os blocos deviam estar todos fechados: %s' % d['cabs'])
+    if d['abertos']: erro('ao chegar há %d painéis abertos' % d['abertos'])
+    if not d['pista']: erro('sem o convite escrito, a descoberta fica só na seta')
+    if not d['detalheMorreu']: erro('o «Ver os números» ainda existe — dois sítios com os mesmos números')
+    # A área de toque: 44px é o mínimo, e a cabeça é o maior botão da página.
+    baixos = [x for x in d['cabs'] if x['tag'] == 'button' and x['alto'] < 44]
+    if baixos: erro('cabeças com menos de 44px de altura: %s' % baixos)
+    if not d['fonte'] or 'Open-Meteo' not in d['fonte']:
+        erro('a atribuição da Open-Meteo desapareceu — é obrigação de licença')
+    else: print('  fonte         ✓ a atribuição está no cartão, sem carregar em nada')
+    print('  ao chegar     ✓ %d cabeças, todas fechadas, com o convite à vista' % len(d['cabs']))
+
+    # --- ABRIR
+    c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()"); time.sleep(.45)
+    d=json.loads(c.js(r"""JSON.stringify({
+      exp: [...document.querySelectorAll('button.bloco__cabeca')].map(function(x){return x.getAttribute('aria-expanded');}),
+      abertos: [...document.querySelectorAll('.bloco__numeros:not([hidden])')].map(function(x){return {
+        id: x.id, papel: x.getAttribute('role'), rotulo: x.getAttribute('aria-label'),
+        live: x.getAttribute('aria-live'),
+        linhas: [...x.querySelectorAll('.nums__linha')].map(function(l){return {
+          nome: (l.querySelector('.nums__nome')||{}).textContent || '',
+          valor: (l.querySelector('.nums__valor')||{}).textContent || '',
+          palavra: (l.querySelector('.nums__palavra')||{}).textContent || '',
+          icone: !!l.querySelector('.nums__icone svg')};})};}),
+      pista: !document.getElementById('v-pista').hidden,
+      transbordo: document.documentElement.scrollWidth+'/'+innerWidth})"""))
+    if len(d['abertos']) != 1: erro('depois de carregar há %d painéis abertos' % len(d['abertos']))
+    else:
+        a = d['abertos'][0]
+        # role="group" e NÃO role="region": um region com nome é um LANDMARK, e
+        # ficavam dois marcos a entrar e a sair do rotor a cada toque.
+        if a['papel'] != 'group': erro('o painel tem role=%r — devia ser group' % a['papel'])
+        if not a['rotulo']: erro('o painel não tem aria-label')
+        # o #veredicto é aria-live="polite": sem isto, abrir despeja os cinco
+        # factores em voz alta por cima do «expandido».
+        if a['live'] != 'off': erro('o painel não tem aria-live="off" dentro da região live')
+        if len(a['linhas']) < 3: erro('só %d factores no painel' % len(a['linhas']))
+        # A LEI: nenhum número sem a sua palavra, e nenhuma linha sem ícone.
+        maus = [l for l in a['linhas'] if not l['valor'] or not l['palavra'] or not l['icone']]
+        if maus: erro('linhas sem valor, sem palavra ou sem ícone: %s' % maus[:2])
+        # Nenhum travessão: uma linha sem valor não chega a ser escrita.
+        if any('—' in l['valor'] for l in a['linhas']):
+            erro('há travessões no painel — a linha devia não ser escrita')
+        # A ordem é por PESO, tirada do modelo.
+        nomes = [l['nome'] for l in a['linhas']]
+        if nomes[0] != 'Vento': erro('a primeira linha devia ser o Vento (peso 34): %s' % nomes)
+        # A água é a mesma nas duas partes — é o número que a conta usou, e o
+        # avaliarDia copia-a do dia para dentro de cada parte antes de a
+        # pontuar. Aqui confirma-se que o ecrã não a reparte por engano.
+        agua = [l for l in a['linhas'] if l['nome'].startswith('Água')]
+        if agua:
+            valores = json.loads(c.js(r"""(function(){
+              var out = [];
+              document.querySelectorAll('.bloco__numeros').forEach(function (p) {
+                p.querySelectorAll('.nums__linha').forEach(function (l) {
+                  var n = l.querySelector('.nums__nome');
+                  if (n && n.textContent.indexOf('Água') === 0) {
+                    out.push(l.querySelector('.nums__valor').textContent);
+                  }});});
+              return JSON.stringify(out);})()"""))
+            if len(set(valores)) > 1:
+                erro('a água aparece diferente nas duas partes: %s' % valores)
+        print('  aberto        ✓ %d factores, por peso, todos com valor, palavra e ícone'
+              % len(a['linhas']))
+    if d['pista']: erro('o convite continua visível com um painel aberto')
+    if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
+        erro('o painel aberto faz transbordar: %s' % d['transbordo'])
+    con=json.loads(c.js(CONTRASTE))
+    if con: erro('contraste com o painel aberto: %s' % con)
+    else: print('  contraste     ✓ limpo com o painel aberto')
+
+    # --- SÓ UM DE CADA VEZ, e o segundo toque fecha
+    c.js("""var bs=document.querySelectorAll('button.bloco__cabeca');
+            if (bs[1]) bs[1].click();"""); time.sleep(.45)
+    n=int(c.js("document.querySelectorAll('.bloco__numeros:not([hidden])').length"))
+    if n != 1: erro('ao abrir o segundo, ficaram %d painéis abertos' % n)
+    else: print('  só um         ✓ abrir a tarde fecha a manhã')
+    c.js("""var bs=document.querySelectorAll('button.bloco__cabeca');
+            if (bs[1]) bs[1].click();"""); time.sleep(.45)
+    d=json.loads(c.js(r"""JSON.stringify({
+      abertos: document.querySelectorAll('.bloco__numeros:not([hidden])').length,
+      pista: !document.getElementById('v-pista').hidden})"""))
+    if d['abertos']: erro('o segundo toque não fechou')
+    elif not d['pista']: erro('fechou mas o convite não voltou')
+    else: print('  segundo toque ✓ fecha, e o convite volta')
+
+    # --- MUDAR DE DIA mantém aberto (quem abriu a manhã está a comparar manhãs)
+    c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()"); time.sleep(.4)
+    c.js("document.getElementById('dia-2').click()"); time.sleep(.5)
+    d=json.loads(c.js(r"""JSON.stringify({
+      abertos: [...document.querySelectorAll('.bloco__numeros:not([hidden])')].map(function(x){return x.id;})})"""))
+    if d['abertos'] != ['nums-manha']:
+        erro('mudar de dia devia manter a manhã aberta, e ficou %s' % d['abertos'])
+    else: print('  mudar de dia  ✓ mantém a parte aberta')
 finally: c.fechar()
 
 print('\n== 7. sem JavaScript ==')

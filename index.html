@@ -104,9 +104,8 @@
       <span class="marca__icone" aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="6" fill="currentColor"/><path d="M2 24c3 0 3-2 6-2s3 2 6 2 3-2 6-2 3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
       </span>
-      Praiómetro<span class="marca__claim"> — vale a pena ir à praia hoje?</span>
+      Praiómetro<span class="marca__claim">Vale a pena ir à praia hoje?</span>
     </h1>
-    <p class="marca__lead">Escolhe a praia. Dizemos-te se vale a pena ir.</p>
   </header>
 
   <main>
@@ -154,26 +153,45 @@
             <span class="estrela__texto" id="v-estrela-texto">Guardar</span>
           </button>
         </div>
-        <div class="veredicto__selo" id="v-selo">
-          <span class="selo__icone" id="v-icone" aria-hidden="true"></span>
-          <span class="selo__palavra" id="v-palavra"></span>
-        </div>
+        <!-- A RESPOSTA, e só no estado PARTIDO: «De manhã sim, de tarde
+             não.» Fica vazia no estado junto — a palavra vive lá dentro da
+             caixa — e o :empty tira-a do fluxo, sem caixa reservada e sem
+             salto de layout. -->
+        <p class="veredicto__resposta" id="v-resposta"></p>
+
+        <!-- AS DUAS PARTES DO DIA, de uma de duas formas e mais nenhuma:
+               JUNTO   — as duas com a mesma cor: UMA caixa, UM ícone, UMA
+                         palavra, e as duas notas por baixo. ~95 % dos dias.
+               PARTIDO — cores diferentes: dois blocos com uma FENDA real
+                         entre eles, cada um a dizer-se por inteiro.
+             Um bloco ou dois é agrupamento por proximidade — percepção, não
+             interpretação. É o mesmo que faz «casa amarela» ler-se como duas
+             palavras: ninguém o aprendeu e toda a gente o sabe.
+
+             E a lei que atravessa tudo: NENHUM NÚMERO APARECE SEM A SUA
+             PALAVRA AO LADO. É isso que resolve o 76 amarelo encostado ao 73
+             verde — deixa de ser contradição e passa a ser classificação. -->
+        <div class="partes" id="v-partes"></div>
+
+        <!-- O TOTAL: parcelas em cima, total em baixo. É a forma de uma conta
+             de café, e com duas parcelas confirma-se de cabeça. -->
+        <p class="veredicto__total" id="v-total"></p>
+
+        <!-- A RAZÃO. Uma frase, um gerador, um sítio — substitui quatro
+             geradores que não sabiam o que os outros tinham dito. -->
         <p class="veredicto__frase" id="v-frase"></p>
-        <p class="veredicto__nota" id="v-nota"></p>
         <p class="veredicto__aviso" id="v-aviso" hidden></p>
+        <!-- A fonte dos dados, que era o rodapé do «Ver os números». A licença
+             da Open-Meteo exige a atribuição junto ao local onde os dados são
+             mostrados, e a documentação marinha exige a referência ao DWD. No
+             fim do cartão está mais perto dos números do que estava dentro de
+             um painel fechado — e vê-se sem carregar em nada. -->
+        <p class="veredicto__fonte" id="v-fonte"></p>
       </article>
 
       <!-- os 6 dias -->
       <div class="dias" id="dias" role="tablist" aria-label="Escolher o dia"></div>
 
-      <!-- detalhe -->
-      <details class="detalhe" id="detalhe">
-        <summary>
-          <span>Ver os números</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </summary>
-        <div class="detalhe__corpo" id="detalhe-corpo"></div>
-      </details>
 
       <!-- ================================================= ONDE FICA -->
       <!-- O contorno é desenhado a partir de /data/mapa.json, que é servido

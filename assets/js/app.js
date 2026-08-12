@@ -35,6 +35,12 @@
   var praiaActual = null;
   var dias = [];          /* dados agregados por dia */
   var veredictos = [];    /* classificação por dia */
+  var avaliacoes = [];    /* {d, v, partes, media} por dia — é o que vai ao ecrã */
+  var horaDesenhada = null;
+  /* null | 'manha' | 'tarde'. Vive só nesta visita e NUNCA vai ao
+     localStorage: um cartão que abre de maneira diferente conforme o que se
+     fez há três semanas é um cartão que se aprende duas vezes. */
+  var parteAberta = null;
   var diaEscolhido = 0;
 
   /* Praias conhecidas para arrancar, para o ecrã inicial não estar vazio.
@@ -351,9 +357,19 @@
       : Promise.resolve(null));
 
     Promise.all(pedidos).then(function (r) {
-      dias = M.agregar(M.consenso(r[0], MODELOS), r[1], praia);
-      veredictos = dias.map(M.classificarDia);
+      var cons = M.consenso(r[0], MODELOS);
+      dias = M.agregar(cons, r[1], praia);
+      /* O dia e as suas três partes vêm juntos do modelo, e a nota do dia JÁ É
+         a média das três. Não se volta a chamar classificarDia aqui: havia
+         duas fontes para a mesma nota e uma delas ficaria para trás. */
+      avaliacoes = dias.map(function (d) { return M.avaliarDia(cons, r[1], praia, d.dia); });
+      veredictos = avaliacoes.map(function (a) { return a.v; });
       diaEscolhido = 0;
+      /* Praia nova, pergunta nova: o gesto que abriu o painel foi feito sobre
+         um cartão que já não está no ecrã. Ao mudar de DIA não se toca — quem
+         abriu a manhã está a comparar manhãs, e fechá-la a cada dia obrigava a
+         seis toques para ver seis manhãs. */
+      parteAberta = null;
       estado.textContent = '';
       /* Já sabemos a cor de hoje desta praia: a tira de favoritos aproveita-a
          em vez de a voltar a pedir. */
@@ -379,6 +395,10 @@
     }).catch(function (e) {
       estado.textContent = 'Não conseguimos ir buscar a previsão. Tenta outra vez daqui a pouco.';
       el('vazio').hidden = false;
+      /* Sem isto, uma praia que falhasse herdava as partes da anterior — e era
+         a silhueta dessa que ficava no ecrã. */
+      avaliacoes = []; parteAberta = null;
+      var f = el('v-fonte'); if (f) { f.innerHTML = ''; f.removeAttribute('data-k'); }
     });
   }
 
@@ -388,7 +408,7 @@
     el('resultado').hidden = false;
     desenharDias();
     desenharVeredicto();
-    desenharDetalhe();
+    desenharFonte();
     /* Fica para o fim e é assíncrono: o mapa é a coisa menos urgente do ecrã,
        e o ficheiro dos contornos só se pede na primeira praia escolhida. */
     if (praiaActual) mostrarMapa(praiaActual);
@@ -397,19 +417,23 @@
   function desenharDias() {
     el('dias').innerHTML = dias.map(function (d, i) {
       var v = veredictos[i];
-      /* tabindex a saltar de um para o outro («roving»): o Tab entra na tira
-         uma vez e sai; lá dentro anda-se com as setas, que é o que a WAI-ARIA
-         manda num tablist e o que qualquer pessoa espera de uma tira de dias. */
+      var pal = palavraDoDia(i);
+      /* SEM a data dd/m (eram doze números em seis células) e SEM os três
+         rectângulos em miniatura: a 34x12, com notas a quinze pontos de
+         distância, davam um píxel de diferença entre si — e a classe .dia--cor
+         nunca definiu `color`, por isso saíam a azul-quase-preto. */
       return '<button class="dia dia--' + v.cor + '" type="button" role="tab" data-i="' + i + '"' +
         ' id="dia-' + i + '" aria-controls="veredicto"' +
         ' tabindex="' + (i === diaEscolhido ? '0' : '-1') + '"' +
         ' aria-selected="' + (i === diaEscolhido) + '"' +
-        ' aria-label="' + esc(nomeDia(d.dia, i) + ', ' + palavra(v.cor, i) +
+        ' aria-label="' + esc(nomeDiaLongo(d.dia, i) + ', ' + pal.toLowerCase() +
           (v.nota == null ? '' : ', nota ' + v.nota + ' em 100')) + '">' +
-        '<span class="dia__nome">' + esc(nomeDia(d.dia, i)) + '</span>' +
-        '<span class="dia__data">' + dataCurta(d.dia) + '</span>' +
+        '<span class="dia__nome" aria-hidden="true">' + esc(nomeDiaLongo(d.dia, i)) + '</span>' +
         '<span class="dia__bolha" aria-hidden="true">' + ICONES[v.cor] + '</span>' +
-        '<span class="dia__nota" aria-hidden="true">' + (v.nota == null ? '✕' : v.nota) + '</span>' +
+        /* Onde não há nota há PALAVRAS. Nunca um «✕», que se lê como avaria ou
+           como «fechado», e nunca como «não vale a pena». */
+        (v.nota == null ? '' : '<span class="dia__nota" aria-hidden="true">' + v.nota + '</span>') +
+        '<span class="dia__palavra" aria-hidden="true">' + esc(pal) + '</span>' +
         '</button>';
     }).join('');
   }
@@ -425,8 +449,12 @@
     var n = dias.length;
     if (!n) return;
     var novo = null;
+    /* A tira passou a ser uma GRELHA de 3x2: sem as setas de cima e de baixo a
+       andarem três células, metade dela ficava inalcançável pelo teclado. */
     if (e.key === 'ArrowRight') novo = (diaEscolhido + 1) % n;
     else if (e.key === 'ArrowLeft') novo = (diaEscolhido - 1 + n) % n;
+    else if (e.key === 'ArrowDown') novo = (diaEscolhido + 3) % n;
+    else if (e.key === 'ArrowUp') novo = (diaEscolhido - 3 + n) % n;
     else if (e.key === 'Home') novo = 0;
     else if (e.key === 'End') novo = n - 1;
     if (novo === null) return;
@@ -440,123 +468,461 @@
   });
 
   function desenharVeredicto() {
-    var d = dias[diaEscolhido], v = veredictos[diaEscolhido];
+    var d = dias[diaEscolhido], v = veredictos[diaEscolhido], a = avaliacoes[diaEscolhido];
     doc.body.setAttribute('data-cor', v.cor);
     el('veredicto').setAttribute('aria-labelledby', 'dia-' + diaEscolhido);
     el('v-praia').textContent = praiaActual.n;
     el('v-praia').setAttribute('title', praiaActual.c ? praiaActual.c + ', ' + praiaActual.r : praiaActual.r);
     desenharEstrela();
     desenharFavoritos();
-    el('v-dia').textContent = dataLonga(d.dia, diaEscolhido);
-    el('v-icone').innerHTML = ICONES[v.cor];
-    el('v-palavra').textContent = palavra(v.cor, diaEscolhido);
-    el('v-frase').textContent = v.frase;
-    /* Sem nota quando há veto: «Nota 94 em 100» ao lado de «Hoje não» destrói a
-       confiança no resto. E a incerteza começa a aparecer ao 3.º dia, não ao 5.º. */
-    var incerteza = diaEscolhido >= 2
-      ? 'Previsão a ' + (diaEscolhido + 1) + ' dias' + (diaEscolhido >= 4 ? ' — ainda pode mudar bastante' : ' — pode mudar')
-      : '';
-    el('v-nota').textContent = (v.nota == null ? '' : 'Nota ' + v.nota + ' em 100')
-      + (v.nota != null && incerteza ? ' · ' : '') + incerteza;
 
-    /* Avisos que não entram na nota mas que interessam a quem vai. */
-    var avisos = [];
-    if (d.uv != null && d.uv >= 8) avisos.push('Sol muito forte — protector, chapéu e sombra entre as 12h e as 16h');
-    else if (d.uv != null && d.uv >= 6) avisos.push('Sol forte — põe protector');
-    /* A informação mais útil do site num Verão português: se de manhã está
-       muito melhor do que de tarde, diz-se para ir cedo. */
-    if (d.ventoManha != null && d.ventoTarde != null && d.ventoTarde - d.ventoManha >= 7) {
-      avisos.push('De manhã ' + d.ventoManha + ' km/h, à tarde ' + d.ventoTarde + ' km/h — vale a pena ir cedo');
-    } else if (v.nortada) {
-      avisos.push('É nortada: costuma levantar-se de tarde');
-    }
-    if (d.mar && d.ondas != null && d.ondas >= 1.5) avisos.push('Mar cavado (' + num(d.ondas, 1) + ' m) — atenção com crianças');
-    var av = el('v-aviso');
-    av.hidden = !avisos.length;
-    av.textContent = avisos.join(' · ');
-    /* Um aviso de segurança não é um aviso amarelo: muda de cor e de tom.
-       Pode vir de um veto (o dia está chumbado) ou de um aviso (o dia está
-       bom E há um risco) — desde que a trovoada deixou de vetar, o segundo
-       caso existe e é o mais comum. Ler `v.vetos[0]` às cegas dava
-       «Aviso de segurança: undefined» num dia de nota 86. */
-    av.classList.toggle('veredicto__aviso--perigo', !!v.perigo);
-    if (v.perigo) {
-      var perigos = (v.vetos || []).concat(v.avisos || []);
-      var texto = 'Aviso de segurança: ' + perigos[0] + '.';
-      /* Um aviso que não diz o que fazer não serve de nada a quem já está na
-         areia — e este agora aparece ao lado de «Dia de praia». */
-      if ((v.avisos || []).indexOf('pode haver trovoada') >= 0) {
-        texto += ' Se ouvires trovões, sai da água e da praia.';
-      }
-      av.hidden = false;
-      av.textContent = texto + (avisos.length ? ' · ' + avisos.join(' · ') : '');
-    }
+    /* «Hoje» / «Amanhã» / «Sábado», e mais nada. A data por extenso saiu: a
+       tira já diz que dia é, e ninguém precisa de «Hoje, segunda-feira, 12 de
+       agosto». O prazo só a partir do 5.º dia — que amanhã é uma previsão,
+       toda a gente sabe. */
+    /* «Previsão a 5 dias — ainda pode mudar» saiu: quem escolhe o quinto
+       cartão de uma tira de seis já sabe que está a olhar para uma previsão. */
+    el('v-dia').textContent = nomeDiaLongo(d.dia, diaEscolhido);
+
+    var temPartes = desenharPartes(a);
+    desenharTotal(a, v);
+    desenharFrase(a, v, temPartes);
+    desenharAvisos(d, v);
+    horaDesenhada = new Date().getHours();
   }
 
-  function desenharDetalhe() {
-    var d = dias[diaEscolhido], v = veredictos[diaEscolhido];
+  /* Os nomes das partes, declinados. Em português o artigo contrai-se («da
+     manhã») e o particípio concorda («a manhã está chumbada»). Uma tabela
+     resolve; um corte de string dava «54 contra 40 d manhã», e deu. */
+  var NOMES = {
+    manha: { com: 'a manhã', de: 'da manhã', alta: 'A manhã', chumbo: 'A manhã está chumbada' },
+    tarde: { com: 'a tarde', de: 'da tarde', alta: 'A tarde', chumbo: 'A tarde está chumbada' }
+  };
 
-    var linhas = v.factores.map(function (f) {
-      var racio = f.pontos == null ? 0 : f.pontos / f.peso;
-      var classe = racio >= 0.7 ? 'bom' : (racio >= 0.35 ? 'medio' : 'mau');
-      var valor = '', extra = '';
-      switch (f.id) {
-        case 'ceu':
-          /* «Sol: 82% de nuvens» era uma contradição em duas palavras. Mostra-se
-             quanto céu está limpo, que é o que o nome do factor promete. */
-          valor = f.valor == null ? '—' : (100 - Math.round(f.valor)) + '% de céu limpo';
-          break;
-        case 'vento':
-          valor = f.valor == null ? '—' : f.valor + ' km/h';
-          /* O intervalo é o que torna isto comparável com os outros sites: eles
-             mostram o máximo do dia ou as rajadas, este mostra o vento típico da
-             tarde. Sem o intervalo, parecia que estava errado. */
-          extra = f.valor == null ? '' :
-            'É o que se chama ' + M.beaufort(f.valor) + '. '
-            + (d.ventoMin != null && d.ventoMax != null && d.ventoMax > d.ventoMin
-                ? 'Ao longo da tarde varia entre ' + d.ventoMin + ' e ' + d.ventoMax + ' km/h. ' : '')
-            + (d.rajada ? 'Rajadas até ' + Math.round(d.rajada) + ' km/h. ' : '')
-            + 'Média de quatro modelos meteorológicos.';
-          break;
-        case 'ar':
-          valor = f.valor == null ? '—' : Math.round(f.valor) + ' °C';
-          extra = d.arReal != null && Math.abs(d.arReal - f.valor) >= 1
-                  ? 'O termómetro marca ' + Math.round(d.arReal) + ' °C; com o vento e a humidade sente-se ' + Math.round(f.valor) + ' °C'
-                  : 'Temperatura que se sente, já com o vento e a humidade';
-          break;
-        case 'agua':
-          valor = num(f.valor, 1) + ' °C';
-          extra = d.ondas != null ? M.palavrasOndas(d.ondas) + ' (' + num(d.ondas, 1) + ' m)' : '';
-          break;
-        case 'chuva':
-          valor = f.valor == null ? '—' : Math.round(f.valor) + '% de hipótese';
-          extra = d.mm ? 'Até ' + num(d.mm, 1) + ' mm previstos' : '';
-          break;
+  /* ============================================= as duas partes do dia ====
+     A manhã e a tarde são SEMPRE dois blocos, com uma fenda real entre eles.
+     Houve uma versão em que os dias iguais apareciam num bloco só — a forma
+     mudava consoante o dia — e foi tirada a pedido: duas caixas todos os dias
+     são uma coisa que se aprende uma vez e nunca mais surpreende, e a pessoa
+     que abre isto de três em três semanas nunca vê o ecrã mudar de feitio.
+
+     O que continua a depender da COR é o que se DIZ, não o que se desenha: a
+     frase comparativa por cima («A manhã está melhor») só aparece quando as
+     duas partes caem em cores diferentes. Um limiar em pontos seria pior —
+     três pontos de diferença estão abaixo dos 5,4 de desvio-padrão do
+     desacordo entre os quatro modelos, e o cartão falaria por ruído. */
+  function haDados(partes) {
+    return !!(partes && partes.length === 2 && partes[0].v && partes[1].v);
+  }
+  /* Cores diferentes é que é notícia — e é isso, e só isso, que faz o cartão
+     abrir a boca por cima dos dois blocos. */
+  function coresDiferem(partes) {
+    if (!haDados(partes)) return false;
+    var a = partes[0].v, b = partes[1].v;
+    if (a.nota == null || b.nota == null) return true;
+    return a.cor !== b.cor;
+  }
+
+  /* As seis combinações de cores diferentes, escritas à mão: «de manhã sim, de
+     tarde não» é uma frase que qualquer português já disse na vida, e nenhum
+     gerador a acerta. Nenhuma é imperativa — o site descreve, não manda. */
+  var FRASES_PARTIDO = {
+    'verde|amarelo':    'A manhã está melhor.',
+    'verde|vermelho':   'De manhã sim, de tarde não.',
+    'amarelo|verde':    'A tarde está melhor.',
+    'amarelo|vermelho': 'De manhã ainda dá; de tarde não.',
+    'vermelho|verde':   'De manhã não, de tarde sim.',
+    'vermelho|amarelo': 'De manhã não; de tarde, ainda dá.'
+  };
+
+  /* Alguma das partes sem número (vetada, ou sem previsão). */
+  function semNumero(partes) {
+    return haDados(partes) && partes.some(function (p) { return p.v.nota == null; });
+  }
+
+  function respostaPartida(partes) {
+    for (var i = 0; i < 2; i++) {
+      var pv = partes[i].v, N = NOMES[partes[i].id];
+      if (!pv || pv.nota == null) {
+        return pv && pv.vetos.length ? N.chumbo + ': ' + pv.vetos[0] + '.'
+                                     : 'Não há previsão para ' + N.com + '.';
       }
-      return '<div class="factor factor--' + classe + '">' +
-        '<div class="factor__topo">' +
-        '<span class="factor__icone" aria-hidden="true">' + (ICONES_FACTOR[f.id] || '') + '</span>' +
-        '<span class="factor__nome">' + esc(f.nome) + '</span>' +
-        '<span class="factor__valor">' + esc(valor) + '</span></div>' +
-        '<p class="factor__texto">' + esc(f.texto) + '</p>' +
-        '<div class="factor__barra"><i style="width:' + Math.round(racio * 100) + '%"></i></div>' +
-        (extra ? '<p class="factor__extra">' + esc(extra) + '</p>' : '') +
-        '</div>';
-    }).join('');
+    }
+    return FRASES_PARTIDO[partes[0].v.cor + '|' + partes[1].v.cor] || '';
+  }
 
-    var rodape = 'Contas feitas com a previsão entre as ' + M.HORA_INI + 'h e as ' + M.HORA_FIM + 'h.';
-    if (!d.mar) rodape += ' Esta é uma praia de rio: não há dados de temperatura da água nem de ondulação.';
-    else if (d.agua == null) rodape += ' Não há dados de mar para este ponto.';
+  function maiuscula(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
 
-    /* A licença da Open-Meteo exige o link «junto ao local onde os dados são
-       mostrados», e a documentação marinha exige também referência ao DWD.
-       Só no rodapé da página não cumpria. */
-    var credito = '<p class="detalhe__credito">Dados de '
+  /* Só no dia de hoje, e só depois de a janela fechar. `>=` e não `>`: às 13h
+     em ponto a manhã já acabou. */
+  function jaPassou(p) {
+    return diaEscolhido === 0 && new Date().getHours() >= p.fim;
+  }
+
+  function desenharPartes(a) {
+    var caixa = el('v-partes'), resp = el('v-resposta');
+    if (!caixa || !resp) return false;
+    var partes = a && a.partes;
+
+    if (!haDados(partes)) {
+      resp.textContent = '';
+      caixa.className = 'partes';
+      caixa.innerHTML = '<p class="partes__sem">Não há previsão para este dia.</p>';
+      return false;
+    }
+
+    /* A frase comparativa («A manhã está melhor») saiu: os dois blocos, com a
+       palavra e o número de cada um, já dizem qual é a melhor — repeti-lo por
+       extenso era dizer duas vezes a mesma coisa. O que fica é o caso em que
+       uma das partes NÃO TEM número: aí não há nada no bloco que explique
+       porquê, e a frase é a única coisa que o diz. */
+    resp.textContent = semNumero(partes) ? respostaPartida(partes) : '';
+    caixa.className = 'partes';
+    caixa.innerHTML = '<ol class="partes__blocos">' + partes.map(function (p) {
+      var pv = p.v, pp = jaPassou(p);
+      var semNota = !pv || pv.nota == null;
+      var semDados = semNota && (!pv || !pv.vetos.length);
+      var c = semDados ? 'semdados' : pv.cor;
+      var pal = semDados ? 'Sem previsão' : PALAVRAS[pv.cor].outro;
+      var lido = p.nome + ': ' + (semDados ? 'não há previsão'
+        : pal.toLowerCase() + (semNota ? ', ' + pv.vetos[0] : ', nota ' + pv.nota + ' em 100'))
+        + (pp ? ', já passou' : '');
+      /* Um bloco sem números NÃO é botão: sai como <div>, sem seta e sem
+         painel. Não entra no Tab e não anuncia um estado que não tem. Um bloco
+         CHUMBADO (sem nota, mas com factores) É botão — é exactamente onde o
+         «porquê» mais interessa. */
+      var abrivel = temNumeros(p);
+      var tag = abrivel ? 'button' : 'div';
+      return '<li class="bloco parte--' + c + (semNota ? ' bloco--sem-nota' : '') +
+               (pp ? ' bloco--passou' : '') + '" data-parte="' + p.id + '">' +
+        '<' + tag + ' class="bloco__cabeca"' + (abrivel
+          ? ' type="button" id="cab-' + p.id + '" aria-controls="nums-' + p.id + '"'
+            + ' aria-expanded="false"' : '') + '>' +
+          /* O nome acessível nomeia o OBJECTO e nunca a acção: quem diz o
+             estado é o aria-expanded. */
+          '<span class="visually-hidden">' + esc(lido) + '.</span>' +
+          (semDados ? '' : '<span class="bloco__icone" aria-hidden="true">' + ICONES[pv.cor] + '</span>') +
+          '<span class="bloco__texto" aria-hidden="true">' +
+            '<span class="bloco__nome">' + esc(p.nome) + (pp ? ' · já passou' : '') + '</span>' +
+            '<span class="bloco__palavra">' + esc(pal) + '</span>' +
+            (semNota && !semDados ? '<span class="bloco__razao">' + esc(pv.vetos[0]) + '</span>' : '') +
+          '</span>' +
+          '<span class="bloco__dir" aria-hidden="true">' +
+            (semNota ? '' : '<b class="bloco__nota">' + pv.nota + '</b>') +
+            (abrivel ? '<span class="bloco__seta">' + SETA + '</span>' : '') +
+          '</span>' +
+        '</' + tag + '>' +
+        /* role="group" e NÃO role="region": um region com nome é um LANDMARK, e
+           ficavam dois marcos a entrar e a sair do rotor a cada toque, dentro
+           de um role="tabpanel" que já é o painel de outro tablist.
+           aria-live="off" não é decoração: o #veredicto inteiro é
+           aria-live="polite", e sem isto abrir um bloco despejava os cinco
+           factores em voz alta por cima do «expandido». */
+        (abrivel
+          ? '<div class="bloco__numeros" id="nums-' + p.id + '" role="group"' +
+            ' aria-label="Números ' + esc(NOMES[p.id].de) + '" aria-live="off" hidden>' +
+            numerosDaParte(p) + '</div>'
+          : '') +
+      '</li>';
+    }).join('') + '</ol>' +
+      /* O único sinal escrito de que os blocos se carregam. aria-hidden porque
+         quem usa leitor de ecrã tem o aria-expanded, que é melhor — e porque
+         isto vive dentro de uma região aria-live e não pode ser lido em voz
+         alta de cada vez que o cartão se redesenha. */
+      '<p class="partes__pista" id="v-pista" aria-hidden="true">Carrega na ' +
+      '<b>Manhã</b> ou na <b>Tarde</b> para ver os números.</p>';
+    /* Na MESMA passagem, nunca em duas: senão um dia o painel mostra os
+       factores de terça debaixo do cabeçalho de sexta. */
+    aplicarAbertura();
+    return true;
+  }
+
+  /* O TOTAL. Regra dura e sem excepções: SE ALGUMA PARTE NÃO TEM NÚMERO, O DIA
+     TAMBÉM NÃO MOSTRA NÚMERO. É o único sítio onde a aritmética podia não
+     fechar à vista — uma parte vetada tem nota nula mas a sua soma entrou na
+     média. Em vez de um total que não sai das duas parcelas visíveis,
+     mostra-se a razão. */
+  function desenharTotal(a, v) {
+    var p = el('v-total');
+    if (!p) return;
+    var partes = a && a.partes;
+    var quando = diaEscolhido === 0 ? 'Hoje' : 'Este dia';
+    var mau = partes && partes.filter(function (x) { return !x.v || x.v.nota == null; })[0];
+    if (mau) {
+      var pv = mau.v;
+      p.textContent = pv && pv.vetos.length
+        ? quando + ' não tem nota: ' + pv.vetos[0] + '.'
+        : quando + ' não tem nota: falta previsão ' + NOMES[mau.id].de + '.';
+      return;
+    }
+    if (!v || v.nota == null) {
+      p.textContent = quando + ' não tem nota: ' + ((v && v.vetos[0]) || 'não vale a pena') + '.';
+      return;
+    }
+    /* «em 100» aparece EXACTAMENTE uma vez em todo o ecrã, aqui. */
+    p.innerHTML = 'Nota do dia <b>' + v.nota + '</b> em 100';
+  }
+
+  /* A RAZÃO. Uma frase, um gerador, um sítio.
+     NUNCA afirma que o dia é igual: as duas notas já estão no ecrã, e afirmar
+     igualdade por cima de dois números diferentes era a contradição que o
+     diagnóstico apanhou («o dia é todo igual» com 94 e 90 logo acima). */
+  var RANK_COR = { vermelho: 0, amarelo: 1, verde: 2 };
+
+  function desenharFrase(a, v, temPartes) {
+    var alvo = el('v-frase');
+    if (!alvo) return;
+    var t = v ? v.frase : '';
+    var partes = a && a.partes;
+
+    if (temPartes && coresDiferem(partes)) {
+      /* A razão da PIOR parte, para o cartão nunca dizer «Está tudo a favor.»
+         por cima de uma tarde vermelha. */
+      var pior = partes[0];
+      if (partes[1].v && (!pior.v || RANK_COR[partes[1].v.cor] < RANK_COR[pior.v.cor])) pior = partes[1];
+      if (pior.v && pior.v.razao) t = maiuscula(pior.v.razao) + '.';
+    } else if (temPartes && partes[0].v.nota != null && partes[1].v.nota != null) {
+      /* Mesma cor, mas doze pontos ou mais entre as duas (uns 2,2 desvios-padrão
+         do desacordo entre modelos). É a única notícia real que a regra da cor
+         deitava fora, e diz-se em TEXTO — sem afirmar uma diferença que os
+         dados não sustentam. */
+      var m = partes[0].v.nota, tt = partes[1].v.nota;
+      if (Math.abs(m - tt) >= 12) t += m > tt ? ' Está melhor de manhã.' : ' Está melhor de tarde.';
+    }
+
+    /* Num dia vermelho, «então quando?» é a pergunta mais valiosa que este
+       site tem para responder — e estava a uns 800 px de distância. */
+    if (v && v.cor === 'vermelho') {
+      var prox = proximoDiaBom(diaEscolhido);
+      if (prox) t += ' ' + prox + ' promete.';
+    }
+    alvo.textContent = t;
+  }
+
+  function proximoDiaBom(i) {
+    for (var k = i + 1; k < veredictos.length; k++) {
+      if (veredictos[k].cor === 'verde') return nomeDiaLongo(dias[k].dia, k);
+    }
+    return null;
+  }
+
+  /* «sáb» num telemóvel de 320 px não custa menos do que «Sábado» e lê-se
+     pior. «quarta-feira» corta-se no hífen: seis letras, cabem em 90 px. */
+  function nomeDiaLongo(iso, i) {
+    if (i === 0) return 'Hoje';
+    if (i === 1) return 'Amanhã';
+    var t = new Date(iso + 'T12:00:00')
+      .toLocaleDateString('pt-PT', { weekday: 'long' }).split('-')[0];
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  /* A palavra de cada dia na tira. NUNCA repete a palavra das partes quando o
+     dia se parte: aí diz «Melhor de manhã» / «Melhor de tarde». É assim que a
+     mesma palavra deixa de aparecer cinco vezes no mesmo ecrã sem se perder
+     informação — e é o que responde a «então quando?» sem obrigar ninguém a
+     interpretar um 91. */
+  function palavraDoDia(i) {
+    var a = avaliacoes[i], v = veredictos[i];
+    var partes = a && a.partes;
+    /* «Melhor de manhã» só quando as cores DIFEREM. Com os dois blocos a
+       aparecerem todos os dias, usar o desenho como critério punha esta
+       palavra em todos os cartões, incluindo naqueles em que as duas partes
+       são a mesma coisa. */
+    if (coresDiferem(partes) &&
+        partes[0].v && partes[1].v && partes[0].v.nota != null && partes[1].v.nota != null) {
+      return partes[0].v.nota > partes[1].v.nota ? 'Melhor de manhã' : 'Melhor de tarde';
+    }
+    return palavra(v.cor, i);
+  }
+
+  function desenharAvisos(d, v) {
+    /* Os avisos de CONFORTO saíram do cartão a pedido: o protector solar, o
+       vento que se levanta de tarde e o mar cavado a metro e meio. Eram três
+       linhas a competir com os dois números que respondem à pergunta, e o
+       estado do mar continua a ver-se em «Ver os números», na linha da água.
+
+       O que FICA é o aviso de SEGURANÇA — trovoada, rajadas perigosas, mar
+       muito cavado. Esse não é um comentário sobre o conforto do dia: é a
+       única coisa no ecrã que pode impedir alguém de se magoar, e tem caixa,
+       cor e tom próprios exactamente por isso. */
+    var av = el('v-aviso');
+    if (!av) return;
+    /* Pode vir de um veto (o dia está chumbado) ou de um aviso (o dia está bom
+       E há um risco) — desde que a trovoada deixou de vetar, o segundo caso
+       existe e é o mais comum. Ler `v.vetos[0]` às cegas dava «Aviso de
+       segurança: undefined» num dia de nota 86. */
+    if (!v.perigo) { av.hidden = true; av.textContent = ''; return; }
+    var perigos = (v.vetos || []).concat(v.avisos || []);
+    var texto = 'Aviso de segurança: ' + perigos[0] + '.';
+    /* Um aviso que não diz o que fazer não serve de nada a quem já está na
+       areia — e este aparece ao lado de «Dia de praia». */
+    if ((v.avisos || []).indexOf('pode haver trovoada') >= 0) {
+      texto += ' Se ouvires trovões, sai da água e da praia.';
+    }
+    av.hidden = false;
+    av.textContent = texto;
+  }
+
+  /* ============================ os números, repartidos pelas três partes ==
+     Uma <table> a sério, com <th scope="col"> nas partes e <th scope="row">
+     nos factores: dá «Vento, Tarde, 14» a um leitor de ecrã sem um único
+     aria-label escrito à mão. Foi por isso que se preferiu a uma grelha de
+     <div> com rótulos escondidos. */
+
+  var SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M6 9l6 6 6-6"/></svg>';
+
+  /* Devolve o valor JÁ COM a unidade. Devolve '' — e não '—' — quando não há
+     valor, porque uma linha sem valor não chega a ser escrita.
+
+     Precisa do agregado da parte por causa do CALOR: o ecrã mostra a
+     temperatura do TERMÓMETRO (`arReal`), que é o que se pede a uma aplicação
+     de tempo, enquanto o modelo continua a pontuar a APARENTE — a que inclui
+     o vento e a humidade. Medido em 96 partes-dia: diferem 1 °C ou mais em
+     90 % dos casos, e a real é em mediana 2 °C mais baixa.
+     Por isso a PALAVRA («Calor de praia») continua a vir da aparente: é o
+     veredicto do modelo sobre este factor e tem de continuar colada à nota.
+     O número é o termómetro; a palavra é a nota. */
+  function valorDoFactor(id, f, dp) {
+    if (!f || f.valor == null) return '';
+    switch (id) {
+      /* «Sol: 82% de nuvens» era uma contradição em duas palavras. */
+      case 'ceu':   return (100 - Math.round(f.valor)) + '%';
+      case 'vento': return Math.round(f.valor) + ' km/h';
+      case 'ar':    return Math.round(dp && dp.arReal != null ? dp.arReal : f.valor) + ' °C';
+      case 'agua':  return num(f.valor, 1) + ' °C';
+      case 'chuva': return Math.round(f.valor) + '%';
+    }
+    return '';
+  }
+
+  /* Os extras vêm do agregado DA PARTE e não do dia. É uma correcção de
+     verdade: o painel antigo lia as rajadas, o termómetro e os milímetros do
+     dia inteiro e mostrava-os por cima de colunas de manhã e de tarde — a
+     mesma classe de mentira que repartir a água seria. A ondulação está aqui
+     porque o avaliarDia a copiou do dia para dentro da parte ANTES de a
+     pontuar: é o número que a conta usou. */
+  function extraDoFactor(f, dp) {
+    if (!dp) return '';
+    if (f.id === 'vento' && dp.rajada) return 'rajadas até ' + Math.round(dp.rajada) + ' km/h';
+    if (f.id === 'agua' && dp.ondas != null) {
+      return M.palavrasOndas(dp.ondas).toLowerCase() + ' (' + num(dp.ondas, 1) + ' m)';
+    }
+    if (f.id === 'chuva' && dp.mm) return 'até ' + num(dp.mm, 1) + ' mm';
+    return '';
+  }
+
+  /* A LEI DO CARTÃO, feita ESTRUTURA e não vigilância: sem valor OU sem
+     palavra, a linha inteira não sai. Não há caminho neste ficheiro que
+     produza um número sem a palavra ao lado. */
+  function linhaDoFactor(f, dp) {
+    var v = valorDoFactor(f.id, f, dp);
+    if (!v || !f.texto) return '';
+    /* Sem sufixos: «96% de céu limpo» e «0% de hipótese» eram três palavras a
+       explicar um número que a linha já nomeou. A palavra por baixo diz o que
+       o número quer dizer, e é para isso que ela existe. */
+    var ex = extraDoFactor(f, dp);
+    return '<li class="nums__linha">'
+      + '<span class="nums__icone" aria-hidden="true">' + (ICONES_FACTOR[f.id] || '') + '</span>'
+      + '<span class="nums__nome">' + esc(f.nome) + '</span>'
+      + '<span class="nums__valor">' + esc(v) + '</span>'
+      + '<span class="nums__palavra">' + esc(f.texto)
+        + (ex ? ' <span class="nums__extra">· ' + esc(ex) + '</span>' : '') + '</span>'
+      + '</li>';
+  }
+
+  /* Um bloco só é botão se tiver mesmo alguma coisa para mostrar. Um botão que
+     abre um painel vazio, ou cheio de travessões, é uma mentira. */
+  function temNumeros(p) {
+    return !!(p && p.v && p.v.factores && p.v.factores.some(function (f) {
+      return f.valor != null && f.texto;
+    }));
+  }
+
+  function numerosDaParte(p) {
+    /* Por PESO, do que mais conta para o que menos conta — e tirado do próprio
+       modelo. Uma lista de ids escrita à mão engolia uma linha inteira em
+       silêncio no dia em que alguém renomeasse um factor, e desalinhava-se da
+       frase que está no fim do painel se os pesos mudassem. */
+    var fs = p.v.factores.slice().sort(function (a, b) { return b.peso - a.peso; });
+    return '<ul class="nums" role="list">'
+      + fs.map(function (f) { return linhaDoFactor(f, p.d); }).join('')
+      + '</ul><p class="nums__ordem">Por ordem do que mais pesa na nota. '
+      + '<a href="/metodologia/">Como isto decide</a></p>';
+  }
+
+  function aplicarAbertura() {
+    var caixa = el('v-partes');
+    if (!caixa) return;
+    var cabs = caixa.querySelectorAll('button.bloco__cabeca');
+    for (var i = 0; i < cabs.length; i++) {
+      var li = cabs[i].parentNode;
+      var painel = li.querySelector('.bloco__numeros');
+      var aberto = li.getAttribute('data-parte') === parteAberta;
+      cabs[i].setAttribute('aria-expanded', aberto ? 'true' : 'false');
+      /* `hidden` e não altura zero nem visibility: fica fora da árvore de
+         acessibilidade e fora do Tab, e o [hidden]{display:none!important}
+         garante-o mesmo contra uma regra de autor. */
+      if (painel) painel.hidden = !aberto;
+    }
+    var pista = el('v-pista');
+    if (!pista) return;
+    /* O convite desaparece assim que um bloco abre — já não tem nada a dizer —
+       e nunca aparece num dia em que não haja nada para abrir. */
+    pista.hidden = !cabs.length || !!caixa.querySelector('.bloco__numeros:not([hidden])');
+  }
+
+  on('v-partes', 'click', function (e) {
+    var b = e.target.closest && e.target.closest('button.bloco__cabeca');
+    if (!b) return;
+    var li = b.parentNode;
+    /* A medição TEM de ser antes-mutação-depois, por esta ordem, e sem animação
+       de altura pelo meio: com animação a segunda leitura apanha um valor que
+       ainda está a mudar e o bloco foge de debaixo do dedo — o defeito clássico
+       dos acordeões, e pior do que não compensar nada. */
+    var antes = li.getBoundingClientRect().top;
+    var id = li.getAttribute('data-parte');
+    parteAberta = (parteAberta === id) ? null : id;
+    aplicarAbertura();
+    var depois = li.getBoundingClientRect().top;
+    /* Só vale alguma coisa no caso em que o OUTRO estava aberto: aí fecha-se um
+       painel e abre-se outro de tamanho parecido, e o topo do bloco tocado fica
+       no MESMO píxel. Quando nada estava aberto, nada acima dele muda de altura
+       e isto dá zero. */
+    if (depois !== antes) window.scrollBy(0, depois - antes);
+  });
+
+  /* Escape com o foco no bloco ou dentro do painel (há lá um link) fecha e
+     devolve o foco à cabeça. As setas NÃO são apanhadas aqui: pertencem à tira
+     dos dias, e é lá que estão. */
+  on('v-partes', 'keydown', function (e) {
+    if (e.key !== 'Escape' || !parteAberta) return;
+    var b = el('cab-' + parteAberta);
+    parteAberta = null;
+    aplicarAbertura();
+    if (b) b.focus();
+  });
+
+  function desenharFonte() {
+    var p = el('v-fonte'), d = dias[diaEscolhido];
+    if (!p) return;
+    if (!d) { p.innerHTML = ''; p.removeAttribute('data-k'); return; }
+    /* A chave existe porque isto vive dentro de uma região aria-live="polite":
+       reescrever a mesma frase a cada mudança de dia fazia o leitor de ecrã
+       dizer «Dados de Open-Meteo.com» seis vezes a percorrer a semana. */
+    var k = (d.mar ? '1' : '0') + (d.agua == null ? '0' : '1');
+    if (p.getAttribute('data-k') === k) return;
+    var rodape = '';
+    if (!d.mar) rodape = 'Esta é uma praia de rio: não há dados de temperatura da água nem de ondulação. ';
+    else if (d.agua == null) rodape = 'Não há dados de mar para este ponto. ';
+    /* A licença da Open-Meteo exige o link junto ao local onde os dados são
+       mostrados, e a documentação marinha exige a referência ao DWD. */
+    p.innerHTML = esc(rodape) + 'Dados de '
       + '<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>'
       + (d.mar && d.agua != null ? ', com dados marinhos do <abbr title="Deutscher Wetterdienst">DWD</abbr>' : '')
-      + '.</p>';
-
-    el('detalhe-corpo').innerHTML = linhas + '<p class="detalhe__rodape">' + esc(rodape) + '</p>' + credito;
+      + '.';
+    p.setAttribute('data-k', k);
   }
 
   /* ---------------------------------------------------------- favoritos */
@@ -1097,4 +1463,15 @@
     .catch(function () {
       estado.textContent = 'Não conseguimos carregar a lista de praias.';
     });
+
+  /* «Já passou» sem mentir num separador aberto desde o almoço. A resposta da
+     API fica em cache 30 minutos, portanto sem isto o cartão continuaria a
+     dizer às 18h que a manhã ainda não passou. Sem `setInterval`: só se
+     redesenha quando a pessoa volta ao separador E a hora mudou desde o último
+     desenho. A hora só afecta o RODAPÉ das partes — uma classe e uma palavra —
+     e nunca a forma, para o desenho ser o mesmo a qualquer hora do dia. */
+  doc.addEventListener('visibilitychange', function () {
+    if (doc.hidden || !dias.length) return;
+    if (new Date().getHours() !== horaDesenhada) desenhar();
+  });
 })();

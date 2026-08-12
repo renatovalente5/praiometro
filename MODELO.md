@@ -84,9 +84,84 @@ nortada vive em cima dessa descontinuidade. Medido com ERA5 (Jul+Ago,
 2019–2025), a média aritmética perdia 15% das nortadas na Nazaré e 38% em
 Peniche. Não voltar a trocar por média simples.
 
-Além disso calcula-se o vento **de manhã (11h–15h)** e **de tarde (15h–19h)** em
-separado. Quando a tarde tem 7 km/h ou mais do que a manhã, o site di-lo: «de
-manhã 12 km/h, à tarde 26 km/h — vale a pena ir cedo».
+### As duas partes do dia
+
+A janela do dia são DOIS blocos (`PARTES`), com um buraco no meio:
+
+| parte | horas |
+|---|---|
+| Manhã | 9h–13h |
+| Tarde | 15h–19h |
+
+**As 13h–15h ficam de fora**, e é de propósito: é a hora de almoço e do sol a
+pique. O dia é a UNIÃO dos dois blocos (`BLOCOS_DIA`) e não o intervalo 9h–19h —
+não há uma única conta no ficheiro que olhe para as 14h. É por isso que existe
+`agregarBlocos(tempo, marinho, praia, dia, blocos)`; a `agregarJanela(…, ini,
+fim)` ficou como invólucro de um bloco só, que é o que as partes e os testes
+usam.
+
+`HORA_INI = 9` e `HORA_FIM = 19` são as PONTAS da janela. Servem para a
+publicar e como omissão da `janela()`. **Não agregar com elas** — dá onze horas
+seguidas, incluindo as 14h.
+
+Blocos do mesmo tamanho (cinco horas cada) importam: o p75 do vento é o mesmo
+estimador nos dois. Numa divisão de 4 e 5 horas não era.
+
+Houve uma versão com três partes (Manhã / Meio-dia / Tarde, blocos de três
+horas dentro de 11h–19h). Foi tirada a pedido.
+
+#### A nota do dia é a média das duas
+
+`classificarDia(d, notaImposta)` — o segundo argumento substitui a nota ANTES
+das regras de cor, portanto há um só sítio a decidir a cor. A `avaliarDia()`
+devolve `{d, v, partes, media}` e é o único ponto de entrada da interface.
+
+Antes, a nota do dia era a soma dos seus próprios factores ao longo da janela
+inteira. Como a chuva e a ondulação entram por máximo e os milímetros por soma,
+uma janela longa acumulava sempre mais do que meia, e o dia saía
+sistematicamente mais severo do que as suas partes. Medido em 1200 dias-praia:
+a média fica **2 pontos acima** (mediana), até +12 no pior caso, e a cor muda em
+7,0 % dos dias.
+
+`min(partes) ≤ nota do dia ≤ max(partes)` passa a ser uma **identidade**.
+
+O que NÃO mudou: vetos, factor limitante, cor, nortada, aviso de UV e a frase
+saem todos do agregado da janela toda. Um veto é um máximo ou uma soma e não se
+dilui numa média.
+
+Uma parte vetada entra na média pela sua `notaPropria` e mostra ✕ no cartão.
+A água e a ondulação são copiadas do dia para cada parte ANTES de a pontuar.
+
+#### A frase
+
+Quatro portões em conjunção, mais o travão assimétrico (`ACORDO_TARDE = 3`) e o
+relógio:
+
+| portão | valor |
+|---|---|
+| cores diferentes | — |
+| diferença de nota | `LIMIAR_METADES = 15` |
+| relativo ao desacordo do dia | `SIGMAS_METADES = 2` |
+| prazo | `PRAZO_METADES = 1` |
+
+**Medido com as janelas de hoje** (`_source/medir-portao.js`, 2400 dias-praia
+contra o ERA5):
+
+| | 11h–14h / 15h–19h | **9h–13h / 15h–19h** |
+|---|---|---|
+| taxa-base | 28,0 % | **32,6 %** |
+| dispara em | 3,0 % | **5,3 %** |
+| acerta o sentido | 98,6 % | **96,1 %** |
+| precisão por cor | 79,5 % | **80,5 %** |
+
+Com as janelas novas o portão fala mais e acerta mais por cor: a manhã a
+começar às 9h e o buraco do almoço tornam as duas partes mais distintas.
+
+**Se mexeres nas horas, corre outra vez o `medir-portao.js` e republica os seis
+números na /metodologia/.** Há um teste que verifica que eles lá estão, mas
+nenhum teste sabe se são os certos — só a medição sabe.
+
+**Não** se divide a água, a ondulação nem o índice UV.
 
 ### As escalas são curvas, não escadas
 

@@ -28,6 +28,7 @@ function url(base, pontos, extra) {
 function comoArray(x) { return x == null ? [] : (Array.isArray(x) ? x : [x]); }
 
 var falhas = [], avisos = [], contagem = { verde: 0, amarelo: 0, vermelho: 0 }, testes = 0;
+var metadesFalam = 0, metadesPares = 0;
 function ok(cond, texto) {
   testes++;
   if (!cond) falhas.push(texto);
@@ -62,6 +63,55 @@ function ok(cond, texto) {
     }
 
     ok(dias.length === 6, rot + ': deviam ser 6 dias, são ' + dias.length);
+
+    /* ------------------------------------------ as duas partes do dia ---- */
+    var cons = M.consenso(tempo[i], MODELOS);
+    dias.forEach(function (d, iDia) {
+      var a = M.avaliarDia(cons, porMar[p.n + p.la], p, d.dia);
+      var onde = rot + ' dia ' + iDia;
+      /* Um buraco de dados horários da API chegava ao ecrã como silêncio, e
+         silêncio é indistinguível de «não há notícia». Aqui distingue-se. */
+      ok(a.partes.length === 2, onde + ': deviam ser 2 partes, são ' + a.partes.length);
+      ok(a.partes.every(function (x) { return x.v; }), onde + ': falta uma das partes');
+      if (!a.v || a.partes.some(function (x) { return !x.v; })) return;
+
+      var ns = a.partes.map(function (x) { return x.v.notaPropria; });
+      /* A NOTA DO DIA É A MÉDIA DAS DUAS. É a queixa que originou o redesenho,
+         e esta é a asserção que impede que volte. Com duas parcelas a média
+         está SEMPRE entre elas — se isto falhar, o cartão mostra três números
+         que não fecham e a pessoa vê uma conta mal feita. */
+      ok(a.v.notaBruta === Math.round((ns[0] + ns[1]) / 2),
+         onde + ': a nota do dia é ' + a.v.notaBruta + ' e a média das partes é '
+         + ((ns[0] + ns[1]) / 2).toFixed(1) + ' (' + ns.join(', ') + ')');
+      ok(a.v.notaBruta >= Math.min(ns[0], ns[1]) && a.v.notaBruta <= Math.max(ns[0], ns[1]),
+         onde + ': a nota do dia (' + a.v.notaBruta + ') cai fora das partes ' + ns.join('-'));
+
+      /* A água e a ondulação são as do DIA, e são as que cada parte usou. O
+         painel escreve «igual de manhã e à tarde», e tem de ser verdade. */
+      ok(a.partes.every(function (x) { return x.d.agua === a.d.agua; }),
+         onde + ': a água não é a mesma nas duas partes');
+
+      /* Toda a classificação tem razão escrita: é o que a interface usa quando
+         é uma PARTE a falar, e sem ela o bloco vermelho fica mudo. */
+      ok(a.partes.every(function (x) { return typeof x.v.razao === 'string' && x.v.razao.length; }),
+         onde + ': uma das partes ficou sem razão');
+
+      /* A escala de uma praia de rio (86 pontos normalizados a 100) tem de
+         sobreviver à divisão da janela. */
+      if (!p.m) {
+        a.partes.forEach(function (x, k) {
+          var us = x.v.factores.filter(function (f) { return f.pontos != null; });
+          var pt = us.reduce(function (s2, f) { return s2 + f.peso; }, 0);
+          ok(Math.abs(pt - 86) < 0.6,
+             onde + ' ' + (k ? 'tarde' : 'manhã') + ': pesos de rio ' + pt.toFixed(1) + ', esperado 86');
+        });
+      }
+      /* Os dois contadores sobre a MESMA população — todos os dias-praia. Ao
+         contar os partidos nos seis dias e os pares só no dia 0, a taxa dava
+         140 %. */
+      metadesPares++;
+      if (a.partes[0].v.cor !== a.partes[1].v.cor) metadesFalam++;
+    });
 
     veredictos.forEach(function (v, d) {
       var onde = rot + ' dia ' + d;
@@ -113,6 +163,18 @@ function ok(cond, texto) {
   console.log('  hoje: ' + contagem.verde + ' verdes · ' + contagem.amarelo
     + ' amarelas · ' + contagem.vermelho + ' vermelhas');
   console.log('  ' + testes + ' verificações');
+
+  /* Quantas vezes o cartão se parte em dois. Não há limiar a afinar — quem
+     manda é a cor — mas se alguém trocar a regra por uma diferença de pontos,
+     esta percentagem dispara e o alarme toca antes do utilizador. A taxa-base
+     medida contra o ERA5 é de 32,6 % dos dias com as partes em cores
+     diferentes, portanto qualquer coisa muito acima de metade é sinal de que
+     a regra deixou de ser a cor. */
+  var taxa = metadesPares ? metadesFalam / metadesPares * 100 : 0;
+  console.log('  cartões partidos: ' + metadesFalam + ' em ' + metadesPares
+    + ' dias-praia = ' + taxa.toFixed(1) + ' %  [taxa-base medida 32,6 %]');
+  ok(taxa <= 60, 'o cartão parte-se em ' + taxa.toFixed(1)
+    + ' % das praias — a regra deixou de ser a cor?');
   if (avisos.length) {
     console.log('\n  valores estranhos (não são falhas, mas vale a pena ver):');
     avisos.slice(0, 10).forEach(function (a) { console.log('    ⚠ ' + a); });

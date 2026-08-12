@@ -107,6 +107,33 @@ if (fs.readFileSync(path.join(SAIDA, 'CNAME'), 'utf8').trim() !== 'praiometro.pt
   process.exit(1);
 }
 
+/* Um COMENTÁRIO MAL FECHADO em CSS não desequilibra chavetas nenhumas e não dá
+   erro em lado nenhum: o parser limita-se a engolir em silêncio a regra que vem
+   a seguir. Aconteceu mesmo — um corte levou a abertura de um comentário, ficou
+   texto solto com um fecho no fim, e a tira dos seis dias perdeu o
+   `display: grid` sem uma única linha de aviso em lado nenhum. Isto custa dez
+   milissegundos e apanha-o.
+   (E sim: a primeira versão deste comentário citava os dois símbolos e fechava
+   a si própria a meio. Por isso não se citam.) */
+for (const css of saiu.filter(f => f.endsWith('.css'))) {
+  const t = fs.readFileSync(path.join(SAIDA, css), 'utf8');
+  let i = 0, abertos = 0, orfao = -1;
+  while (i < t.length) {
+    if (t.startsWith('/*', i)) { if (!abertos) abertos = 1; i += 2; continue; }
+    if (t.startsWith('*/', i)) {
+      if (!abertos) { orfao = i; break; }
+      abertos = 0; i += 2; continue;
+    }
+    i++;
+  }
+  if (orfao >= 0 || abertos) {
+    const linha = t.slice(0, orfao < 0 ? t.length : orfao).split('\n').length;
+    console.error(`NÃO PUBLICAR — ${css} tem um comentário ${orfao >= 0 ? 'fechado sem abrir' : 'por fechar'} na linha ${linha}`);
+    console.error('   um comentário mal fechado engole a regra seguinte em silêncio');
+    process.exit(1);
+  }
+}
+
 console.log(`_site/ — ${saiu.length} ficheiros, ${(conta.bytes / 1024).toFixed(0)} KB`);
 for (const f of saiu.filter(f => !f.startsWith('assets/') && !f.startsWith('data/')).sort()) {
   console.log('   ' + f);

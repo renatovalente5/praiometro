@@ -55,7 +55,8 @@
       <h2 id="indice-t">Nesta página</h2>
       <ol>
         <li><a href="#pesos">Os 100 pontos</a></li>
-        <li><a href="#janela">A janela das 11h às 19h</a></li>
+        <li><a href="#janela">A janela do dia</a></li>
+        <li><a href="#partes">As duas partes do dia</a></li>
         <li><a href="#direccao">A direcção do vento</a></li>
         <li><a href="#curvas">Curvas, e não escadas</a></li>
         <li><a href="#vento">Vento — 34 pontos</a></li>
@@ -119,22 +120,89 @@
     país onde a nortada é o assunto de Agosto.</p>
 
     <!-- =========================================================== JANELA -->
-    <h2 id="janela"><a class="lig" href="#janela" aria-label="Ligação para esta secção">#</a>A janela das 11h às 19h</h2>
+    <h2 id="janela"><a class="lig" href="#janela" aria-label="Ligação para esta secção">#</a>A janela do dia</h2>
 
-    <p>Tudo é calculado entre as <strong>11h e as 19h</strong>, hora local — é quando se
-    vai à praia. Fora dessa janela os dados são ignorados. Dentro dela: o céu pela média,
-    a temperatura do ar pelo máximo, a água pela média, a chuva pela probabilidade máxima
-    e pelo acumulado, a ondulação pelo máximo.</p>
+    <p>Tudo é calculado em duas janelas: <strong>das 9h às 13h</strong> e
+    <strong>das 15h às 19h</strong>, hora local. Fora delas os dados são ignorados —
+    incluindo as <strong>13h–15h</strong>, que ficam de fora de propósito: é a hora de
+    almoço e do sol a pique, e quem vai à praia não está lá. Não há uma única conta neste
+    modelo que olhe para as 14h.</p>
 
-    <p>O <strong>vento é o percentil 75</strong>, e não a média. A média de nove horas
-    achatava exactamente o pico da tarde, que é quando a nortada sopra. Medido no
-    Furadouro: média de 11,2 km/h contra 15,2 no pico. Com a média, o site dizia menos
-    vento do que qualquer outro sítio — e tinha razão quanto à média e nenhuma quanto ao
-    que se sente na areia.</p>
+    <p>Dentro delas: o céu pela média, a temperatura do ar pelo máximo, a água pela média,
+    a chuva pela probabilidade máxima e pelo acumulado, a ondulação pelo máximo.</p>
 
-    <p>Calcula-se também o vento <strong>de manhã (11h–15h)</strong> e <strong>de tarde
-    (15h–19h)</strong> em separado. Quando a tarde tem 7 km/h ou mais do que a manhã, o
-    site di-lo — «de manhã 12 km/h, à tarde 26 km/h: vale a pena ir cedo».</p>
+    <p>O <strong>vento é o percentil 75</strong>, e não a média. A média achatava
+    exactamente o pico da tarde, que é quando a nortada sopra. Medido no Furadouro: média
+    de 11,2 km/h contra 15,2 no pico. Com a média, o site dizia menos vento do que qualquer
+    outro sítio — e tinha razão quanto à média e nenhuma quanto ao que se sente na areia.</p>
+
+    <p>As duas janelas têm <strong>cinco horas cada</strong>, e blocos do mesmo tamanho
+    importam mais do que parece: o percentil 75 é o mesmo estimador nos dois. Numa divisão
+    de 4 e 5 horas não era — com 4 valores o percentil 75 fica a um quarto do caminho do
+    3.º para o 4.º, e com 5 dá exactamente o 4.º.</p>
+
+    <!-- ========================================================== PARTES -->
+    <span id="metades"></span>
+    <h2 id="partes"><a class="lig" href="#partes" aria-label="Ligação para esta secção">#</a>As duas partes do dia</h2>
+
+    <p>Há dias em que só vale a pena ir a uma parte do dia. Por isso o cartão mostra
+    <strong>sempre</strong> a nota da <strong>manhã</strong> e a nota da
+    <strong>tarde</strong>, com a sua cor e a sua palavra. Num dia em que as duas são
+    iguais isso também é informação: quer dizer que tanto faz a que horas se vai.</p>
+
+    <h3>A nota do dia é a média das duas partes</h3>
+
+    <p>Isto mudou em Agosto de 2026, e mudou por uma razão simples: <strong>a conta tinha
+    de fechar no ecrã</strong>. Antes, a nota do dia era a soma dos seus próprios factores
+    medidos ao longo da janela inteira — e como a chuva e a ondulação entram por máximo e
+    os milímetros por soma, uma janela longa acumulava sempre mais do que meia. O resultado
+    era um dia sistematicamente mais severo do que as suas próprias partes. Medido em
+    <strong>1200 dias-praia</strong>: a média das partes fica <strong>2 pontos</strong>
+    acima da nota que o dia dava a si próprio (mediana), e até 12 pontos no pior caso.</p>
+
+    <p>Agora a nota do dia é a <strong>média aritmética</strong> das duas, arredondada.
+    Consequência que se vê no ecrã: a nota do dia cai <strong>sempre</strong> entre a nota
+    da manhã e a da tarde. Não é uma promessa — é uma identidade, e qualquer pessoa a
+    confirma de cabeça.</p>
+
+    <p>O que <strong>não</strong> mudou: os vetos, o factor limitante, a cor, a nortada, o
+    aviso de sol e a frase continuam todos a sair da janela inteira. Um veto é um máximo ou
+    uma soma e não se dilui numa média — a segurança não se faz por médias.</p>
+
+    <p>Uma parte chumbada entra na média pela sua soma de factores e no cartão mostra ✕ em
+    vez desse número. Um veto diz «não vás»; não diz «não sei quanto valia».</p>
+
+    <h3>Um bloco ou dois</h3>
+
+    <p>No cartão, as duas partes aparecem <strong>juntas</strong> num bloco só quando têm
+    a <strong>mesma cor</strong>, e <strong>separadas</strong> em dois blocos quando têm
+    cores diferentes. Não há aqui nenhum número a afinar: a cor manda na palavra, portanto
+    mesma cor quer dizer mesma palavra, e dizê-la uma vez é exacto e não aproximado.</p>
+
+    <p>Um limiar em pontos seria pior. Três pontos de diferença entre a manhã e a tarde
+    estão abaixo dos <strong>5,4 pontos</strong> de desvio-padrão do desacordo entre os
+    quatro modelos — partir o cartão por causa disso seria mandar alguém mudar de planos
+    por ruído. Quando as duas partilham a cor mas distam doze pontos ou mais, o site
+    acrescenta uma frase («Está melhor de manhã») em texto, sem partir o bloco.</p>
+
+    <p>Houve aqui, até Agosto de 2026, um detector que dizia «Vai de manhã: o céu deve
+    fechar à tarde» em cerca de 5&nbsp;% dos dias, com quatro travões e uma calibração de
+    <strong>2400 dias-praia</strong> contra o ERA5 — acertava a parte certa em 96&nbsp;%
+    das vezes. Foi apagado quando o cartão passou a mostrar as duas notas sempre: um
+    detector existe para revelar o que está escondido, e deixou de haver nada escondido.
+    A medição está guardada em <code>_source/medir-portao.js</code>, para o dia em que
+    voltar a ser precisa.</p>
+
+    <h3>O que não se divide</h3>
+
+    <p>A temperatura da água e a ondulação são as do <strong>dia</strong>, e são essas que
+    cada parte usa para se pontuar — não são recalculadas parte a parte. Variam de um dia
+    para o outro e não de manhã para a tarde, e assim o que se mostra é exactamente o
+    número que a conta usou. O índice ultravioleta também não se divide: é astronomia — um
+    sino com o pico ao meio-dia solar, todos os dias, para sempre.</p>
+
+    <p>Um dia com veto — chuva a sério, rajadas perigosas, mar muito cavado — não recebe a
+    frase. A divisão do dia não fica por cima de um aviso de segurança.</p>
 
     <!-- ======================================================== DIRECÇÃO -->
     <h2 id="direccao"><a class="lig" href="#direccao" aria-label="Ligação para esta secção">#</a>A direcção do vento é uma média vectorial</h2>
@@ -255,6 +323,13 @@
     <p>Usa-se a <strong>temperatura aparente</strong>, e não a do termómetro: é a que
     inclui o efeito do vento e da humidade. A escala é simétrica — 40 °C estraga um dia
     de praia tanto como 16 °C.</p>
+
+    <p>O que aparece no ecrã, ao abrir a manhã ou a tarde, é a temperatura do
+    <strong>termómetro</strong> — é o número que se procura numa aplicação de tempo. A
+    <em>palavra</em> ao lado («Calor de praia», «Muito calor») é que vem da temperatura
+    aparente, porque é ela que dá os pontos. Medido em 96 partes-dia: as duas diferem
+    <strong>1 °C ou mais em 90 %</strong> dos casos, e no Verão a aparente é em mediana
+    <strong>2 °C mais alta</strong> — é a humidade.</p>
 
     <div class="rolo">
       <table>

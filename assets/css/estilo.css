@@ -83,9 +83,13 @@ a { color: inherit; }
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
+/* Branco sobre --mar dava 2,14:1 no tema escuro, onde o --mar é um azul
+   claro. Só se via com o foco em cima, e por isso ninguém deu por ela — o
+   medidor de contraste do projecto corria só em tema claro. Tinta sobre carta
+   inverte-se sozinho com o tema e passa nos dois. */
 .salta {
   position: absolute; left: -999px; top: 0; z-index: 90;
-  background: var(--mar); color: #fff; padding: .7em 1.1em; text-decoration: none;
+  background: var(--tinta); color: var(--carta); padding: .7em 1.1em; text-decoration: none;
   border-radius: 0 0 var(--raio) 0; font-weight: 600;
 }
 .salta:focus { left: 0; }
@@ -139,9 +143,6 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
 }
 .conta--vazia { min-height: 0; margin-bottom: 0; }
 
-/* Atribuição obrigatória pela licença da Open-Meteo, junto aos números. */
-.detalhe__credito { font-size: .78rem; color: var(--tinta-3); margin-top: .5rem; }
-.detalhe__credito abbr { text-decoration: none; border-bottom: 1px dotted currentColor; }
 
 /* ====================================================== PÁGINA DE TEXTO = */
 .texto {
@@ -254,20 +255,24 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
   .painel__accoes { grid-auto-flow: column; justify-content: end; }
   .painel__accoes .conta__botao { padding: .6rem 1rem; }
 }
+/* Uma grelha de duas linhas: o ícone e a marca em cima, a pergunta por baixo.
+   Com `inline-flex` e o claim em `inline`, a pergunta enrolava-se à volta do
+   ícone e o cabeçalho ficava com três linhas desalinhadas. */
 .marca {
-  display: inline-flex; align-items: center; gap: .55rem;
-  font-size: clamp(1.7rem, 6vw, 2.6rem); font-weight: 800; letter-spacing: -.02em;
+  display: grid; grid-template-columns: auto auto; justify-content: center;
+  align-items: center; gap: 0 .55rem;
+  font-size: clamp(1.5rem, 5.4vw, 2.4rem); font-weight: 800; letter-spacing: -.02em;
 }
-/* A pergunta faz parte do <h1> — «Praiómetro» sozinho só é procurável por
-   quem já conhece o nome. Fica escondida à vista, e não com display:none:
-   tem de continuar a contar como texto da página e a ser lida em voz alta. */
+/* «Praiómetro» é uma palavra inventada e não diz nada a quem chega pela
+   primeira vez. A pergunta a que o site responde tem de estar no <h1>, e à
+   vista também no telemóvel — estava escondida a um píxel de largura. */
 .marca__claim {
-  position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip-path: inset(50%); white-space: nowrap;
+  grid-column: 1 / -1; display: block;
+  font-size: clamp(1rem, 3.6vw, 1.2rem); font-weight: 700; color: var(--tinta-2);
+  margin-top: .1rem; text-wrap: balance;
 }
 .marca__icone { width: 1.15em; height: 1.15em; color: var(--mar); flex: none; }
 .marca__icone svg { width: 100%; height: 100%; }
-.marca__lead { color: var(--tinta-2); margin-top: .35rem; font-size: clamp(.95rem, 2.6vw, 1.08rem); }
 
 /* ========================================================== PROCURA ==== */
 .procura { position: relative; padding: 0 var(--gutter); max-width: 640px; margin: 1.2rem auto 0; }
@@ -338,26 +343,246 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
 .veredicto__dia { color: var(--tinta-2); font-size: .95rem; }
 
 /* O selo: cor + forma + palavra. Nunca só a cor. */
-.veredicto__selo {
-  display: inline-flex; flex-direction: column; align-items: center; gap: .5rem;
-  margin: .2rem 0 .9rem;
+/* ============================================= AS DUAS PARTES DO DIA ====
+   Uma regra e mais nenhuma: cada parte do dia é um bloco de largura inteira;
+   quando as duas dizem o mesmo, são desenhadas JUNTAS, num bloco só, e o que
+   dizem diz-se uma vez.
+
+   NÃO HÁ UM ÚNICO <svg> DE DADOS AQUI. Os três ícones são forma, não gráfico:
+   não codificam quantidade nenhuma. Nenhuma altura, nenhum comprimento e
+   nenhuma área representa um número em lado nenhum deste ficheiro. Aqui esteve
+   uma silhueta que o fazia, e foi rejeitada por ser confusa — ler um gráfico
+   não trivial é competência de uma minoria, e ler um número é de quase todos.
+
+   CONTRASTE, e a razão de a cor só pintar a palavra:
+     verde    #0e7a4a sobre #d7f2e3 = 4,54:1   <- passa por 0,04
+     amarelo  #8a5c00 sobre #fdf0cf = 5,13:1
+     vermelho #b3261e sobre #fbdfdc = 5,22:1
+   4,54:1 é o fio da navalha. Por isso a cor SÓ é usada em texto grande e
+   pesado (onde a norma pede 3:1) e nos ícones; todos os NÚMEROS e todos os
+   NOMES vão a var(--tinta) sobre o fundo pastel. */
+
+.partes { margin: .9rem 0 0; }
+.parte--verde    { --p-cor: var(--verde);    --p-fundo: var(--verde-luz); }
+.parte--amarelo  { --p-cor: var(--amarelo);  --p-fundo: var(--amarelo-luz); }
+.parte--vermelho { --p-cor: var(--vermelho); --p-fundo: var(--vermelho-luz); }
+.parte--semdados { --p-cor: var(--tinta-3);  --p-fundo: var(--carta-2); }
+
+/* O cartão deixa de ser centrado: tudo lá dentro é lista, e uma lista com
+   números lê-se da esquerda. */
+.veredicto { text-align: left; }
+/* Sai a barra de cor do topo: num dia partido teria de ter a cor da média,
+   que pode discordar das duas partes que estão logo por baixo. */
+.veredicto::before { content: none; }
+.veredicto__praia { padding: 0 3rem 0 0; }
+.veredicto__topo { margin-bottom: .2rem; }
+.estrela { top: .7rem; right: .6rem; }
+
+/* --------------------------------- a resposta (só no estado partido) --- */
+/* A maior coisa do cartão num dia partido. Vai a var(--tinta) e NUNCA a uma
+   cor de veredicto: há duas cores no ecrã e a frase não é de nenhuma delas. */
+.veredicto__resposta {
+  margin: .9rem 0 .1rem;
+  font-size: clamp(1.45rem, 6.6vw, 1.85rem);
+  font-weight: 800; line-height: 1.12; letter-spacing: -.02em;
+  color: var(--tinta); text-wrap: balance;
 }
-.selo__icone {
-  width: clamp(76px, 22vw, 104px); height: clamp(76px, 22vw, 104px);
-  display: grid; place-items: center; border-radius: 50%;
-  background: var(--cor-fundo, var(--carta-2)); color: var(--cor-actual, var(--tinta));
+.veredicto__resposta:empty { display: none; }
+
+/* ------------------------------------------------ os dois blocos ------ */
+/* A fenda é o portador de «são dois» — e é o único que sobrevive ao modo de
+   contraste elevado, coisa que a cor não faz.
+
+   Aqui esteve uma segunda forma, para os dias em que as duas partes eram
+   iguais: um bloco só, com a palavra dita uma vez. Saiu a pedido. Um cartão
+   que muda de feitio consoante o dia obriga quem o abre de três em três
+   semanas a reconhecer duas coisas em vez de uma; dois blocos todos os dias
+   aprendem-se uma vez e nunca mais surpreendem. */
+.partes__blocos { display: grid; gap: .625rem; list-style: none; padding: 0; }
+/* O bloco deixou de ser a linha e passou a ser só a MOLDURA: a linha mudou-se
+   para uma cabeça com as mesmas medidas, para haver onde pendurar o painel. A
+   caixa fechada é, ao píxel, a que foi aprovada — 84 + 2 + 2 = 88. */
+.bloco {
+  display: block; padding: 0; min-height: 88px;
+  background: var(--p-fundo); border: 2px solid var(--p-cor);
+  border-radius: var(--raio-g);
 }
-.selo__icone svg { width: 58%; height: 58%; }
-.selo__palavra {
-  font-size: clamp(1.5rem, 5.5vw, 2rem); font-weight: 800; letter-spacing: -.02em;
-  color: var(--cor-actual, var(--tinta));
+.bloco__cabeca {
+  display: flex; align-items: center; gap: .75rem;
+  width: 100%; min-height: 84px; padding: .9rem 1rem; margin: 0;
+  font: inherit; color: inherit; text-align: left;
+  background: none; border: 0; border-radius: calc(var(--raio-g) - 2px);
 }
-.veredicto__frase { font-size: clamp(1rem, 3.4vw, 1.15rem); color: var(--tinta); }
-.veredicto__nota { margin-top: .5rem; font-size: .85rem; color: var(--tinta-3); }
+button.bloco__cabeca { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* Com os +3 px de `outline-offset` globais, o anel de foco era desenhado POR
+   CIMA do contorno de 2 px do bloco e lia-se como parte do desenho. Por dentro,
+   sobre o pastel, vê-se — e o raio tem de ser reposto, senão um anel de 6 px
+   dentro de uma caixa de 22 px fica torto nos cantos. */
+button.bloco__cabeca:focus-visible {
+  outline-offset: -4px; border-radius: calc(var(--raio-g) - 2px);
+}
+/* Um color-mix e não um filter: brightness() — a mesma regra escurece no claro
+   e clareia no escuro. E NUNCA um transform: um antepassado transformado já
+   matou cliques neste projecto uma vez. */
+button.bloco__cabeca:active {
+  background: color-mix(in oklab, var(--p-cor) 12%, transparent);
+}
+.bloco__icone { width: 44px; height: 44px; flex: none; color: var(--p-cor); }
+.bloco__icone svg { width: 100%; height: 100%; display: block; }
+.bloco__texto { display: grid; gap: .05rem; flex: 1; min-width: 0; }
+.bloco__nome { font-size: 1.15rem; font-weight: 700; color: var(--tinta); line-height: 1.2; }
+.bloco__palavra {
+  font-size: 1.2rem; font-weight: 800; color: var(--p-cor);
+  line-height: 1.2; letter-spacing: -.01em; text-wrap: balance;
+}
+.bloco__razao { font-size: .92rem; color: var(--tinta-2); line-height: 1.35; }
+/* A nota fica encostada à direita, como foi aprovado. A seta vive POR BAIXO
+   dela, na mesma coluna: não rouba largura à palavra, e fora da linha de
+   leitura do número não se lê como «81 e a descer». Contas a 375 px: 33,75 (a
+   nota, a 9vw) + 1,6 + 18 = 53,35 px, contra os 55,2 que a caixa já dava. */
+.bloco__dir { margin-left: auto; flex: none; display: grid; justify-items: end; gap: .1rem; }
+.bloco__nota {
+  font-size: clamp(1.95rem, 9vw, 2.4rem); font-weight: 800; line-height: 1;
+  color: var(--tinta); font-variant-numeric: tabular-nums; letter-spacing: -.03em;
+}
+.bloco__seta { width: 18px; height: 18px; color: var(--tinta-2); transition: transform var(--t); }
+.bloco__seta svg { width: 100%; height: 100%; display: block; }
+[aria-expanded="true"] .bloco__seta { transform: rotate(180deg); }
+
+/* O único sinal ESCRITO de que os blocos se carregam. Uma frase não é uma
+   legenda a decifrar: lê-se à primeira aos 70 anos, e mata o risco de a
+   descoberta ficar pendurada só numa seta de 18 px. */
+.partes__pista { margin-top: .5rem; font-size: .82rem; color: var(--tinta-2); line-height: 1.5; }
+.partes__pista b { color: var(--tinta); font-weight: 700; }
+
+/* ---------------------------- os cinco números, dentro do bloco ------- */
+/* SEM animação de altura. Um bloco a crescer durante 300 ms é um bloco que
+   durante 300 ms está a mentir sobre onde estão as coisas — e é a animação que
+   faria a compensação de scroll medir um valor que ainda está a mudar. */
+.bloco__numeros { padding: 0 1rem 1rem; }
+
+/* A mesma anatomia do bloco, um andar abaixo: ícone à esquerda, nome, número
+   encostado à direita, palavra por baixo a ocupar a largura toda. */
+.nums { list-style: none; padding: 0; margin: 0; }
+.nums__linha {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: baseline; column-gap: .6rem; row-gap: .1rem; padding: .4rem 0;
+  /* O recuo vem primeiro: sem ele, um browser sem color-mix deitava fora a
+     declaração inteira e ficava SEM separador nenhum. */
+  border-top: 1px solid var(--borda);
+  border-top-color: color-mix(in oklab, var(--p-cor) 28%, transparent);
+}
+/* Aqui esteve um fio de 2 px na linha da água, a dizer pela FORMA que aquele
+   factor não se reparte pela manhã e pela tarde. Saiu com a frase que o
+   explicava: um traço mais grosso sem uma palavra a dizer o que significa é
+   exactamente a classe de coisa que este site tem andado a tirar do ecrã.
+   A água continua a ser a mesma nas duas partes — e continua a ser o número
+   que a conta usou; o que deixou de haver é um sinal que ninguém pediu. */
+/* O ICONES_FACTOR estava declarado no app.js desde sempre e nunca foi chamado
+   por ninguém. 22 px, com o nome escrito ao lado — um ícone com o nome ao lado
+   nunca precisa de legenda. SEMPRE a mesma cor: nunca verde/amarelo/vermelho
+   conforme o factor, que seria um segundo semáforo dentro do primeiro. */
+.nums__icone { grid-column: 1; grid-row: 1; width: 22px; height: 22px;
+               color: var(--tinta-2); align-self: center; }
+.nums__icone svg { width: 100%; height: 100%; display: block; }
+.nums__nome { grid-column: 2; font-size: .95rem; font-weight: 700;
+              color: var(--tinta); line-height: 1.25; }
+/* nowrap no valor + o nome livre para quebrar = transbordo estruturalmente
+   impossível: quando aperta, é o nome que passa a duas linhas. */
+.nums__valor {
+  grid-column: 3; justify-self: end; text-align: right;
+  font-size: 1.05rem; font-weight: 800; color: var(--tinta);
+  font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap;
+}
+/* MEDIDO, e é a armadilha deste ficheiro: var(--tinta-3) sobre o pastel dá
+   4,61:1 no tema CLARO — passa — e 3,96:1 no ESCURO. Chumba, e chumba só
+   metade das vezes: foi assim que o «Saltar para o resultado» esteve meses a
+   2,14:1. AQUI NÃO ENTRA NEM --tinta-3 NEM COR DE VEREDICTO. */
+.nums__palavra { grid-column: 2 / -1; font-size: .875rem; color: var(--tinta-2); line-height: 1.35; }
+.nums__extra   { color: var(--tinta-2); }
+/* Os pesos (34/26/18/14/8) NÃO vão ao ecrã: são meta-informação sobre o modelo
+   e não sobre o dia, e cinco números novos duplicavam a contagem de números da
+   página. O peso diz-se pela ORDEM, e a ordem diz-se aqui. */
+.nums__ordem {
+  margin-top: .6rem; padding-top: .6rem;
+  border-top: 1px solid var(--borda);
+  border-top-color: color-mix(in oklab, var(--p-cor) 28%, transparent);
+  font-size: .8rem; color: var(--tinta-2); line-height: 1.45;
+}
+/* --tinta e sublinhado, e não var(--mar): no tema escuro o --mar é um azul
+   claro e sobre o pastel escuro não está medido. */
+.nums__ordem a { color: var(--tinta); font-weight: 700; text-decoration: underline; }
+
+/* A fonte dos dados, que era o rodapé do «Ver os números». */
+.veredicto__fonte { margin-top: .9rem; font-size: .78rem; color: var(--tinta-3); line-height: 1.45; }
+.veredicto__fonte:empty { display: none; }
+.veredicto__fonte abbr { text-decoration: none; border-bottom: 1px dotted currentColor; }
+/* Sem número, o texto ocupa a largura toda. Nada de espaço reservado a um «✕»
+   que se lê como avaria ou como «fechado», nunca como «não vale a pena». */
+.bloco--sem-nota .bloco__nota { display: none; }
+
+/* «já passou»: NUNCA por opacidade. O medidor de contraste do projecto lê a
+   `color` sem descontar a opacidade dos antepassados, e um opacity:.55 daria
+   texto a ~2,6:1 a passar no teste. */
+/* --tinta-2 e NÃO --tinta-3: sobre o pastel escuro o --tinta-3 dá 3,96:1, e o
+   nome está a 18,4 px — quatro décimas abaixo dos 18,66 px que a norma aceita
+   como «texto grande», portanto exige 4,5:1 e chumba. Só se via no cartão de
+   HOJE depois das 13h, e só no tema escuro: por isso esteve escondido até o
+   teste passar a abrir um bloco. */
+.bloco--passou .bloco__nome, .bloco--passou .bloco__nota { color: var(--tinta-2); }
+
+/* ------------------------------------------ o total e a razão --------- */
+/* A linha de baixo de uma conta de café: parcelas em cima, total em baixo.
+   Ninguém precisa de instruções para a ler. */
+.veredicto__total { margin-top: .85rem; font-size: 1.05rem; color: var(--tinta-2); }
+.veredicto__total b {
+  font-size: 1.4rem; font-weight: 800; color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+.veredicto__frase {
+  margin-top: .55rem; font-size: clamp(1.05rem, 3.6vw, 1.15rem);
+  color: var(--tinta); line-height: 1.45; text-wrap: balance;
+}
+.partes__sem { font-size: 1.05rem; color: var(--tinta-2); line-height: 1.45; }
+
 .veredicto__aviso {
   margin-top: .9rem; padding: .6rem .8rem; border-radius: var(--raio);
   background: var(--amarelo-luz); color: var(--amarelo); font-size: .88rem; font-weight: 600;
 }
+
+/* O padding e o gap SAEM do .bloco e vão para a .bloco__cabeca, na MESMA
+   edição. Se ficassem onde estavam, abaixo dos 360 px o rectângulo pastel
+   ganhava uma almofada dupla — uma a envolver a cabeça E o painel, outra
+   dentro de cada um — o painel deixava de alinhar com o nome, e o bloco aberto
+   crescia uns 26 px. Um defeito que só existe abaixo dos 360 px, ou seja,
+   exactamente onde ninguém testa. */
+@media (max-width: 360px) {
+  .veredicto { padding: 14px; }
+  .bloco { min-height: 82px; }
+  .bloco__cabeca { padding: .8rem; gap: .6rem; min-height: 78px; }
+  .bloco__icone { width: 40px; height: 40px; }
+  .bloco__palavra { font-size: 1.1rem; }
+  .bloco__numeros { padding: 0 .8rem .8rem; }
+  .nums__linha { padding: .35rem 0; column-gap: .5rem; }
+  .nums__nome { font-size: .9rem; }
+  .nums__palavra { font-size: .85rem; }
+}
+
+/* Com as cores todas forçadas para a mesma sobram a PALAVRA, o NÚMERO, o
+   ÍCONE e — o mais importante — a fenda entre os dois blocos. «Um objecto ou
+   dois» não depende de cor nenhuma. */
+@media (forced-colors: active) {
+  .bloco { background: Canvas; border-color: CanvasText; }
+  .bloco__palavra, .bloco__icone { color: CanvasText; }
+  /* Com as cores forçadas sobra o que sempre sobrou — a fenda entre os dois
+     blocos, a palavra, o número — e agora também a seta e os fios. */
+  .nums__linha, .nums__ordem { border-top-color: CanvasText; }
+  .bloco__seta, .nums__icone { color: CanvasText; }
+}
+
+/* SEM ANIMAÇÃO na troca de dia: um bloco que se divide em dois durante 400 ms
+   é um bloco que durante 400 ms está a mentir. */
+
 
 /* ---------------------------------------------------------- a estrela */
 .estrela {
@@ -425,23 +650,24 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
      cortar nas pontas — mais discreta do que os 10px do canal. */
   border: 3px solid transparent; background-clip: content-box;
 }
+/* Os favoritos falam a mesma língua: fundo pastel e contorno de 2 px na cor
+   do dia. Enquanto não se sabe a cor de uma praia, fica neutra — e isso lê-se
+   como «ainda não sei», que é a verdade. */
 .fav {
   scroll-snap-align: start;
   display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap;
   padding: .42rem .8rem .42rem .55rem; cursor: pointer; font: inherit;
   font-size: .88rem; font-weight: 600; color: var(--tinta);
-  background: var(--carta); border: 1px solid var(--borda); border-radius: 999px;
-  transition: border-color var(--t), box-shadow var(--t);
+  background: var(--fav-fundo, var(--carta));
+  border: 2px solid var(--fav-cor, var(--borda)); border-radius: 999px;
+  transition: box-shadow var(--t);
 }
-.fav:hover { border-color: var(--fav-cor, var(--mar)); }
-.fav[aria-current="true"] {
-  border-color: var(--fav-cor, var(--mar)); box-shadow: 0 0 0 2px var(--fav-cor, var(--mar));
-}
+.fav[aria-current="true"] { box-shadow: 0 0 0 3px var(--fav-cor, var(--mar)); }
 .fav__ponto {
-  width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center;
-  background: var(--fav-fundo, var(--carta-2)); color: var(--fav-cor, var(--tinta-3));
+  width: 20px; height: 20px; flex: none; display: grid; place-items: center;
+  color: var(--fav-cor, var(--tinta-3));
 }
-.fav__ponto svg { width: 68%; height: 68%; }
+.fav__ponto svg { width: 100%; height: 100%; }
 .favoritos__aviso { margin-top: .5rem; font-size: .85rem; color: var(--amarelo); font-weight: 600; }
 .fav__rio {
   font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
@@ -456,90 +682,60 @@ body[data-cor="verde"]    { --cor-actual: var(--verde);    --cor-fundo: var(--ve
 body[data-cor="amarelo"]  { --cor-actual: var(--amarelo);  --cor-fundo: var(--amarelo-luz); }
 body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--vermelho-luz); }
 
-/* ============================================================= DIAS ==== */
+/* ============================================================= DIAS ====
+   Três por linha e duas linhas, sem rolo horizontal. Seis células em linha a
+   320 px davam 41 px cada: a nota a 11,8 px — mais pequena do que o aviso
+   legal das bandeiras — e uns 124 px de tira a viver fora do ecrã. Três por
+   linha dão uns 90 px, e a resposta mais valiosa que este site tem num dia
+   mau («então quando?») deixa de exigir rolar em duas direcções. */
 .dias {
-  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(4.6rem, 1fr);
-  /* .7rem + .3rem de `padding-block` = o 1rem que aqui estava antes. */
-  gap: .5rem; margin-top: .7rem; overflow-x: auto;
-  /* Como na tira dos favoritos, mas aqui são 2px do anel MAIS os 2px que o
-     `translateY(-2px)` do hover levanta o cartão. Daí .3rem (4,8px) em cima. */
-  padding-block: .3rem;
-  /* E a MESMA folga é precisa aos lados, que era o que faltava. O primeiro
-     cartão encosta ao início da tira (`scroll-snap-align: start`) e, com
-     `padding-inline: 0`, o `overflow-x` cortava-lhe os 2px do anel do lado
-     esquerdo: no telemóvel via-se o contorno do dia escolhido rente e reto à
-     esquerda e redondo à direita. A margem negativa devolve o alinhamento com
-     o cartão do veredicto. */
-  padding-inline: 3px; margin-inline: -3px;
-  /* Sem isto o padding acima não serve de nada: `scroll-snap-align: start`
-     alinha o cartão com o início do snapport, e o snapport ia até à borda —
-     o browser rolava os mesmos 3px (medido: `scrollLeft` a 3) e o anel voltava
-     a ficar rente. O `scroll-padding` encolhe o snapport e o encosto passa a
-     ser na folga. */
-  scroll-padding-inline: 3px;
-  /* Como na tira dos favoritos: no telemóvel os 6 dias não cabem — sobram uns
-     124px em 390px — e sem barra nada dizia que havia mais para o lado. */
-  scrollbar-width: thin;
-  scrollbar-color: var(--tinta-3) transparent;
-  scroll-snap-type: x proximity;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem;
+  margin-top: .8rem; overflow: visible;
+  padding: 3px; margin-inline: -3px;   /* só para o anel de selecção caber */
 }
-.dias::-webkit-scrollbar { height: 10px; }
-.dias::-webkit-scrollbar-track { background: transparent; }
-.dias::-webkit-scrollbar-thumb {
-  background: var(--tinta-3); border-radius: 999px;
-  border: 3px solid transparent; background-clip: content-box;
-}
+@media (min-width: 700px) { .dias { grid-template-columns: repeat(6, 1fr); } }
+/* O MESMO vocabulário dos blocos da manhã e da tarde: fundo pastel da cor do
+   veredicto, contorno de 2 px na mesma cor, cantos grandes. Quem aprendeu a
+   ler um bloco no cartão lê estes seis sem aprender nada de novo — e a tira
+   deixa de ser uma fila de caixas brancas onde só a bolinha tem cor. */
 .dia {
-  scroll-snap-align: start;
-  display: flex; flex-direction: column; align-items: center; gap: .35rem;
-  padding: .7rem .3rem .8rem; cursor: pointer;
-  background: var(--carta); border: 1px solid var(--borda); border-radius: var(--raio);
-  transition: transform var(--t), border-color var(--t), box-shadow var(--t);
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: .7rem .3rem .75rem; cursor: pointer;
+  background: var(--dia-fundo, var(--carta));
+  border: 2px solid var(--dia-cor, var(--borda)); border-radius: var(--raio-g);
+  transition: transform var(--t), box-shadow var(--t);
 }
 .dia:hover { transform: translateY(-2px); }
-.dia[aria-selected="true"] {
-  border-color: var(--dia-cor, var(--mar)); box-shadow: 0 0 0 2px var(--dia-cor, var(--mar));
+/* O dia escolhido: um anel por fora, e não uma cor diferente. Com os seis já
+   pintados, mudar a cor do escolhido não se via. */
+.dia[aria-selected="true"] { box-shadow: 0 0 0 3px var(--dia-cor, var(--mar)); }
+/* Sem MAIÚSCULAS e sem letter-spacing: a uns 10 px, maiúsculas espaçadas
+   tiram a silhueta às palavras e obrigam a ler letra a letra — que é
+   exactamente o que a presbiopia não perdoa. Estava a 9,9 px. */
+.dia__nome { font-size: .95rem; font-weight: 700; color: var(--tinta); }
+/* Sem bolha: o cartão inteiro já é da cor do dia, e um círculo da mesma cor
+   por dentro dele era um contorno a mais sem informação nenhuma. */
+.dia__bolha { width: 30px; height: 30px; display: grid; place-items: center; color: var(--dia-cor); }
+.dia__bolha svg { width: 100%; height: 100%; }
+/* De 11,8 px para 21,6 px. Era mais pequena do que o aviso legal das
+   bandeiras — e é o número que responde a «então quando?». */
+/* A NOTA a var(--tinta) e não à cor do dia: sobre o fundo pastel, o verde
+   #0e7a4a dá 4,54:1 — passa por quatro centésimas, e a norma só perdoa isso
+   em texto grande. A tinta dá mais de 12:1. Quem carrega a cor é a palavra. */
+.dia__nota { font-size: 1.5rem; font-weight: 800; color: var(--tinta);
+             font-variant-numeric: tabular-nums; line-height: 1.05; }
+/* A PALAVRA. Duas linhas SEMPRE reservadas, para as seis células terem a
+   mesma altura e a grelha não dançar de dia para dia. */
+.dia__palavra {
+  font-size: .8rem; line-height: 1.15; font-weight: 600; color: var(--dia-cor, var(--tinta-2));
+  min-height: 2.3em; display: flex; align-items: flex-start;
+  justify-content: center; text-wrap: balance;
 }
-.dia__nome { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--tinta-2); }
-.dia__data { font-size: .7rem; color: var(--tinta-3); margin-top: -.25rem; }
-.dia__bolha {
-  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--dia-fundo); color: var(--dia-cor);
-}
-.dia__bolha svg { width: 62%; height: 62%; }
-.dia__nota { font-size: .74rem; font-weight: 700; color: var(--dia-cor); }
 .dia--verde    { --dia-cor: var(--verde);    --dia-fundo: var(--verde-luz); }
 .dia--amarelo  { --dia-cor: var(--amarelo);  --dia-fundo: var(--amarelo-luz); }
 .dia--vermelho { --dia-cor: var(--vermelho); --dia-fundo: var(--vermelho-luz); }
 
 /* ========================================================= DETALHE ==== */
-.detalhe {
-  margin-top: 1rem; background: var(--carta); border: 1px solid var(--borda);
-  border-radius: var(--raio-g); overflow: hidden;
-}
-.detalhe > summary {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 1rem 1.2rem; cursor: pointer; font-weight: 600; list-style: none;
-}
-.detalhe > summary::-webkit-details-marker { display: none; }
-.detalhe > summary svg { width: 20px; height: 20px; color: var(--tinta-3); transition: transform var(--t); }
-.detalhe[open] > summary svg { transform: rotate(180deg); }
-.detalhe__corpo { padding: 0 1.2rem 1.2rem; }
-
-.factor { padding: .85rem 0; border-top: 1px solid var(--borda); }
-.factor__topo { display: flex; align-items: baseline; gap: .6rem; }
-.factor__nome { font-weight: 700; }
-.factor__valor { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; }
-.factor__texto { color: var(--tinta-2); font-size: .9rem; margin-top: .1rem; }
-/* A barra mostra quanto daquele factor «correu bem», de 0 a 100%. */
-.factor__barra { height: 7px; border-radius: 99px; background: var(--carta-2); margin-top: .5rem; overflow: hidden; }
-.factor__barra i { display: block; height: 100%; border-radius: 99px; background: var(--f-cor, var(--tinta-3)); transition: width .5s cubic-bezier(.2,0,0,1); }
-.factor--bom   { --f-cor: var(--verde); }
-.factor--medio { --f-cor: var(--amarelo); }
-.factor--mau   { --f-cor: var(--vermelho); }
-.factor__extra { font-size: .82rem; color: var(--tinta-3); margin-top: .35rem; }
-
-.detalhe__rodape { font-size: .82rem; color: var(--tinta-3); padding-top: .9rem; border-top: 1px solid var(--borda); }
 
 /* =========================================================== VAZIO ==== */
 .vazio { max-width: 640px; margin: 1.4rem auto 0; padding: 0 var(--gutter); text-align: center; }

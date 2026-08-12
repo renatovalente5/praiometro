@@ -12,8 +12,11 @@
 (function (raiz) {
   'use strict';
 
-  /* Quando se vai à praia. Tudo o que está fora desta janela é ignorado. */
-  var HORA_INI = 11;
+  /* A janela de praia deixou de ser um intervalo contínuo: são DOIS blocos, com
+     um buraco no meio. Ver PARTES, mais abaixo. Estas duas constantes são as
+     pontas dessa janela — servem para a publicar («das 9h às 19h») e como
+     valores por omissão da `janela()`, e não para agregar seja o que for. */
+  var HORA_INI = 9;
   var HORA_FIM = 19;
 
   /* Pesos. Somam 100 nas praias de mar.
@@ -195,13 +198,33 @@
      achatava exactamente o pico da tarde, que é quando a nortada sopra e quando
      as pessoas estão na praia. Medido no Furadouro: média 11,2 km/h contra
      15,2 no pico — o site dizia menos vento do que qualquer outro sítio, e
-     tinha razão em relação à média e nenhuma em relação ao que se sente. */
+     tinha razão em relação à média e nenhuma em relação ao que se sente.
+
+     CUIDADO com a intuição sobre amostras pequenas, porque já houve quem a
+     tivesse ao contrário e construísse uma correcção em cima do erro: com 4
+     valores o p75 fica a um QUARTO do caminho do 3.º para o 4.º —
+     percentil([10,12,14,20], 0.75) = 15,5, e não «quase o máximo». Com 5
+     valores dá exactamente o 4.º: percentil([10,12,14,20,22], 0.75) = 20.
+     Ou seja, das duas metades do dia é a TARDE (5 horas) que é medida com o
+     estimador mais alto, e não a manhã (4 horas). */
   function percentil(a, p) {
     var v = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; });
     if (!v.length) return null;
     if (v.length === 1) return v[0];
     var i = (v.length - 1) * p, b = Math.floor(i), r = i - b;
     return v[b + 1] != null ? v[b] + (v[b + 1] - v[b]) * r : v[b];
+  }
+
+  /* Índices das horas que caem numa lista de blocos, para um dia. A união, e
+     por ordem: é isto que permite ao dia ser dois pedaços com um buraco no
+     meio em vez de um intervalo corrido. */
+  function indices(horas, dia, blocos) {
+    var ix = [];
+    for (var b = 0; b < blocos.length; b++) {
+      var j = janela(horas, dia, blocos[b][0], blocos[b][1]);
+      for (var k = 0; k < j.length; k++) ix.push(j[k]);
+    }
+    return ix.sort(function (x, y) { return x - y; });
   }
 
   /* Índices das horas que caem numa janela, para um dia. */
@@ -221,7 +244,27 @@
      15h-19h, e em 63% dos dias a manhã está bem melhor do que a tarde. Dizer
      «de manhã 12, à tarde 26 — vá cedo» é a informação mais útil que este site
      pode dar a um português no Verão, e os dados já cá estavam. */
-  var HORA_MEIO = 15;
+
+  /* -------------------------------------------- as duas partes do dia -----
+     Manhã das 9h às 13h, tarde das 15h às 19h. Cinco horas cada — e blocos do
+     mesmo tamanho importam mais do que parece: o percentil 75 do vento é o
+     mesmo estimador nos dois, coisa que uma divisão em 4 e 5 horas nunca teve.
+
+     AS 13h-15h FICAM DE FORA, e é de propósito: é a hora de almoço e do sol a
+     pique, e quem vai à praia não está lá. O dia é a UNIÃO dos dois blocos e
+     não o intervalo 9h-19h — não há uma única conta neste ficheiro que olhe
+     para as 14h.
+
+     Houve uma versão com três partes (Manhã / Meio-dia / Tarde, blocos de três
+     horas dentro de 11h-19h). Foi tirada a pedido: duas partes são o número em
+     que uma comparação se faz sem contar, e «de manhã sim, de tarde não» é uma
+     frase que toda a gente já disse. */
+  var PARTES = [
+    { id: 'manha', nome: 'Manhã', ini: 9,  fim: 13 },
+    { id: 'tarde', nome: 'Tarde', ini: 15, fim: 19 }
+  ];
+  var BLOCOS_DIA = PARTES.map(function (p) { return [p.ini, p.fim]; });
+
   function fatia(arr, ix) {
     if (!arr) return [];
     return ix.map(function (i) { return arr[i]; });
@@ -266,7 +309,30 @@
    *    lat, lon, mar}
    * @returns {Object} veredicto
    */
-  function classificarDia(d) {
+  /**
+   * @param d   agregado de uma janela de horas
+   * @param op  {nota: N} — se vier, N substitui a nota calculada. É assim que o
+   *            dia passa a valer a MÉDIA das suas duas partes.
+   *
+   * PORQUÊ UM OBJECTO e não um número solto: com um número, um inocente
+   * `dias.map(classificarDia)` passava o ÍNDICE como segundo argumento e o dia
+   * 0 saía com nota 0 — em silêncio, com cor e frase de dia péssimo. Aconteceu,
+   * e foi apanhado pelo testar-praias. Um objecto torna o acidente impossível:
+   * o índice é um número e não tem `.nota`.
+   *
+   * PORQUÊ a nota do dia deixou de ser a sua própria soma: as nove horas são
+   * medidas com MÁXIMOS (calor, probabilidade de chuva, ondulação) e SOMAS
+   * (milímetros), e nove horas acumulam sempre mais do que três. O resultado
+   * era um dia sistematicamente mais severo do que as suas partes — medido em
+   * 1200 dias-praia, a média das três partes fica 2 pontos acima da nota que o
+   * dia dava a si próprio (mediana; até +12 no pior caso). Com as três notas no
+   * ecrã ao lado da do dia, isso lia-se como conta mal feita, porque era.
+   *
+   * O que NÃO mudou: os vetos, o factor limitante, a nortada e a frase saem
+   * todos do agregado das nove horas, como sempre saíram. Um veto continua a
+   * zerar a nota. A segurança não foi recalibrada — só a aritmética do número.
+   */
+  function classificarDia(d, op) {
     var mar = d.mar !== false;
 
     var f = [
@@ -286,6 +352,8 @@
     var pesoTotal = usaveis.reduce(function (s, x) { return s + x.peso; }, 0);
     var obtidos = usaveis.reduce(function (s, x) { return s + x.pontos; }, 0);
     var nota = pesoTotal ? Math.round(obtidos / pesoTotal * 100) : null;
+    var notaPropria = nota;
+    if (op && op.nota != null) nota = op.nota;
 
     /* ------- vetos: sozinhos mandam o dia para vermelho ------- */
     /* Os vetos com `perigo: true` são questões de segurança, não de conforto, e
@@ -373,21 +441,35 @@
     });
 
     var nortada = eNortada(d.dirVento, d.vento, d.lat, d.lon);
-    var frase;
+    /* A RAZÃO, sem o prefixo. A frase inteira («Dá para ir, mas está muito
+       vento.») serve quando é o dia a falar; quando é uma PARTE do dia, o
+       prefixo mente — «dá para ir» por cima de uma tarde vermelha. Expor a
+       razão em separado evita um segundo gerador de frases a dizer o mesmo
+       de outra maneira, que foi como se chegou a ter quatro na mesma caixa. */
+    var razao, frase;
     if (vetos.length) {
-      frase = (vetos[0].perigo ? 'Não vá: ' : 'Não vale a pena: ') + vetos[0].t + '.';
+      razao = vetos[0].t;
+      frase = (vetos[0].perigo ? 'Não vá: ' : 'Não vale a pena: ') + razao + '.';
     } else if (cor === 'verde') {
+      razao = pior ? ressalva(pior) : '';
       frase = piorPerda <= 4 ? 'Está tudo a favor.'
-            : (piorPerda >= 8 && pior ? 'Bom dia de praia, ' + ressalva(pior) + '.'
+            : (piorPerda >= 8 && pior ? 'Bom dia de praia, ' + razao + '.'
                                       : 'Bom dia de praia.');
+      if (piorPerda <= 4) razao = 'está tudo a favor';
     } else if (cor === 'amarelo') {
-      frase = 'Dá para ir, mas ' + queixa(limitante && pior_racio < 0.20 ? limitante : pior, nortada) + '.';
+      razao = queixa(limitante && pior_racio < 0.20 ? limitante : pior, nortada);
+      frase = 'Dá para ir, mas ' + razao + '.';
     } else {
-      frase = 'Fica para outro dia: ' + queixa(pior_racio < 0.08 ? limitante : pior, nortada) + '.';
+      razao = queixa(pior_racio < 0.08 ? limitante : pior, nortada);
+      frase = 'Fica para outro dia: ' + razao + '.';
     }
 
     return {
-      nota: vetos.length ? null : nota, notaBruta: nota,
+      nota: vetos.length ? null : nota, notaBruta: nota, razao: razao,
+      /* A nota que esta janela daria a si própria, sem a média das partes.
+         É a que as PARTES usam para se somarem, e a que o teste da média
+         compara — sem ela, impor a média e depois medi-la era circular. */
+      notaPropria: notaPropria,
       cor: cor, frase: frase, vetos: vetos.map(function (v) { return v.t; }),
       avisos: avisos.map(function (a) { return a.t; }),
       perigo: vetos.concat(avisos).some(function (v) { return v.perigo; }), factores: f,
@@ -509,69 +591,178 @@
       cw.forEach(function (k) { var v = dl[k][i4]; if (v != null && (m4 == null || v > m4)) m4 = v; });
       sd.weather_code[i4] = m4;
     }
+    /* A matéria-prima, guardada para quem precise de saber o DESACORDO entre
+       modelos e não só a média deles. O consenso é uma média, e uma média não
+       diz se os quatro concordavam ou se dois puxavam para cada lado — que é
+       exactamente a diferença entre um sinal e ruído. Usa-o o `metadesDoDia`.
+       São duas referências, não duas cópias: os arrays já estão vivos na
+       resposta em sessionStorage, e nada aqui itera as chaves de `hourly` (os
+       acessos são todos por nome), portanto não há risco de estes dois campos
+       entrarem numa média. */
+    saida._bruto = h;
+    saida._modelos = modelos.slice();
     return { hourly: saida, daily: sd };
   }
 
   /* ------------------------------------------------- agregação dos dados */
 
   /**
+   * Agrega um dia a um intervalo de horas QUALQUER — não obrigatoriamente a
+   * janela de praia inteira. É o corpo que a `agregar()` usava lá dentro,
+   * posto de fora para que as metades do dia possam ser pontuadas exactamente
+   * pelas mesmas contas: as mesmas estatísticas (p75 do vento, máximo do
+   * calor, soma dos milímetros), as mesmas curvas, os mesmos pesos. Metades
+   * medidas de outra maneira não seriam comparáveis com o dia nem uma com a
+   * outra.
+   *
+   * Devolve `null` se não houver uma única hora no intervalo. Isso é
+   * deliberado e é a guarda mais importante do ficheiro: o `classificarDia({})`
+   * devolve cor VERMELHA, nota nula, zero vetos e «Fica para outro dia: as
+   * condições não ajudam» — ou seja, ausência de dados sai daqui com todo o ar
+   * de um veredicto. Quem chamar isto tem de distinguir «não sei» de «é mau».
+   *
+   * Não devolve `mmDia` nem `codigo`: esses vêm do bloco diário da API, são do
+   * dia inteiro e não fazem sentido pedidos a um intervalo.
+   */
+  function agregarBlocos(tempo, marinho, praia, dia, blocos) {
+    var horas = (tempo.hourly && tempo.hourly.time) || [];
+    var ix = indices(horas, dia, blocos);
+    if (!ix.length) return null;
+
+    var mh = (marinho && marinho.hourly) || null;
+    var mHoras = (mh && mh.time) || [];
+    var ixm = mHoras.length ? indices(mHoras, dia, blocos) : [];
+
+    var ventosJanela = fatia(tempo.hourly.wind_speed_10m, ix);
+    /* p75 e não média: é o vento da parte ventosa da tarde, sem ser refém de
+       uma hora isolada como seria o máximo. */
+    var vento = percentil(ventosJanela, 0.75);
+    var agua = ixm.length ? media(fatia(mh.sea_surface_temperature, ixm)) : null;
+    var ondas = ixm.length ? maximo(fatia(mh.wave_height, ixm)) : null;
+
+    return {
+      dia: dia,
+      vento: vento == null ? null : Math.round(vento),
+      ventoMin: percentil(ventosJanela, 0.10) != null ? Math.round(percentil(ventosJanela, 0.10)) : null,
+      ventoMax: maximo(ventosJanela) != null ? Math.round(maximo(ventosJanela)) : null,
+      rajada: maximo(fatia(tempo.hourly.wind_gusts_10m, ix)),
+      dirVento: mediaDir(fatia(tempo.hourly.wind_direction_10m, ix)),
+      ceu: media(fatia(tempo.hourly.cloud_cover, ix)),
+      ar: maximo(fatia(tempo.hourly.apparent_temperature, ix)),
+      arReal: maximo(fatia(tempo.hourly.temperature_2m, ix)),
+      agua: agua,
+      chuva: maximo(fatia(tempo.hourly.precipitation_probability, ix)),
+      /* Acumulado DENTRO da janela, não do dia inteiro. Medido pela revisão:
+         79% dos vetos de chuva vinham de chuva que caía de madrugada ou à
+         noite, e chumbavam tardes de sol. */
+      mm: soma(fatia(tempo.hourly.precipitation || [], ix)),
+      ondas: ondas,
+      uv: maximo(fatia(tempo.hourly.uv_index, ix)),
+      trovoada: temTrovoada(
+        fatia(tempo.hourly.trovoada_modelos || [], ix).filter(function (x) { return x != null; }),
+        tempo.hourly.n_modelos),
+      lat: praia.la, lon: praia.lo, mar: praia.m === 1
+    };
+  }
+
+  /* Um bloco só, que é o caso comum: as partes do dia e os testes. Mantém a
+     assinatura de sempre. */
+  function agregarJanela(tempo, marinho, praia, dia, ini, fim) {
+    return agregarBlocos(tempo, marinho, praia, dia, [[ini, fim]]);
+  }
+
+  /* O que a `agregar()` devolvia para um dia sem uma única hora na janela.
+     Tem de continuar a ser um OBJECTO e não `null`: o array que sai da
+     `agregar()` é indexado pelo dia escolhido e o app.js lê `d.uv` sem
+     perguntar. Um `null` no meio deixava a página com o HTML e mais nada. */
+  function janelaVazia(dia, praia) {
+    return {
+      dia: dia, vento: null, ventoMin: null, ventoMax: null, rajada: null,
+      dirVento: null, ceu: null, ar: null, arReal: null, agua: null,
+      chuva: null, mm: null, ondas: null, uv: null, trovoada: false,
+      lat: praia.la, lon: praia.lo, mar: praia.m === 1
+    };
+  }
+
+  /**
    * Junta a resposta das duas APIs num objecto por dia, já agregado à janela
    * de praia. Devolve um array de dias.
    */
   function agregar(tempo, marinho, praia) {
-    var horas = (tempo.hourly && tempo.hourly.time) || [];
     var dias = (tempo.daily && tempo.daily.time) || [];
-    var mh = (marinho && marinho.hourly) || null;
-    var mHoras = (mh && mh.time) || [];
-
     return dias.map(function (dia, iDia) {
-      var ix = janela(horas, dia);
-      var ixManha = janela(horas, dia, HORA_INI, HORA_MEIO - 1);
-      var ixTarde = janela(horas, dia, HORA_MEIO, HORA_FIM);
-      var ixm = mHoras.length ? janela(mHoras, dia) : [];
-
-      var ventosJanela = fatia(tempo.hourly.wind_speed_10m, ix);
-      /* p75 e não média: é o vento da parte ventosa da tarde, sem ser refém de
-         uma hora isolada como seria o máximo. */
-      var vento = percentil(ventosJanela, 0.75);
-      var ventoManha = media(fatia(tempo.hourly.wind_speed_10m, ixManha));
-      var ventoTarde = media(fatia(tempo.hourly.wind_speed_10m, ixTarde));
-      var agua = ixm.length ? media(fatia(mh.sea_surface_temperature, ixm)) : null;
-      var ondas = ixm.length ? maximo(fatia(mh.wave_height, ixm)) : null;
-
-      return {
-        dia: dia,
-        vento: vento == null ? null : Math.round(vento),
-        ventoMin: percentil(ventosJanela, 0.10) != null ? Math.round(percentil(ventosJanela, 0.10)) : null,
-        ventoMax: maximo(ventosJanela) != null ? Math.round(maximo(ventosJanela)) : null,
-        ventoManha: ventoManha == null ? null : Math.round(ventoManha),
-        ventoTarde: ventoTarde == null ? null : Math.round(ventoTarde),
-        rajada: maximo(fatia(tempo.hourly.wind_gusts_10m, ix)),
-        dirVento: mediaDir(fatia(tempo.hourly.wind_direction_10m, ix)),
-        ceu: media(fatia(tempo.hourly.cloud_cover, ix)),
-        ar: maximo(fatia(tempo.hourly.apparent_temperature, ix)),
-        arReal: maximo(fatia(tempo.hourly.temperature_2m, ix)),
-        agua: agua,
-        chuva: maximo(fatia(tempo.hourly.precipitation_probability, ix)),
-        /* Acumulado DENTRO da janela de praia, não do dia inteiro. Medido pela
-           revisão: 79% dos vetos de chuva vinham de chuva que caía de
-           madrugada ou à noite, e chumbavam tardes de sol. */
-        mm: soma(fatia(tempo.hourly.precipitation || [], ix)),
-        mmDia: (tempo.daily.precipitation_sum || [])[iDia],
-        ondas: ondas,
-        uv: maximo(fatia(tempo.hourly.uv_index, ix)),
-        trovoada: temTrovoada(
-          fatia(tempo.hourly.trovoada_modelos || [], ix).filter(function (x) { return x != null; }),
-          tempo.hourly.n_modelos),
-        codigo: (tempo.daily.weather_code || [])[iDia],
-        lat: praia.la, lon: praia.lo, mar: praia.m === 1
-      };
+      var d = agregarBlocos(tempo, marinho, praia, dia, BLOCOS_DIA)
+        || janelaVazia(dia, praia);
+      d.mmDia = (tempo.daily.precipitation_sum || [])[iDia];
+      d.codigo = (tempo.daily.weather_code || [])[iDia];
+      return d;
     });
+  }
+
+  /* ------------------------------------------- as duas metades do dia */
+
+  /* Aqui viveu, até Agosto de 2026, um detector que dizia «Vai de manhã — o
+     céu deve fechar à tarde» em cerca de 5 % dos dias, com quatro portões em
+     conjunção e uma calibração de 2400 dias-praia contra o ERA5.
+
+     Saiu porque o ecrã passou a mostrar as duas partes SEMPRE, com a nota de
+     cada uma. Um detector existe para revelar o que está escondido; quando as
+     duas notas estão à vista em corpo grande, o ecrã É o detector, e a frase
+     passava a dizer por palavras o que dois números já diziam.
+
+     A medição não se perdeu: está em `_source/medir-portao.js` e no MODELO.md,
+     e o dia em que se voltar a precisar de afirmar qual das partes é a melhor,
+     recomeça-se dali e não do zero. */
+
+  /**
+   * O dia inteiro E as suas três partes, de uma vez. É o que a interface pede
+   * ao modelo: um objecto por dia com tudo o que vai para o ecrã.
+   *
+   *   { d, v, partes: [{ id, nome, d, v }, …] }
+   *
+   * A nota de `v` é a MÉDIA das três partes. Os vetos, a cor, o factor
+   * limitante e a frase continuam a sair das nove horas.
+   *
+   * Se faltar uma parte — buraco nos dados horários — a média não se faz com
+   * as que sobram: o dia volta a valer a sua própria soma. Uma média de duas
+   * partes chamada «o dia» seria pior do que um número honesto.
+   */
+  function avaliarDia(tempo, marinho, praia, dia) {
+    var d = agregarBlocos(tempo, marinho, praia, dia, BLOCOS_DIA);
+    var partes = PARTES.map(function (P) {
+      var g = agregarJanela(tempo, marinho, praia, dia, P.ini, P.fim);
+      /* A água e a ondulação são do DIA, e são copiadas para cada parte antes
+         de a pontuar. Sem isto a `agregarJanela` recalcula-as dentro de cada
+         bloco — a água pela média das horas marinhas, as ondas pelo máximo — e
+         as três partes passavam a pontuar contra três águas diferentes por
+         décimas. O ecrã diz «igual nas três partes», e tem de ser verdade:
+         mostrar um número que a conta não usou é a mesma classe de defeito que
+         esta alteração toda veio corrigir. */
+      if (g && d) { g.agua = d.agua; g.ondas = d.ondas; }
+      return { id: P.id, nome: P.nome, ini: P.ini, fim: P.fim,
+               d: g, v: g ? classificarDia(g) : null };
+    });
+    if (!d) return { d: null, v: null, partes: partes, media: null };
+
+    var notas = partes.map(function (p) { return p.v && p.v.notaPropria; })
+                      .filter(function (n) { return n != null; });
+    var media = notas.length === PARTES.length
+      ? notas.reduce(function (s, n) { return s + n; }, 0) / notas.length
+      : null;
+    return { d: d, v: classificarDia(d, media == null ? null : { nota: Math.round(media) }),
+             partes: partes,
+             /* por arredondar: é com ela que o painel escreve «75,7 → 76» */
+             media: media };
   }
 
   raiz.Modelo = {
     classificarDia: classificarDia,
+    avaliarDia: avaliarDia,
+    PARTES: PARTES,
     agregar: agregar,
+    agregarJanela: agregarJanela,
+    agregarBlocos: agregarBlocos,
+    BLOCOS_DIA: BLOCOS_DIA,
     beaufort: beaufort,
     percentil: percentil,
     consenso: consenso,

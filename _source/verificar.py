@@ -775,6 +775,40 @@ try:
     if d['abertos'] != ['nums-manha']:
         erro('mudar de dia devia manter a manhã aberta, e ficou %s' % d['abertos'])
     else: print('  mudar de dia  ✓ mantém a parte aberta')
+
+    # CARREGAR NUMA CABEÇA NÃO MEXE O ECRÃ. Houve aqui um window.scrollBy a
+    # compensar a diferença de altura, para o bloco tocado ficar no mesmo
+    # píxel: com a manhã aberta, tocar na tarde dava scrollY −248 no telemóvel
+    # e −291 no computador, e o nome da praia saltava esses mesmos pixéis. E
+    # nem chegava ao alvo — pedia 374 px de compensação com 248 de scroll
+    # acima, ficava cortado no limite e a cabeça ainda fugia 126.
+    # Só se mede com a cabeça À VISTA: ninguém carrega no que não vê, e com ela
+    # acima do topo é a ancoragem do próprio Chrome que decide, não este código.
+    antes = len(falhas)
+    for aberto in (None, 'manha', 'tarde'):
+        for qual in ('manha', 'tarde'):
+            c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');
+                 if(b) b.click();})()"""); time.sleep(.35)
+            if aberto:
+                c.js("document.getElementById('cab-%s').click()" % aberto); time.sleep(.45)
+            c.js("document.getElementById('cab-%s').scrollIntoView({block:'center'})" % qual)
+            time.sleep(.45)
+            m=json.loads(c.js("""JSON.stringify({y:Math.round(scrollY),
+              cab:Math.round(document.getElementById('cab-%s').getBoundingClientRect().top)})""" % qual))
+            if m['cab'] < 0: continue          # fora do ecrã: não é uma acção possível
+            c.js("document.getElementById('cab-%s').click()" % qual); time.sleep(.7)
+            n=json.loads(c.js("""JSON.stringify({y:Math.round(scrollY),
+              cab:Math.round(document.getElementById('cab-%s').getBoundingClientRect().top)})""" % qual))
+            if n['y'] != m['y']:
+                erro('carregar na %s (com %s aberta) mexeu o ecrã: scrollY %+d'
+                     % (qual, aberto or 'nenhuma', n['y']-m['y']))
+            elif aberto in (None, qual) and n['cab'] != m['cab']:
+                erro('carregar na %s fez a própria cabeça fugir %+d px'
+                     % (qual, n['cab']-m['cab']))
+    if len(falhas) == antes:
+        print('  sem salto     ✓ carregar numa cabeça não mexe o ecrã')
+    c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');
+         if(b) b.click();})()"""); time.sleep(.3)
 finally: c.fechar()
 
 print('\n== 7. sem JavaScript ==')

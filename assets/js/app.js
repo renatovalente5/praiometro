@@ -854,21 +854,22 @@
   on('v-partes', 'click', function (e) {
     var b = e.target.closest && e.target.closest('button.bloco__cabeca');
     if (!b) return;
-    var li = b.parentNode;
-    /* A medição TEM de ser antes-mutação-depois, por esta ordem, e sem animação
-       de altura pelo meio: com animação a segunda leitura apanha um valor que
-       ainda está a mudar e o bloco foge de debaixo do dedo — o defeito clássico
-       dos acordeões, e pior do que não compensar nada. */
-    var antes = li.getBoundingClientRect().top;
-    var id = li.getAttribute('data-parte');
+    /* NÃO se mexe no scroll da página. Houve aqui um `window.scrollBy` a
+       compensar a diferença de altura, para o bloco tocado ficar no mesmo
+       píxel. Fazia duas coisas erradas ao mesmo tempo, e as duas medidas:
+
+         · atirava o ecrã inteiro. Com a manhã aberta, tocar na tarde dava
+           `scrollY` −248 no telemóvel e −291 no computador, e o nome da praia
+           saltava para baixo esses mesmos pixéis. Era isto que se via.
+         · e nem chegava ao alvo: pedia 374 px de compensação com 248 de scroll
+           acima, ficava cortado no limite, e a cabeça tocada ainda fugia 126.
+
+       Sem ele o ecrã fica onde está, sempre. O que se move é o CONTEÚDO — o
+       bloco da tarde sobe para o lugar que a manhã deixou —, que é o que um
+       acordeão faz e o que toda a gente já viu fazer. */
+    var id = b.parentNode.getAttribute('data-parte');
     parteAberta = (parteAberta === id) ? null : id;
     aplicarAbertura();
-    var depois = li.getBoundingClientRect().top;
-    /* Só vale alguma coisa no caso em que o OUTRO estava aberto: aí fecha-se um
-       painel e abre-se outro de tamanho parecido, e o topo do bloco tocado fica
-       no MESMO píxel. Quando nada estava aberto, nada acima dele muda de altura
-       e isto dá zero. */
-    if (depois !== antes) window.scrollBy(0, depois - antes);
   });
 
   /* Escape com o foco no bloco ou dentro do painel (há lá um link) fecha e

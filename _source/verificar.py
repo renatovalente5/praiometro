@@ -133,13 +133,14 @@ try:
     d=json.loads(c.js("""JSON.stringify({praia:document.getElementById('v-praia').textContent,
       palavra:(document.querySelector('.partes__palavra')||{}).textContent
               || document.getElementById('v-resposta').textContent,
-      nota:document.getElementById('v-total').textContent})"""))
+      nota:((document.querySelector('.dia[aria-selected="true"] .dia__nota')||{}).textContent)||''})"""))
     # Os factores vivem agora dentro do painel de cada parte, e só quando aberto.
     c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()"); time.sleep(.5)
     d['factores']=json.loads(c.js("JSON.stringify([...document.querySelectorAll('.nums__nome')].map(x=>x.textContent))"))
-    # A explicação da praia de rio mudou-se do rodapé do painel para a linha da
-    # fonte dos dados, no fim do cartão: são duas coisas sobre a mesma origem.
-    rodape=c.js("(document.getElementById('v-fonte')||{}).textContent||''")
+    # A explicação da praia de rio: sem ela, a ausência do factor «Água do mar»
+    # lá dentro dos números lê-se como avaria. Vivia na linha da fonte dos
+    # dados; essa linha saiu a pedido e a explicação ficou, sozinha.
+    rodape=c.js("(document.getElementById('v-sem-mar')||{}).textContent||''")
     print('  praia:', d['praia'], '|', d['palavra'], '|', d['nota'])
     print('  factores:', d['factores'])
     if 'Água do mar' in d['factores']: erro('praia de rio não devia ter factor água')
@@ -359,6 +360,24 @@ try:
     if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
         erro('o mapa faz a página transbordar: %s' % d['transbordo'])
 
+    # O MAPA ALINHA COM OS IRMÃOS. Teve um gutter próprio por cima do gutter do
+    # <section class="resultado"> que o contém, e ficava 16 px para dentro de
+    # cada lado — 311 px onde o aviso das bandeiras media 343. Compara-se com o
+    # aviso porque é o vizinho de baixo, que é onde a diferença se via.
+    torto=False
+    for larg in (375, 700, 1000):
+        c.cmd('Emulation.setDeviceMetricsOverride', width=larg, height=900,
+              deviceScaleFactor=1, mobile=larg < 620)
+        time.sleep(.45)
+        cx=json.loads(c.js('''JSON.stringify(['.mapa__tela', '.aviso-bandeiras'].map(function (k) {
+          var r = document.querySelector(k).getBoundingClientRect();
+          return [Math.round(r.left), Math.round(r.width)]; }))'''))
+        if cx[0] != cx[1]:
+            torto=True
+            erro('a %d px o mapa não alinha com o aviso: tela %s, aviso %s' % (larg, cx[0], cx[1]))
+    if not torto: print('  alinhado     ✓ a mesma largura do aviso a 375, 700 e 1000 px')
+    c.cmd('Emulation.setDeviceMetricsOverride', width=375, height=812, deviceScaleFactor=1, mobile=True)
+
     # A PROMESSA: o mapa existe para não haver pedidos a terceiros. Se um dia
     # alguém trocar isto por tiles, o site passa a mandar o IP de quem visita
     # para outro servidor — e a página do Perfil promete o contrário.
@@ -394,8 +413,7 @@ try:
             lido: (x.querySelector('.visually-hidden')||{}).textContent})),
           palavraJunto: (document.querySelector('.partes__palavra')||{}).textContent || '',
           iconeJunto: !!document.querySelector('.partes__icone svg'),
-          total: document.getElementById('v-total').textContent,
-          frase: document.getElementById('v-frase').textContent,
+          notaDoDia: ((document.querySelector('.dia[aria-selected="true"] .dia__nota')||{}).textContent) || '',
           transbordo: document.documentElement.scrollWidth+'/'+innerWidth})"""))
         # A MANHÃ E A TARDE SÃO SEMPRE DOIS BLOCOS. Houve uma versão em que os
         # dias iguais vinham num bloco só, e o cartão mudava de feitio
@@ -420,32 +438,35 @@ try:
         # blocos já dizem qual é a melhor, e repeti-lo por extenso («A manhã
         # está melhor») era dizer duas vezes a mesma coisa — saiu a pedido.
         semNumero = any(not b['nota'] for b in d['blocos'])
+        diaSemNota = not d['notaDoDia']
         if semNumero and not d['resposta']:
             erro('dia %d: uma parte sem número e sem frase a explicar porquê' % dia)
-        if not semNumero and d['resposta']:
-            erro('dia %d: as duas partes têm nota mas há frase por cima: %r' % (dia, d['resposta']))
+        # O DIA pode chumbar COM AS DUAS PARTES SÃS: a chuva conta os milímetros
+        # por soma e o dia é a união exacta das duas partes — 1,2 mm de manhã e
+        # 1,2 à tarde passam as duas e o dia chumba nos 2. Aí a razão TEM de
+        # estar escrita; senão ficam dois blocos verdes debaixo de um cartão
+        # vermelho e nada no ecrã diz «chuva a sério».
+        if diaSemNota and not semNumero and not d['resposta']:
+            erro('dia %d: o dia chumbou com as duas partes sãs e nada o explica' % dia)
+        if not semNumero and not diaSemNota and d['resposta']:
+            erro('dia %d: nada falta e há frase por cima: %r' % (dia, d['resposta']))
 
         if [n.split(' ·')[0] for n in nomes] != ['Manhã','Tarde']:
             erro('dia %d: nomes das partes: %s' % (dia, nomes))
 
         # A ARITMÉTICA FECHA À VISTA. É a queixa que originou este desenho, e
-        # esta é a asserção que impede que volte. floor(x+0.5) e não round():
-        # o Python arredonda 80,5 para 80 e o Math.round do JS para 81.
-        import re as _re
-        m = _re.search(r'Nota do dia\s+(\d+)\s+em 100', d['total'])
-        if m and len(notas) == 2:
+        # esta é a asserção que impede que volte. A linha «Nota do dia 74 em
+        # 100» saiu do cartão a pedido — mas a nota do dia NÃO saiu do ecrã:
+        # está na célula deste dia, na tira, e é essa que tem de ser a média das
+        # duas que estão nos blocos. floor(x+0.5) e não round(): o Python
+        # arredonda 80,5 para 80 e o Math.round do JS para 81.
+        # Um dia sem número é legítimo (veto) e é tratado acima: aqui só se
+        # verifica que, QUANDO há número, ele é mesmo a média das duas.
+        if len(notas) == 2 and not diaSemNota:
             media = int(sum(int(n) for n in notas)/2 + 0.5)
-            if int(m.group(1)) != media:
-                erro('dia %d: o total diz %s e a média das duas é %d — %s'
-                     % (dia, m.group(1), media, notas))
-        elif not m:
-            # sem número, tem de haver razão escrita — nunca um total mudo
-            if 'não tem nota' not in d['total']:
-                erro('dia %d: sem total e sem razão: %r' % (dia, d['total']))
-            if any(b.get('nota') for b in d['blocos']) and len(notas) == 2:
-                erro('dia %d: as duas partes têm nota mas o dia não mostra total' % dia)
-
-        if not d['frase']: erro('dia %d: sem razão escrita' % dia)
+            if int(d['notaDoDia']) != media:
+                erro('dia %d: a tira diz %s e a média das duas é %d — %s'
+                     % (dia, d['notaDoDia'], media, notas))
         if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
             erro('dia %d: o cartão faz transbordar (%s)' % (dia, d['transbordo']))
     print('  6 dias        ✓ sempre dois blocos — %d com cores iguais, %d diferentes, %d sem dados'
@@ -489,10 +510,81 @@ try:
       rolo: document.getElementById('dias').scrollWidth > document.getElementById('dias').clientWidth + 1,
       palavras: [...document.querySelectorAll('.dia__palavra')].map(x => x.textContent).filter(Boolean).length})"""))
     if d['dias'] != 6: erro('a tira deixou de ter 6 dias: %d' % d['dias'])
-    if d['colunas'] != 3: erro('a tira devia ser de 3 colunas a 375px, é de %d' % d['colunas'])
+    if d['colunas'] != 6: erro('a tira devia ser de 6 colunas a 375px, é de %d' % d['colunas'])
     if d['rolo']: erro('a tira voltou a ter rolo horizontal')
     if d['palavras'] != 6: erro('só %d dos 6 dias têm palavra' % d['palavras'])
-    print('  tira          ✓ 6 dias em 3 colunas, sem rolo, todos com palavra')
+    print('  tira          ✓ 6 dias em fila, sem rolo, todos com palavra')
+
+    # Com seis células em ~53 px, o que rebenta primeiro é o TEXTO a passar por
+    # cima do contorno — aconteceu duas vezes seguidas («Amanhã» a medir 47,5 px
+    # numa célula com 46 úteis, e a terceira linha da palavra cortada) e nenhuma
+    # das contas anteriores dava por isso, porque contam colunas e não pixéis.
+    fora=json.loads(c.js(r"""JSON.stringify(
+      [...document.querySelectorAll('.dia')].flatMap(function (cel) {
+        var r = cel.getBoundingClientRect(), cs = getComputedStyle(cel);
+        var e = parseFloat(cs.paddingLeft), d = parseFloat(cs.paddingRight);
+        return [...cel.children].filter(function (k) {
+          var q = k.getBoundingClientRect();
+          return q.width > r.width - 4 - e - d + .5 || q.bottom > r.bottom - 1;
+        }).map(function (k) { return k.className + ' "' + k.innerText.replace(/\s+/g, ' ') + '"'; });
+      }))"""))
+    if fora: erro('texto a sair da célula do dia: %s' % fora)
+    else: print('  cabe na fila  ✓ nome, nota e palavra dentro da célula')
+
+    alturas=json.loads(c.js(r"""JSON.stringify([...new Set(
+      [...document.querySelectorAll('.dia')].map(function (x) {
+        return Math.round(x.getBoundingClientRect().height); }))])"""))
+    if len(alturas) != 1: erro('as seis células ficaram com alturas diferentes: %s' % alturas)
+    else: print('  fila direita  ✓ as seis células com a mesma altura (%d px)' % alturas[0])
+finally: c.fechar()
+
+print('\n== 6d. o dia que chumba com as duas partes sãs ==')
+# NÃO é um caso teórico e NÃO acontece na previsão de hoje, por isso tem de ser
+# forçado: o veto da chuva conta os milímetros por SOMA e o dia é a união exacta
+# das duas partes, logo 1,2 mm de manhã e 1,2 à tarde passam as duas — o veto é
+# aos 2 — e o dia chumba em 2,4. Enquanto o cartão teve a linha «Nota do dia»,
+# era ela que dizia «Hoje não tem nota: chuva a sério». Essa linha saiu a pedido,
+# e sem esta guarda o ecrã volta a ficar com barra vermelha por cima de dois
+# blocos verdes de 94 sem nada a explicar porquê.
+ENXERTO = r"""
+(function () {
+  var t = setInterval(function () {
+    if (!window.Modelo || !window.Modelo.avaliarDia) return;
+    clearInterval(t);
+    var orig = window.Modelo.avaliarDia, n = 0;
+    window.Modelo.avaliarDia = function () {
+      var r = orig.apply(this, arguments);
+      if (n++ === 0 && r && r.v && r.partes[0] && r.partes[0].v && r.partes[1] && r.partes[1].v) {
+        r.v.nota = null; r.v.cor = 'vermelho'; r.v.vetos = ['chuva a sério'];
+        r.partes[0].v.nota = 94; r.partes[0].v.cor = 'verde'; r.partes[0].v.vetos = [];
+        r.partes[1].v.nota = 94; r.partes[1].v.cor = 'verde'; r.partes[1].v.vetos = [];
+      }
+      return r;
+    };
+  }, 5);
+})();
+"""
+c=Chrome(porta=livre())
+try:
+    c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
+    c.cmd('Page.addScriptToEvaluateOnNewDocument', source=ENXERTO)
+    c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+    d=json.loads(c.js(r"""JSON.stringify({
+      resposta: document.getElementById('v-resposta').textContent,
+      notas: [...document.querySelectorAll('.bloco__nota')].map(x => x.textContent),
+      notaTira: ((document.querySelector('.dia[aria-selected="true"] .dia__nota')||{}).textContent)||'',
+      cor: document.body.getAttribute('data-cor')})"""))
+    if d['notas'] != ['94','94'] or d['cor'] != 'vermelho':
+        print('  · o enxerto não pegou (%s / %s) — secção sem valor nesta corrida' % (d['notas'], d['cor']))
+    elif d['notaTira']:
+        erro('o dia chumbou e a tira continua a mostrar %s' % d['notaTira'])
+    elif not d['resposta'].strip():
+        erro('cartão vermelho, dois blocos verdes de 94 e nada no ecrã a explicar porquê')
+    elif 'chuva' not in d['resposta']:
+        erro('a linha não nomeia o veto: %r' % d['resposta'])
+    else:
+        print('  dia chumbado  ✓ %r' % d['resposta'])
 finally: c.fechar()
 
 print('\n== 6c-ter. o tema escuro ==')
@@ -533,7 +625,7 @@ try:
         alto: Math.round(x.getBoundingClientRect().height)};}),
       abertos: document.querySelectorAll('.bloco__numeros:not([hidden])').length,
       pista: document.getElementById('v-pista') ? !document.getElementById('v-pista').hidden : null,
-      fonte: (document.getElementById('v-fonte')||{}).textContent || '',
+      fonte: (document.querySelector('.rodape__fontes')||{}).textContent || '',
       detalheMorreu: !document.getElementById('detalhe')})"""))
     if d['cabs'] and any(x['tag'] != 'button' for x in d['cabs']):
         print('  · há partes sem números — a cabeça não é botão, como deve')
@@ -545,9 +637,12 @@ try:
     # A área de toque: 44px é o mínimo, e a cabeça é o maior botão da página.
     baixos = [x for x in d['cabs'] if x['tag'] == 'button' and x['alto'] < 44]
     if baixos: erro('cabeças com menos de 44px de altura: %s' % baixos)
-    if not d['fonte'] or 'Open-Meteo' not in d['fonte']:
-        erro('a atribuição da Open-Meteo desapareceu — é obrigação de licença')
-    else: print('  fonte         ✓ a atribuição está no cartão, sem carregar em nada')
+    # A atribuição vivia no fim do cartão e saiu a pedido. A licença NÃO deixa
+    # de existir por isso: mudou-se para o rodapé da página, e o DWD — que a
+    # documentação marinha exige e que só vivia naquela linha — foi com ela.
+    faltam = [n for n in ('Open-Meteo', 'DWD') if n not in d['fonte']]
+    if faltam: erro('a atribuição a %s desapareceu do rodapé — é obrigação de licença' % ', '.join(faltam))
+    else: print('  atribuição    ✓ Open-Meteo e DWD no rodapé, sem carregar em nada')
     print('  ao chegar     ✓ %d cabeças, todas fechadas, com o convite à vista' % len(d['cabs']))
 
     # --- ABRIR

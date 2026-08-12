@@ -514,9 +514,10 @@ button.bloco__cabeca:active {
 .nums__ordem a { color: var(--tinta); font-weight: 700; text-decoration: underline; }
 
 /* A fonte dos dados, que era o rodapé do «Ver os números». */
-.veredicto__fonte { margin-top: .9rem; font-size: .78rem; color: var(--tinta-3); line-height: 1.45; }
-.veredicto__fonte:empty { display: none; }
-.veredicto__fonte abbr { text-decoration: none; border-bottom: 1px dotted currentColor; }
+/* Só aparece nas praias de rio e nos pontos sem dados de mar. O :empty tira-a
+   do fluxo no caso normal — sem caixa reservada e sem salto de layout. */
+.veredicto__sem-mar { margin-top: .9rem; font-size: .78rem; color: var(--tinta-3); line-height: 1.45; }
+.veredicto__sem-mar:empty { display: none; }
 /* Sem número, o texto ocupa a largura toda. Nada de espaço reservado a um «✕»
    que se lê como avaria ou como «fechado», nunca como «não vale a pena». */
 .bloco--sem-nota .bloco__nota { display: none; }
@@ -531,18 +532,8 @@ button.bloco__cabeca:active {
    teste passar a abrir um bloco. */
 .bloco--passou .bloco__nome, .bloco--passou .bloco__nota { color: var(--tinta-2); }
 
-/* ------------------------------------------ o total e a razão --------- */
-/* A linha de baixo de uma conta de café: parcelas em cima, total em baixo.
-   Ninguém precisa de instruções para a ler. */
-.veredicto__total { margin-top: .85rem; font-size: 1.05rem; color: var(--tinta-2); }
-.veredicto__total b {
-  font-size: 1.4rem; font-weight: 800; color: var(--tinta);
-  font-variant-numeric: tabular-nums;
-}
-.veredicto__frase {
-  margin-top: .55rem; font-size: clamp(1.05rem, 3.6vw, 1.15rem);
-  color: var(--tinta); line-height: 1.45; text-wrap: balance;
-}
+/* A nota do dia e a frase da razão sairam do cartão a pedido; as regras que as
+   pintavam sairam com elas. */
 .partes__sem { font-size: 1.05rem; color: var(--tinta-2); line-height: 1.45; }
 
 .veredicto__aviso {
@@ -688,19 +679,27 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
    legal das bandeiras — e uns 124 px de tira a viver fora do ecrã. Três por
    linha dão uns 90 px, e a resposta mais valiosa que este site tem num dia
    mau («então quando?») deixa de exigir rolar em duas direcções. */
+/* minmax(0, 1fr) e NÃO 1fr: `1fr` é `minmax(auto, 1fr)`, e o `auto` impede a
+   célula de encolher abaixo do seu conteúdo mínimo. Com nomes de larguras
+   diferentes, as seis colunas saíam desiguais — medido a 375 px: 47, 74, 57,
+   57, 57 e 46 px — e a tira transbordava 16 px para fora do cartão. */
 .dias {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem;
   margin-top: .8rem; overflow: visible;
   padding: 3px; margin-inline: -3px;   /* só para o anel de selecção caber */
 }
-@media (min-width: 700px) { .dias { grid-template-columns: repeat(6, 1fr); } }
+@media (min-width: 620px) { .dias { grid-template-columns: repeat(6, 1fr); gap: .5rem; } }
+/* As duas formas do nome vão as duas para o HTML e é aqui que se escolhe: a
+   longa quando há largura, a curta quando não há. Medido a 375 px: com seis em
+   fila cada célula fica com uns 50 px úteis, e «Domingo» a 15 px mede 66. */
+.dia__nome--curto { display: none; }
 /* O MESMO vocabulário dos blocos da manhã e da tarde: fundo pastel da cor do
    veredicto, contorno de 2 px na mesma cor, cantos grandes. Quem aprendeu a
    ler um bloco no cartão lê estes seis sem aprender nada de novo — e a tira
    deixa de ser uma fila de caixas brancas onde só a bolinha tem cor. */
 .dia {
-  display: flex; flex-direction: column; align-items: center; gap: .3rem;
-  padding: .7rem .3rem .75rem; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: .25rem;
+  padding: .6rem .15rem .65rem; cursor: pointer; min-width: 0;
   background: var(--dia-fundo, var(--carta));
   border: 2px solid var(--dia-cor, var(--borda)); border-radius: var(--raio-g);
   transition: transform var(--t), box-shadow var(--t);
@@ -734,6 +733,28 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .dia--verde    { --dia-cor: var(--verde);    --dia-fundo: var(--verde-luz); }
 .dia--amarelo  { --dia-cor: var(--amarelo);  --dia-fundo: var(--amarelo-luz); }
 .dia--vermelho { --dia-cor: var(--vermelho); --dia-fundo: var(--vermelho-luz); }
+
+/* A versão estreita: seis células em ~53 px a 375 px e ~44 px a 320. Tudo o
+   que aqui está foi medido no ecrã e não estimado — a primeira tentativa
+   deixava o til do «Amanhã» cortado e a terceira linha da palavra escondida
+   por baixo da altura reservada. */
+@media (max-width: 619px) {
+  .dia__nome--longo { display: none; }
+  .dia__nome--curto { display: inline; }
+  .dia { padding: .55rem .1rem .6rem; }
+  .dia__nome  { font-size: .78rem; }
+  .dia__bolha { width: 26px; height: 26px; }
+  .dia__nota  { font-size: 1.25rem; }
+  /* Três linhas reservadas, não duas: «Melhor de tarde» parte em três nesta
+     largura, e com duas a última ficava cortada a meio. Reservadas SEMPRE,
+     para as seis células terem a mesma altura e a fila não dançar. */
+  .dia__palavra { font-size: .72rem; min-height: 3.45em; }
+}
+@media (max-width: 360px) {
+  .dia__nome  { font-size: .72rem; }
+  .dia__nota  { font-size: 1.15rem; }
+  .dia__palavra { font-size: .68rem; }
+}
 
 /* ========================================================= DETALHE ==== */
 
@@ -822,9 +843,12 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 /* =========================================================== ONDE FICA == */
 /* O mapa é SVG desenhado no browser a partir de data/mapa.json. Sem tiles e
    sem pedidos a terceiros — ver o comentário no index.html. */
-.mapa {
-  max-width: 640px; margin: 1.1rem auto 0; padding: 0 var(--gutter);
-}
+/* SEM gutter próprio: o <section class="resultado"> que o contém já tem o dele,
+   e os dois somados metiam o mapa 16 px para dentro de cada lado em relação aos
+   irmãos — media 311 px onde o aviso das bandeiras media 343. O max-width
+   também sai: era o mesmo 640 px do pai, a repetir a mesma regra em dois
+   sítios. Medido a 375, 700 e 1000 px. */
+.mapa { margin-top: 1.1rem; }
 .mapa__titulo {
   font-size: .74rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .06em; color: var(--tinta-3); margin-bottom: .5rem;

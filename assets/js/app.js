@@ -398,7 +398,7 @@
       /* Sem isto, uma praia que falhasse herdava as partes da anterior — e era
          a silhueta dessa que ficava no ecrã. */
       avaliacoes = []; parteAberta = null;
-      var f = el('v-fonte'); if (f) { f.innerHTML = ''; f.removeAttribute('data-k'); }
+      var f = el('v-sem-mar'); if (f) { f.innerHTML = ''; f.removeAttribute('data-k'); }
     });
   }
 
@@ -408,7 +408,7 @@
     el('resultado').hidden = false;
     desenharDias();
     desenharVeredicto();
-    desenharFonte();
+    desenharSemMar();
     /* Fica para o fim e é assíncrono: o mapa é a coisa menos urgente do ecrã,
        e o ficheiro dos contornos só se pede na primeira praia escolhida. */
     if (praiaActual) mostrarMapa(praiaActual);
@@ -428,7 +428,10 @@
         ' aria-selected="' + (i === diaEscolhido) + '"' +
         ' aria-label="' + esc(nomeDiaLongo(d.dia, i) + ', ' + pal.toLowerCase() +
           (v.nota == null ? '' : ', nota ' + v.nota + ' em 100')) + '">' +
-        '<span class="dia__nome" aria-hidden="true">' + esc(nomeDiaLongo(d.dia, i)) + '</span>' +
+        '<span class="dia__nome" aria-hidden="true">' +
+          '<span class="dia__nome--longo">' + esc(nomeDiaLongo(d.dia, i)) + '</span>' +
+          '<span class="dia__nome--curto">' + esc(nomeDiaCurto(d.dia, i)) + '</span>' +
+        '</span>' +
         '<span class="dia__bolha" aria-hidden="true">' + ICONES[v.cor] + '</span>' +
         /* Onde não há nota há PALAVRAS. Nunca um «✕», que se lê como avaria ou
            como «fechado», e nunca como «não vale a pena». */
@@ -484,9 +487,7 @@
        cartão de uma tira de seis já sabe que está a olhar para uma previsão. */
     el('v-dia').textContent = nomeDiaLongo(d.dia, diaEscolhido);
 
-    var temPartes = desenharPartes(a);
-    desenharTotal(a, v);
-    desenharFrase(a, v, temPartes);
+    desenharPartes(a);
     desenharAvisos(d, v);
     horaDesenhada = new Date().getHours();
   }
@@ -540,6 +541,19 @@
     return haDados(partes) && partes.some(function (p) { return p.v.nota == null; });
   }
 
+  /* O DIA pode ficar sem nota COM AS DUAS PARTES SÃS, e isto não é teórico: o
+     veto da chuva conta os milímetros por SOMA, e o dia é a união exacta das
+     duas partes. 1,2 mm de manhã e 1,2 mm à tarde passam as duas — o veto é aos
+     2 — e o dia chumba em 2,4. Sem esta linha ficava um cartão de barra
+     vermelha por cima de dois blocos verdes de 94, e nada no ecrã a dizer
+     «chuva a sério»: era a linha do total que o dizia, e ela saiu a pedido.
+     Reproduzível: classificarDia com mm=2.4 no dia e mm=1.2 em cada parte. */
+  function razaoDoDia(a) {
+    var v = a && a.v;
+    if (!v || v.nota != null || !v.vetos.length) return '';
+    return 'O dia está chumbado: ' + v.vetos[0] + '.';
+  }
+
   function respostaPartida(partes) {
     for (var i = 0; i < 2; i++) {
       var pv = partes[i].v, N = NOMES[partes[i].id];
@@ -550,8 +564,6 @@
     }
     return FRASES_PARTIDO[partes[0].v.cor + '|' + partes[1].v.cor] || '';
   }
-
-  function maiuscula(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
 
   /* Só no dia de hoje, e só depois de a janela fechar. `>=` e não `>`: às 13h
      em ponto a manhã já acabou. */
@@ -576,7 +588,7 @@
        extenso era dizer duas vezes a mesma coisa. O que fica é o caso em que
        uma das partes NÃO TEM número: aí não há nada no bloco que explique
        porquê, e a frase é a única coisa que o diz. */
-    resp.textContent = semNumero(partes) ? respostaPartida(partes) : '';
+    resp.textContent = semNumero(partes) ? respostaPartida(partes) : razaoDoDia(a);
     caixa.className = 'partes';
     caixa.innerHTML = '<ol class="partes__blocos">' + partes.map(function (p) {
       var pv = p.v, pp = jaPassou(p);
@@ -637,74 +649,14 @@
     return true;
   }
 
-  /* O TOTAL. Regra dura e sem excepções: SE ALGUMA PARTE NÃO TEM NÚMERO, O DIA
-     TAMBÉM NÃO MOSTRA NÚMERO. É o único sítio onde a aritmética podia não
-     fechar à vista — uma parte vetada tem nota nula mas a sua soma entrou na
-     média. Em vez de um total que não sai das duas parcelas visíveis,
-     mostra-se a razão. */
-  function desenharTotal(a, v) {
-    var p = el('v-total');
-    if (!p) return;
-    var partes = a && a.partes;
-    var quando = diaEscolhido === 0 ? 'Hoje' : 'Este dia';
-    var mau = partes && partes.filter(function (x) { return !x.v || x.v.nota == null; })[0];
-    if (mau) {
-      var pv = mau.v;
-      p.textContent = pv && pv.vetos.length
-        ? quando + ' não tem nota: ' + pv.vetos[0] + '.'
-        : quando + ' não tem nota: falta previsão ' + NOMES[mau.id].de + '.';
-      return;
-    }
-    if (!v || v.nota == null) {
-      p.textContent = quando + ' não tem nota: ' + ((v && v.vetos[0]) || 'não vale a pena') + '.';
-      return;
-    }
-    /* «em 100» aparece EXACTAMENTE uma vez em todo o ecrã, aqui. */
-    p.innerHTML = 'Nota do dia <b>' + v.nota + '</b> em 100';
-  }
-
-  /* A RAZÃO. Uma frase, um gerador, um sítio.
-     NUNCA afirma que o dia é igual: as duas notas já estão no ecrã, e afirmar
-     igualdade por cima de dois números diferentes era a contradição que o
-     diagnóstico apanhou («o dia é todo igual» com 94 e 90 logo acima). */
-  var RANK_COR = { vermelho: 0, amarelo: 1, verde: 2 };
-
-  function desenharFrase(a, v, temPartes) {
-    var alvo = el('v-frase');
-    if (!alvo) return;
-    var t = v ? v.frase : '';
-    var partes = a && a.partes;
-
-    if (temPartes && coresDiferem(partes)) {
-      /* A razão da PIOR parte, para o cartão nunca dizer «Está tudo a favor.»
-         por cima de uma tarde vermelha. */
-      var pior = partes[0];
-      if (partes[1].v && (!pior.v || RANK_COR[partes[1].v.cor] < RANK_COR[pior.v.cor])) pior = partes[1];
-      if (pior.v && pior.v.razao) t = maiuscula(pior.v.razao) + '.';
-    } else if (temPartes && partes[0].v.nota != null && partes[1].v.nota != null) {
-      /* Mesma cor, mas doze pontos ou mais entre as duas (uns 2,2 desvios-padrão
-         do desacordo entre modelos). É a única notícia real que a regra da cor
-         deitava fora, e diz-se em TEXTO — sem afirmar uma diferença que os
-         dados não sustentam. */
-      var m = partes[0].v.nota, tt = partes[1].v.nota;
-      if (Math.abs(m - tt) >= 12) t += m > tt ? ' Está melhor de manhã.' : ' Está melhor de tarde.';
-    }
-
-    /* Num dia vermelho, «então quando?» é a pergunta mais valiosa que este
-       site tem para responder — e estava a uns 800 px de distância. */
-    if (v && v.cor === 'vermelho') {
-      var prox = proximoDiaBom(diaEscolhido);
-      if (prox) t += ' ' + prox + ' promete.';
-    }
-    alvo.textContent = t;
-  }
-
-  function proximoDiaBom(i) {
-    for (var k = i + 1; k < veredictos.length; k++) {
-      if (veredictos[k].cor === 'verde') return nomeDiaLongo(dias[k].dia, k);
-    }
-    return null;
-  }
+  /* A LINHA «Nota do dia 74 em 100» SAIU do cartão, a pedido. A nota do dia
+     continua a ver-se na célula deste dia na tira de baixo, ao lado da sua
+     palavra, e a aritmética continua a fechar à vista: a nota da tira é a média
+     das duas que estão nos blocos.
+     A escala «em 100» deixa de aparecer para quem vê; para quem ouve continua,
+     porque o texto lido de cada bloco diz «nota 92 em 100». E a razão de um dia
+     sem nota é dita pela linha por cima dos blocos — nos DOIS casos em que ela
+     falta: parte chumbada, e dia chumbado com as partes sãs. */
 
   /* «sáb» num telemóvel de 320 px não custa menos do que «Sábado» e lê-se
      pior. «quarta-feira» corta-se no hífen: seis letras, cabem em 90 px. */
@@ -714,6 +666,26 @@
     var t = new Date(iso + 'T12:00:00')
       .toLocaleDateString('pt-PT', { weekday: 'long' }).split('-')[0];
     return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  /* A forma curta, para quando as seis células têm de caber na largura de um
+     telemóvel. Medido: com seis em fila a 375 px cada célula fica com uns 50 px
+     úteis, e «Domingo» a 15 px mede 66 — não cabe, e encolher a letra até caber
+     punha-a abaixo dos 11 px, que é mais pequeno do que o aviso legal.
+     As duas formas vão as duas para o HTML e é o CSS que escolhe; assim não há
+     JavaScript a depender da largura do ecrã, que seria uma segunda fonte de
+     verdade sobre o mesmo layout. */
+  /* Sem «Amanhã»: medido, ele mede 47,5 px e a célula só tem 40 úteis a 320 px
+     e 46 a 375 — passava por cima do contorno. Encolher a letra até caber dava
+     8,9 px, ilegível. A abreviatura do dia cabe sempre e é igual às outras
+     quatro; a forma por extenso volta acima dos 620 px. */
+  function nomeDiaCurto(iso, i) {
+    if (i === 0) return 'Hoje';
+    /* A partir da DATA e não do nome longo: cortar o nome longo dava «Ama»,
+       porque para amanhã ele devolve «Amanhã» e não o dia da semana. */
+    var t = new Date(iso + 'T12:00:00')
+      .toLocaleDateString('pt-PT', { weekday: 'short' }).replace('.', '').split('-')[0];
+    return t.charAt(0).toUpperCase() + t.slice(1, 3);
   }
 
   /* A palavra de cada dia na tira. NUNCA repete a palavra das partes quando o
@@ -915,24 +887,24 @@
     if (b) b.focus();
   });
 
-  function desenharFonte() {
-    var p = el('v-fonte'), d = dias[diaEscolhido];
+  /* SÓ quando não há mar. A atribuição aos dados, que partilhava esta linha,
+     passou para o rodapé da página — a licença da Open-Meteo exige que a
+     atribuição exista e se veja, não que esteja dentro do cartão, e o rodapé
+     leva também a referência ao DWD que a documentação marinha pede.
+     O que fica é a única parte que era informação sobre ESTA praia: sem ela, a
+     ausência do factor «Água do mar» lá dentro dos números lê-se como avaria. */
+  function desenharSemMar() {
+    var p = el('v-sem-mar'), d = dias[diaEscolhido];
     if (!p) return;
-    if (!d) { p.innerHTML = ''; p.removeAttribute('data-k'); return; }
+    if (!d) { p.textContent = ''; p.removeAttribute('data-k'); return; }
     /* A chave existe porque isto vive dentro de uma região aria-live="polite":
        reescrever a mesma frase a cada mudança de dia fazia o leitor de ecrã
-       dizer «Dados de Open-Meteo.com» seis vezes a percorrer a semana. */
+       repeti-la seis vezes a percorrer a semana. */
     var k = (d.mar ? '1' : '0') + (d.agua == null ? '0' : '1');
     if (p.getAttribute('data-k') === k) return;
-    var rodape = '';
-    if (!d.mar) rodape = 'Esta é uma praia de rio: não há dados de temperatura da água nem de ondulação. ';
-    else if (d.agua == null) rodape = 'Não há dados de mar para este ponto. ';
-    /* A licença da Open-Meteo exige o link junto ao local onde os dados são
-       mostrados, e a documentação marinha exige a referência ao DWD. */
-    p.innerHTML = esc(rodape) + 'Dados de '
-      + '<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>'
-      + (d.mar && d.agua != null ? ', com dados marinhos do <abbr title="Deutscher Wetterdienst">DWD</abbr>' : '')
-      + '.';
+    p.textContent = !d.mar
+      ? 'Esta é uma praia de rio: não há dados de temperatura da água nem de ondulação.'
+      : (d.agua == null ? 'Não há dados de mar para este ponto.' : '');
     p.setAttribute('data-k', k);
   }
 

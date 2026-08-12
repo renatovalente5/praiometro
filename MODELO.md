@@ -137,10 +137,32 @@ O que NÃO mudou: vetos, factor limitante, cor, nortada, aviso de UV e a frase
 saem todos do agregado da janela toda. Um veto é um máximo ou uma soma e não se
 dilui numa média.
 
-Uma parte vetada entra na média pela sua `notaPropria` e mostra ✕ no cartão.
+Uma parte vetada entra na média pela sua `notaPropria`; no lugar do número, o
+cartão diz por palavras o que a chumbou (o ✕ saiu — lia-se como avaria).
 A água e a ondulação são copiadas do dia para cada parte ANTES de a pontuar.
 
+**O dia pode chumbar com as duas partes sãs.** Os milímetros entram por SOMA e o
+dia é a união exacta das duas partes: 1,2 mm de manhã e 1,2 à tarde passam as
+duas — o veto é aos 2 — e o dia chumba em 2,4. Aí o cartão fica com a barra
+vermelha por cima de dois blocos verdes, e é a linha por cima dos blocos que diz
+«O dia está chumbado: chuva a sério». Guardado em `verificar.py`, secção 6d.
+
 #### A frase
+
+**Já não aparece no cartão.** A linha «Nota do dia N em 100» e a frase da razão
+saíram do ecrã a pedido, em 12 de Agosto de 2026; o cartão passou a ser o nome
+da praia, o dia e os dois blocos, e mais nada. O modelo continua a calcular
+`frase`, `razao`, `ressalva()` e `queixa()` — estão cobertos por testes e a porta
+fica aberta — mas **nenhum deles chega hoje a um utilizador**. Duas consequências
+a registar, para quem voltar aqui:
+
+- o caso «as duas da mesma cor mas com doze pontos ou mais de diferença» deixou
+  de ter voz: os dois números estão à vista e o site não aponta a melhor metade
+  (a tira só diz «Melhor de manhã/tarde» quando as **cores** diferem);
+- a palavra **nortada** desapareceu do produto — só a `queixa()` a escrevia, e o
+  site tem uma página inteira sobre ela.
+
+O que se segue é o registo do portão antigo, que já não existe no modelo:
 
 Quatro portões em conjunção, mais o travão assimétrico (`ACORDO_TARDE = 3`) e o
 relógio:
@@ -407,8 +429,8 @@ As cores dizem se vale a pena ir, não se é seguro estar.
 
 Os vetos marcados como aviso de segurança são ditos noutro tom e noutra cor: um
 aviso de trovoada no mesmo amarelo que «a água está fria» é um aviso que
-ninguém lê. E um dia vetado **deixa de mostrar a nota** — «Nota 94 em 100» ao
-lado de «Hoje não» destrói a confiança em tudo o resto.
+ninguém lê. E um dia vetado **deixa de mostrar a nota** — um 94 na tira ao lado de
+«Hoje não» destrói a confiança em tudo o resto.
 
 ## Os cortes
 

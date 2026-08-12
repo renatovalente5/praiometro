@@ -173,20 +173,18 @@
              verde — deixa de ser contradição e passa a ser classificação. -->
         <div class="partes" id="v-partes"></div>
 
-        <!-- O TOTAL: parcelas em cima, total em baixo. É a forma de uma conta
-             de café, e com duas parcelas confirma-se de cabeça. -->
-        <p class="veredicto__total" id="v-total"></p>
-
-        <!-- A RAZÃO. Uma frase, um gerador, um sítio — substitui quatro
-             geradores que não sabiam o que os outros tinham dito. -->
-        <p class="veredicto__frase" id="v-frase"></p>
+        <!-- A NOTA DO DIA e a FRASE DA RAZÃO sairam daqui a pedido. A nota do
+             dia continua a ver-se, na célula deste dia na tira de baixo; o que
+             cada parte tem contra si continua a ler-se ao abrir os números. -->
         <p class="veredicto__aviso" id="v-aviso" hidden></p>
-        <!-- A fonte dos dados, que era o rodapé do «Ver os números». A licença
-             da Open-Meteo exige a atribuição junto ao local onde os dados são
-             mostrados, e a documentação marinha exige a referência ao DWD. No
-             fim do cartão está mais perto dos números do que estava dentro de
-             um painel fechado — e vê-se sem carregar em nada. -->
-        <p class="veredicto__fonte" id="v-fonte"></p>
+        <!-- Só fala quando NÃO há mar: praia de rio, ou um ponto do mapa sem
+             dados marinhos. É o que explica a ausência do factor «Água do mar»
+             lá dentro dos números — sem isto, a falta lê-se como avaria. No
+             caso normal fica vazio, e o :empty tira-o do fluxo.
+             A atribuição aos dados, que vivia nesta linha, passou para o rodapé
+             da página: a licença exige que exista e se veja, não que esteja
+             dentro do cartão. -->
+        <p class="veredicto__sem-mar" id="v-sem-mar"></p>
       </article>
 
       <!-- os 6 dias -->
@@ -242,7 +240,8 @@
       <a href="/nortada/">A nortada</a>
     </nav>
     <p class="rodape__fontes">
-      Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+      Previsão de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>,
+      com dados marinhos do <abbr title="Deutscher Wetterdienst">DWD</abbr> ·
       praias do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> ·
       mapa da <abbr title="Carta Administrativa Oficial de Portugal">CAOP</abbr>,
       <a href="https://www.dgterritorio.gov.pt" target="_blank" rel="noopener">DGT</a> ·

@@ -683,23 +683,45 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
    célula de encolher abaixo do seu conteúdo mínimo. Com nomes de larguras
    diferentes, as seis colunas saíam desiguais — medido a 375 px: 47, 74, 57,
    57, 57 e 46 px — e a tira transbordava 16 px para fora do cartão. */
+/* UMA regra para as duas larguras, sem ponto de corte nenhum: o minmax diz que
+   a célula NUNCA encolhe abaixo dos 5,6rem (89,6 px, que é o tamanho a que ela
+   fica no computador) e que estica até 1fr quando há espaço. No telemóvel os
+   seis não cabem — 580 px de tira em 343 de cartão — e é a tira que rola, nunca
+   a página. Houve uma versão a apertar os seis para dentro dos 375 px: davam 53
+   px cada, obrigavam a abreviar «Amanhã» para «Qui» e a palavra do veredicto
+   partia-se em três linhas. Foi tirada a pedido.
+
+   O que aqui está de padding e de scroll-padding foi ganho a ferro no commit
+   b7cd579 e não é decoração: sem os 3 px de folga o `overflow-x` cortava os
+   2 px do anel do dia escolhido do lado esquerdo — via-se o contorno reto à
+   esquerda e redondo à direita — e sem o `scroll-padding-inline` o browser
+   rolava exactamente esses 3 px para encostar ao snapport e a folga deixava de
+   existir (medido: `scrollLeft` a 3). A margem negativa devolve o alinhamento
+   com o cartão do veredicto. */
 .dias {
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem;
-  margin-top: .8rem; overflow: visible;
-  padding: 3px; margin-inline: -3px;   /* só para o anel de selecção caber */
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(5.6rem, 1fr);
+  gap: .5rem; margin-top: .8rem;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  padding: 3px; margin-inline: -3px;
+  scroll-padding-inline: 3px;
+  scroll-snap-type: x proximity;
+  /* Sem barra, nada dizia que havia mais para o lado. */
+  scrollbar-width: thin; scrollbar-color: var(--tinta-3) transparent;
 }
-@media (min-width: 620px) { .dias { grid-template-columns: repeat(6, 1fr); gap: .5rem; } }
-/* As duas formas do nome vão as duas para o HTML e é aqui que se escolhe: a
-   longa quando há largura, a curta quando não há. Medido a 375 px: com seis em
-   fila cada célula fica com uns 50 px úteis, e «Domingo» a 15 px mede 66. */
-.dia__nome--curto { display: none; }
+.dias::-webkit-scrollbar { height: 10px; }
+.dias::-webkit-scrollbar-track { background: transparent; }
+.dias::-webkit-scrollbar-thumb {
+  background: var(--tinta-3); border-radius: 999px;
+  border: 3px solid transparent; background-clip: content-box;
+}
 /* O MESMO vocabulário dos blocos da manhã e da tarde: fundo pastel da cor do
    veredicto, contorno de 2 px na mesma cor, cantos grandes. Quem aprendeu a
    ler um bloco no cartão lê estes seis sem aprender nada de novo — e a tira
    deixa de ser uma fila de caixas brancas onde só a bolinha tem cor. */
 .dia {
-  display: flex; flex-direction: column; align-items: center; gap: .25rem;
-  padding: .6rem .15rem .65rem; cursor: pointer; min-width: 0;
+  scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: .7rem .3rem .75rem; cursor: pointer;
   background: var(--dia-fundo, var(--carta));
   border: 2px solid var(--dia-cor, var(--borda)); border-radius: var(--raio-g);
   transition: transform var(--t), box-shadow var(--t);
@@ -733,28 +755,6 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .dia--verde    { --dia-cor: var(--verde);    --dia-fundo: var(--verde-luz); }
 .dia--amarelo  { --dia-cor: var(--amarelo);  --dia-fundo: var(--amarelo-luz); }
 .dia--vermelho { --dia-cor: var(--vermelho); --dia-fundo: var(--vermelho-luz); }
-
-/* A versão estreita: seis células em ~53 px a 375 px e ~44 px a 320. Tudo o
-   que aqui está foi medido no ecrã e não estimado — a primeira tentativa
-   deixava o til do «Amanhã» cortado e a terceira linha da palavra escondida
-   por baixo da altura reservada. */
-@media (max-width: 619px) {
-  .dia__nome--longo { display: none; }
-  .dia__nome--curto { display: inline; }
-  .dia { padding: .55rem .1rem .6rem; }
-  .dia__nome  { font-size: .78rem; }
-  .dia__bolha { width: 26px; height: 26px; }
-  .dia__nota  { font-size: 1.25rem; }
-  /* Três linhas reservadas, não duas: «Melhor de tarde» parte em três nesta
-     largura, e com duas a última ficava cortada a meio. Reservadas SEMPRE,
-     para as seis células terem a mesma altura e a fila não dançar. */
-  .dia__palavra { font-size: .72rem; min-height: 3.45em; }
-}
-@media (max-width: 360px) {
-  .dia__nome  { font-size: .72rem; }
-  .dia__nota  { font-size: 1.15rem; }
-  .dia__palavra { font-size: .68rem; }
-}
 
 /* ========================================================= DETALHE ==== */
 
@@ -793,7 +793,12 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .rodape__fontes a { color: inherit; }
 
 /* ========================================================= ECRÃS ====== */
-@media (min-width: 700px) {
+/* A partir daqui os seis já cabem: cai o mínimo dos 5,6rem — as células passam
+   a repartir a largura toda — e cai o rolo com ele. Estava nos 700 px, e entre
+   os 620 e os 700 a tira rolava por 8 px, que é o pior dos dois mundos: rola,
+   mas não se percebe que rola. Medido: a 620 px as células ficam a 89,3, três
+   décimas abaixo do mínimo — não se vê. */
+@media (min-width: 620px) {
   .dias { grid-auto-columns: 1fr; overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) {

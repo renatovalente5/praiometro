@@ -506,19 +506,36 @@ try:
 
     d=json.loads(c.js(r"""JSON.stringify({
       dias: document.querySelectorAll('.dia').length,
-      colunas: getComputedStyle(document.getElementById('dias')).gridTemplateColumns.split(' ').length,
+      /* UMA fila: todas as células com o mesmo topo. Contar colunas deixou de
+         servir — com grid-auto-flow: column as faixas são implícitas e o
+         gridTemplateColumns computa para «none». */
+      linhas: [...new Set([...document.querySelectorAll('.dia')].map(
+        x => Math.round(x.getBoundingClientRect().top)))].length,
+      largura: Math.round((document.querySelector('.dia')||{getBoundingClientRect:()=>({width:0})}).getBoundingClientRect().width),
       rolo: document.getElementById('dias').scrollWidth > document.getElementById('dias').clientWidth + 1,
+      roloPagina: document.documentElement.scrollWidth > innerWidth + 1,
       palavras: [...document.querySelectorAll('.dia__palavra')].map(x => x.textContent).filter(Boolean).length})"""))
+    antes = len(falhas)
     if d['dias'] != 6: erro('a tira deixou de ter 6 dias: %d' % d['dias'])
-    if d['colunas'] != 6: erro('a tira devia ser de 6 colunas a 375px, é de %d' % d['colunas'])
-    if d['rolo']: erro('a tira voltou a ter rolo horizontal')
+    if d['linhas'] != 1: erro('a tira partiu-se em %d linhas — devia ser uma fila' % d['linhas'])
+    # A célula tem de manter o tamanho que tem no computador. Houve uma versão
+    # a apertar os seis para dentro dos 375 px: davam 53 px cada, obrigavam a
+    # abreviar «Amanhã» e a palavra partia-se em três linhas. Saiu a pedido.
+    if d['largura'] < 88: erro('a célula encolheu para %d px — devia ficar nos ~90' % d['largura'])
+    # A tira ROLA no telemóvel, e é assim de propósito: os seis ao tamanho do
+    # computador não cabem em 343 px de cartão. O que NÃO pode rolar é a página.
+    if not d['rolo']: erro('a tira devia rolar a 375 px e não rola')
+    if d['roloPagina']: erro('é a PÁGINA que rola na horizontal, e não só a tira')
     if d['palavras'] != 6: erro('só %d dos 6 dias têm palavra' % d['palavras'])
-    print('  tira          ✓ 6 dias em fila, sem rolo, todos com palavra')
+    # Só a seguir a nenhum ✗: um ✓ por baixo de um erro lê-se como aprovação
+    # daquilo que acabou de falhar.
+    if len(falhas) == antes:
+        print('  tira          ✓ 6 dias numa fila de %d px, a tira rola e a página não' % d['largura'])
 
-    # Com seis células em ~53 px, o que rebenta primeiro é o TEXTO a passar por
-    # cima do contorno — aconteceu duas vezes seguidas («Amanhã» a medir 47,5 px
-    # numa célula com 46 úteis, e a terceira linha da palavra cortada) e nenhuma
-    # das contas anteriores dava por isso, porque contam colunas e não pixéis.
+    # O que rebenta primeiro numa tira apertada é o TEXTO a passar por cima do
+    # contorno — aconteceu duas vezes seguidas («Amanhã» a medir 47,5 px numa
+    # célula com 46 úteis, e a terceira linha da palavra cortada) e nenhuma das
+    # contas anteriores dava por isso, porque contam colunas e não pixéis.
     fora=json.loads(c.js(r"""JSON.stringify(
       [...document.querySelectorAll('.dia')].flatMap(function (cel) {
         var r = cel.getBoundingClientRect(), cs = getComputedStyle(cel);
@@ -536,6 +553,29 @@ try:
         return Math.round(x.getBoundingClientRect().height); }))])"""))
     if len(alturas) != 1: erro('as seis células ficaram com alturas diferentes: %s' % alturas)
     else: print('  fila direita  ✓ as seis células com a mesma altura (%d px)' % alturas[0])
+
+    # O ANEL DO DIA ESCOLHIDO, e o dia escolhido À VISTA. Os dois já se
+    # partiram nesta tira: o `overflow-x` cortava os 2 px do anel do lado
+    # esquerdo (contorno reto à esquerda e redondo à direita, commit b7cd579),
+    # e o innerHTML novo do `desenharDias` punha o `scrollLeft` a zero — quem
+    # rolasse até «Segunda» e lhe tocasse via-a sair do ecrã.
+    def tira():
+        return json.loads(c.js(r"""JSON.stringify((function () {
+          var t = document.getElementById('dias');
+          var sel = t.querySelector('.dia[aria-selected="true"]');
+          var tr = t.getBoundingClientRect(), sr = sel.getBoundingClientRect();
+          return { qual: sel.querySelector('.dia__nome').innerText.trim(),
+                   esq: Math.round(sr.left - tr.left), dir: Math.round(tr.right - sr.right),
+                   dentro: sr.left >= tr.left - .5 && sr.right <= tr.right + .5 };})())"""))
+    c.js("document.getElementById('dia-0').click()"); time.sleep(.6)
+    d0 = tira()
+    if d0['esq'] < 3: erro('o anel do dia escolhido fica cortado à esquerda (folga %d px)' % d0['esq'])
+    c.js("document.getElementById('dia-5').click()"); time.sleep(.6)
+    d5 = tira()
+    if not d5['dentro']: erro('escolher o último dia deixa-o fora de vista: %s' % d5)
+    elif d5['dir'] < 3: erro('o anel do último dia fica cortado à direita (folga %d px)' % d5['dir'])
+    else: print('  anel e rolo   ✓ folga de 3 px nos dois topos, e o dia escolhido vem à vista')
+    c.js("document.getElementById('dia-0').click()"); time.sleep(.4)
 finally: c.fechar()
 
 print('\n== 6d. o dia que chumba com as duas partes sãs ==')

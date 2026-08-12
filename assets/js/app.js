@@ -428,10 +428,7 @@
         ' aria-selected="' + (i === diaEscolhido) + '"' +
         ' aria-label="' + esc(nomeDiaLongo(d.dia, i) + ', ' + pal.toLowerCase() +
           (v.nota == null ? '' : ', nota ' + v.nota + ' em 100')) + '">' +
-        '<span class="dia__nome" aria-hidden="true">' +
-          '<span class="dia__nome--longo">' + esc(nomeDiaLongo(d.dia, i)) + '</span>' +
-          '<span class="dia__nome--curto">' + esc(nomeDiaCurto(d.dia, i)) + '</span>' +
-        '</span>' +
+        '<span class="dia__nome" aria-hidden="true">' + esc(nomeDiaLongo(d.dia, i)) + '</span>' +
         '<span class="dia__bolha" aria-hidden="true">' + ICONES[v.cor] + '</span>' +
         /* Onde não há nota há PALAVRAS. Nunca um «✕», que se lê como avaria ou
            como «fechado», e nunca como «não vale a pena». */
@@ -439,6 +436,24 @@
         '<span class="dia__palavra" aria-hidden="true">' + esc(pal) + '</span>' +
         '</button>';
     }).join('');
+    trazerDiaAVista();
+  }
+
+  /* O `desenharDias` reescreve o innerHTML da tira, e isso põe o `scrollLeft` a
+     zero. Numa tira que rola, quem tivesse rolado até «Domingo» e lhe tocasse
+     via a tira saltar para o princípio e o dia que acabou de escolher sair do
+     ecrã. Mexe-se no `scrollLeft` da TIRA e não se chama `scrollIntoView`: esse
+     também mexe na página, e na primeira pintura a tira ainda está abaixo da
+     dobra — puxava o ecrã para baixo sem ninguém ter pedido nada.
+     Os 3 px são a folga do anel de selecção, a mesma do padding da tira. */
+  function trazerDiaAVista() {
+    var t = el('dias');
+    if (!t || t.scrollWidth <= t.clientWidth + 1) return;
+    var sel = t.querySelector('.dia[aria-selected="true"]');
+    if (!sel) return;
+    var tr = t.getBoundingClientRect(), sr = sel.getBoundingClientRect();
+    if (sr.left < tr.left + 3) t.scrollLeft += sr.left - tr.left - 3;
+    else if (sr.right > tr.right - 3) t.scrollLeft += sr.right - tr.right + 3;
   }
 
   on('dias', 'click', function (e) {
@@ -452,12 +467,12 @@
     var n = dias.length;
     if (!n) return;
     var novo = null;
-    /* A tira passou a ser uma GRELHA de 3x2: sem as setas de cima e de baixo a
-       andarem três células, metade dela ficava inalcançável pelo teclado. */
+    /* Uma fila e não uma grelha: as setas de cima e de baixo andavam três
+       células, que era o que a grelha de 3x2 pedia. Com a tira outra vez em
+       fila, andar três é arbitrário — e, pior, o preventDefault tirava a essas
+       duas teclas o seu trabalho normal, que é rolar a página. Saíram. */
     if (e.key === 'ArrowRight') novo = (diaEscolhido + 1) % n;
     else if (e.key === 'ArrowLeft') novo = (diaEscolhido - 1 + n) % n;
-    else if (e.key === 'ArrowDown') novo = (diaEscolhido + 3) % n;
-    else if (e.key === 'ArrowUp') novo = (diaEscolhido - 3 + n) % n;
     else if (e.key === 'Home') novo = 0;
     else if (e.key === 'End') novo = n - 1;
     if (novo === null) return;
@@ -666,26 +681,6 @@
     var t = new Date(iso + 'T12:00:00')
       .toLocaleDateString('pt-PT', { weekday: 'long' }).split('-')[0];
     return t.charAt(0).toUpperCase() + t.slice(1);
-  }
-
-  /* A forma curta, para quando as seis células têm de caber na largura de um
-     telemóvel. Medido: com seis em fila a 375 px cada célula fica com uns 50 px
-     úteis, e «Domingo» a 15 px mede 66 — não cabe, e encolher a letra até caber
-     punha-a abaixo dos 11 px, que é mais pequeno do que o aviso legal.
-     As duas formas vão as duas para o HTML e é o CSS que escolhe; assim não há
-     JavaScript a depender da largura do ecrã, que seria uma segunda fonte de
-     verdade sobre o mesmo layout. */
-  /* Sem «Amanhã»: medido, ele mede 47,5 px e a célula só tem 40 úteis a 320 px
-     e 46 a 375 — passava por cima do contorno. Encolher a letra até caber dava
-     8,9 px, ilegível. A abreviatura do dia cabe sempre e é igual às outras
-     quatro; a forma por extenso volta acima dos 620 px. */
-  function nomeDiaCurto(iso, i) {
-    if (i === 0) return 'Hoje';
-    /* A partir da DATA e não do nome longo: cortar o nome longo dava «Ama»,
-       porque para amanhã ele devolve «Amanhã» e não o dia da semana. */
-    var t = new Date(iso + 'T12:00:00')
-      .toLocaleDateString('pt-PT', { weekday: 'short' }).replace('.', '').split('-')[0];
-    return t.charAt(0).toUpperCase() + t.slice(1, 3);
   }
 
   /* A palavra de cada dia na tira. NUNCA repete a palavra das partes quando o

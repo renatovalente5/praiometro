@@ -657,7 +657,7 @@
          isto vive dentro de uma região aria-live e não pode ser lido em voz
          alta de cada vez que o cartão se redesenha. */
       '<p class="partes__pista" id="v-pista" aria-hidden="true">Carrega na ' +
-      '<b>Manhã</b> ou na <b>Tarde</b> para ver os números.</p>';
+      '<b>Manhã</b> ou na <b>Tarde</b> para ver detalhes.</p>';
     /* Na MESMA passagem, nunca em duas: senão um dia o painel mostra os
        factores de terça debaixo do cabeçalho de sexta. */
     aplicarAbertura();

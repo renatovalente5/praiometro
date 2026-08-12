@@ -700,9 +700,18 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
    com o cartão do veredicto. */
 .dias {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(5.6rem, 1fr);
-  gap: .5rem; margin-top: .8rem;
+  gap: .5rem; margin-top: .6rem;   /* .8rem menos os 3 px que o padding cresceu */
   overflow-x: auto; overscroll-behavior-x: contain;
-  padding: 3px; margin-inline: -3px;
+  /* `overflow-x: auto` obriga o `overflow-y` a passar de `visible` a `auto`: a
+     tira corta também EM CIMA e em baixo, não só aos lados — a mesma armadilha
+     que a tira dos favoritos já documenta. Em cima é preciso somar duas coisas:
+     os 3 px do anel do dia escolhido, que vive em `box-shadow` e fica FORA da
+     caixa, MAIS os 2 px que o `:hover` levanta o cartão. Com 3 px o anel do
+     escolhido aparecia cortado a régua no topo assim que a célula levantava —
+     medido, sobrava 1 px de folga para um anel de 3. O sexto píxel é margem
+     para o arredondamento a 3 dpr.
+     Aos lados bastam 3: aí não há nada a levantar, só o anel. */
+  padding: 6px 3px; margin-inline: -3px;
   scroll-padding-inline: 3px;
   scroll-snap-type: x proximity;
   /* Sem barra, nada dizia que havia mais para o lado. */
@@ -726,7 +735,13 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
   border: 2px solid var(--dia-cor, var(--borda)); border-radius: var(--raio-g);
   transition: transform var(--t), box-shadow var(--t);
 }
-.dia:hover { transform: translateY(-2px); }
+/* Só onde há mesmo um rato. Num telemóvel o `:hover` fica COLADO depois do
+   toque: a célula tocada ficava levantada 2 px indefinidamente, e era isso que
+   metia o topo do seu contorno dentro do corte da tira. Quem toca não precisa
+   de um estado que diz «estás por cima disto». */
+@media (hover: hover) {
+  .dia:hover { transform: translateY(-2px); }
+}
 /* O dia escolhido: um anel por fora, e não uma cor diferente. Com os seis já
    pintados, mudar a cor do escolhido não se via. */
 .dia[aria-selected="true"] { box-shadow: 0 0 0 3px var(--dia-cor, var(--mar)); }

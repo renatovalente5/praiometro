@@ -575,6 +575,62 @@ try:
     if not d5['dentro']: erro('escolher o último dia deixa-o fora de vista: %s' % d5)
     elif d5['dir'] < 3: erro('o anel do último dia fica cortado à direita (folga %d px)' % d5['dir'])
     else: print('  anel e rolo   ✓ folga de 3 px nos dois topos, e o dia escolhido vem à vista')
+
+    # E EM CIMA. `overflow-x: auto` obriga o `overflow-y` a passar de `visible`
+    # a `auto`: uma tira que rola aos lados corta TAMBÉM em cima e em baixo. Já
+    # aconteceu duas vezes — nos favoritos e agora nos dias — e a segunda foi
+    # pior, porque ao anel de 3 px do escolhido soma-se o `:hover` que levanta o
+    # cartão 2. Mede-se em repouso E com o cartão levantado, que é o estado em
+    # que um telemóvel fica depois do toque.
+    def folgas():
+        return json.loads(c.js(r"""JSON.stringify(
+          ['#dias', '.favoritos__lista'].flatMap(function (k) {
+            var t = document.querySelector(k);
+            if (!t || getComputedStyle(t).overflowX === 'visible') return [];
+            var tr = t.getBoundingClientRect();
+            return [...t.children].flatMap(function (x) {
+              var r = x.getBoundingClientRect();
+              var n = (getComputedStyle(x).boxShadow.match(/-?\d+(?:\.\d+)?px/g) || []).map(parseFloat);
+              var esp = n.length >= 4 ? n[3] + n[2] : 0;          /* espalhamento + desfoque */
+              var cima = (r.top - esp) - tr.top, baixo = tr.bottom - (r.bottom + esp);
+              return (cima < -.5 || baixo < -.5)
+                ? [k + ' «' + x.innerText.replace(/\s+/g, ' ').slice(0, 12) + '»: cima ' +
+                   cima.toFixed(1) + ', baixo ' + baixo.toFixed(1)] : [];
+            });
+          }))"""))
+    r = folgas()
+    if r: erro('contorno cortado na vertical: %s' % r)
+    # O :hover colado depois do toque — o estado real de um telemóvel.
+    c.js("""(function(){
+      /* O levantar LÊ-SE da folha de estilo, não se escreve aqui à mão: senão,
+         quem aumentasse o translateY do :hover passava por esta guarda sem ela
+         dar por nada, e o corte voltava. */
+      var alto = 0;
+      [...document.styleSheets].forEach(function (ss) {
+        /* `if (r.cssRules) return anda(...)` NÃO serve: desde o CSS Nesting,
+           no Chrome TODA a regra de estilo tem um `cssRules` vazio — que é
+           verdadeiro — e a regra era tratada como contentor sem nunca se lhe
+           olhar para o selector. Custou-me duas mutações a passar em falso:
+           `alto` ficava a 0, não se levantava nada, e a guarda dizia ✓ com o
+           contorno cortado. Por isso: primeiro o selector, e só se desce onde
+           há mesmo filhos. */
+        try { (function anda(rs) { [...rs].forEach(function (r) {
+          if (r.selectorText === '.dia:hover' && r.style && r.style.transform) {
+            var m = r.style.transform.match(/translateY\((-?[\d.]+)px\)/);
+            if (m) alto = Math.max(alto, Math.abs(parseFloat(m[1])));
+          }
+          if (r.cssRules && r.cssRules.length) anda(r.cssRules);
+        });})(ss.cssRules); } catch (e) {}
+      });
+      if (!alto) throw new Error('não encontrei o translateY do .dia:hover');
+      var s = document.createElement('style'); s.id = 'forcar-hover';
+      s.textContent = '.dia[aria-selected="true"]{transform:translateY(-' + alto + 'px)}';
+      document.head.appendChild(s);
+      return alto;})()"""); time.sleep(.4)
+    rh = folgas()
+    c.js("document.getElementById('forcar-hover').remove()")
+    if rh: erro('com o cartão levantado, o contorno é cortado: %s' % rh)
+    if not r and not rh: print('  anel inteiro  ✓ nada cortado em cima nem em baixo, levantado ou não')
     c.js("document.getElementById('dia-0').click()"); time.sleep(.4)
 finally: c.fechar()
 

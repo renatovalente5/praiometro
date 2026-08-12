@@ -484,7 +484,10 @@
   function ressalva(f) {
     switch (f.id) {
       case 'ceu':   return 'só podia haver mais sol';
-      case 'vento': return 'só sopra algum vento';
+      /* Sem o «só», ao contrário das outras: é a única ressalva com um verbo
+         de acção, e «só sopra algum vento» lê-se como se o vento fosse a
+         única coisa que o dia faz. «Bom dia de praia, sopra algum vento.» */
+      case 'vento': return 'sopra algum vento';
       case 'ar':    return f.valor != null && f.valor < 24 ? 'só está um pouco fresco' : 'só aperta o calor';
       case 'agua':  return 'só a água é que está fria';
       case 'chuva': return 'só pode pingar a certa altura';

@@ -581,9 +581,17 @@ try:
         # Nenhum travessão: uma linha sem valor não chega a ser escrita.
         if any('—' in l['valor'] for l in a['linhas']):
             erro('há travessões no painel — a linha devia não ser escrita')
-        # A ordem é por PESO, tirada do modelo.
+        # A ordem é FIXA e é a ordem por que se pensa num dia de praia — não a
+        # do peso na nota. Se alguém a trocar por outra, isto apanha; e se
+        # renomear um factor, a linha vai para o fim em vez de desaparecer,
+        # o que faz esta asserção falhar em vez de o ecrã ficar mudo.
         nomes = [l['nome'] for l in a['linhas']]
-        if nomes[0] != 'Vento': erro('a primeira linha devia ser o Vento (peso 34): %s' % nomes)
+        ESPERADA = ['Sol', 'Calor', 'Vento', 'Água do mar', 'Chuva']
+        if nomes != ESPERADA:
+            erro('a ordem dos factores mudou: %s (esperada %s)' % (nomes, ESPERADA))
+        # E o painel não pode voltar a afirmar que a ordem é a do peso.
+        if 'mais pesa' in c.js("document.querySelector('.nums__ordem').textContent"):
+            erro('o painel diz que a ordem é a do peso, e já não é')
         # A água é a mesma nas duas partes — é o número que a conta usou, e o
         # avaliarDia copia-a do dia para dentro de cada parte antes de a
         # pontuar. Aqui confirma-se que o ecrã não a reparte por engano.
@@ -600,7 +608,7 @@ try:
               return JSON.stringify(out);})()"""))
             if len(set(valores)) > 1:
                 erro('a água aparece diferente nas duas partes: %s' % valores)
-        print('  aberto        ✓ %d factores, por peso, todos com valor, palavra e ícone'
+        print('  aberto        ✓ %d factores na ordem certa, todos com valor, palavra e ícone'
               % len(a['linhas']))
     if d['pista']: erro('o convite continua visível com um painel aberto')
     if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:

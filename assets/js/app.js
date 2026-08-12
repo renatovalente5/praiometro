@@ -840,15 +840,26 @@
     }));
   }
 
+  /* A ordem em que os factores se lêem. NÃO é a do peso na nota — o vento pesa
+     34 e o sol 26 — mas é a ordem por que se pensa num dia de praia: primeiro
+     olha-se para o céu, depois para o calor, e só depois para o vento.
+     Por isso o painel também já não diz «por ordem do que mais pesa»: dizia-o
+     quando a ordem era essa, e uma linha dessas por cima desta lista passaria
+     a mentir. Quem quiser os pesos tem-nos na /metodologia/. */
+  var ORDEM = ['ceu', 'ar', 'vento', 'agua', 'chuva'];
+
   function numerosDaParte(p) {
-    /* Por PESO, do que mais conta para o que menos conta — e tirado do próprio
-       modelo. Uma lista de ids escrita à mão engolia uma linha inteira em
-       silêncio no dia em que alguém renomeasse um factor, e desalinhava-se da
-       frase que está no fim do painel se os pesos mudassem. */
-    var fs = p.v.factores.slice().sort(function (a, b) { return b.peso - a.peso; });
+    /* Os que não estão na ORDEM vão para o fim em vez de desaparecerem. Uma
+       lista de ids escrita à mão é uma armadilha: no dia em que alguém
+       renomear um factor, ou acrescentar um sexto, esta linha impede que ele
+       se evapore do ecrã em silêncio. */
+    var fs = p.v.factores.slice().sort(function (a, b) {
+      var ia = ORDEM.indexOf(a.id), ib = ORDEM.indexOf(b.id);
+      return (ia < 0 ? ORDEM.length : ia) - (ib < 0 ? ORDEM.length : ib);
+    });
     return '<ul class="nums" role="list">'
       + fs.map(function (f) { return linhaDoFactor(f, p.d); }).join('')
-      + '</ul><p class="nums__ordem">Por ordem do que mais pesa na nota. '
+      + '</ul><p class="nums__ordem">'
       + '<a href="/metodologia/">Como isto decide</a></p>';
   }
 

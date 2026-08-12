@@ -73,12 +73,46 @@
     return interpolar(CURVA_CEU, n);
   }
 
-  /* Temperatura APARENTE, não a do termómetro: é a que inclui vento e humidade.
-     Curva com dois lados: 25-31 °C é o planalto, e cai para os dois extremos —
-     16 °C tem veto próprio («frio a mais»), e acima de 40 °C também não é dia
-     de areia. */
+  /* Temperatura APARENTE, não a do termómetro: é a que inclui o vento, a
+     humidade E a radiação solar. Curva com dois lados: 25-34 °C é o planalto,
+     e cai para os dois extremos — 16 °C tem veto próprio («frio a mais»), e
+     acima de 40,5 °C também não é dia de areia.
+
+     O LADO QUENTE FOI RECALIBRADO em Agosto de 2026, e a razão é um defeito
+     reportado: a Praia da Rocha com 34 °C no termómetro (36,3 aparentes), sol
+     aberto, sem vento e sem chuva, saía «assim-assim» — o calor dava 6 pontos
+     em 18 e disparava a regra que despromove verde a amarelo. O joelho estava
+     nos 31 °C aparentes, ou seja ABAIXO da mediana das tardes de Agosto no
+     Algarve, o que é indefensável para um site de praias portuguesas.
+
+     Onde ficam agora os cortes, medidos por varrimento da curva:
+       18/18 até .......... 34,0 aparentes (~32 no termómetro)
+       40 % (despromove) .. 37,4
+       20 % (escreve a frase) 38,8
+       8 % (vermelho) ..... 39,8
+
+     A ÂNCORA dos 37,4: é o único ponto de desistência MEDIDO que existe para o
+     Mediterrâneo — 867 inquéritos em 18 praias da Catalunha (Sardá et al.,
+     2023): 35,6 °C reais (dp 4,2) é a temperatura a que deixariam de ir à
+     praia. E 34 °C aparentes é o topo do intervalo ideal declarado em quatro
+     amostras europeias independentes. Abaixo disso não há uma única fonte que
+     diga que se perde qualidade de dia de praia.
+
+     O declive máximo mantém-se em 3,33 pontos por °C, igual ao de antes: meio
+     grau de diferença entre duas corridas de previsão não pode virar a cor do
+     dia.
+
+     DÍVIDA POR PAGAR, e não é pequena: a `apparent_temperature` da Open-Meteo
+     inclui a RADIAÇÃO SOLAR. Num dia de céu limpo, o sol dá 26 pontos e tira
+     pontos ao calor — é a mesma variável a puxar nos dois sentidos, e é isso,
+     e não o gosto português, que produziu o caso reportado. Alargar o planalto
+     COMPENSA essa contaminação deslocando o joelho; não a corrige. No dia em
+     que alguém trocar a variável por uma sem radiação (ou o `maximo` da janela
+     pelo percentil 75, que é a outra dívida), esta curva fica errada e tem de
+     ser remedida. Está escrito aqui para que ninguém faça as duas coisas ao
+     mesmo tempo e depois não saiba qual delas produziu o quê. */
   var CURVA_AR = [[15.5, 0], [17.5, 3], [20.5, 7], [23.5, 13], [25, 18],
-                  [31, 18], [32.5, 13], [35.5, 7], [38.5, 3], [40.5, 0]];
+                  [34, 18], [35.5, 13], [37.5, 7], [39, 3], [40.5, 0]];
   function pontosAr(t) {
     if (t == null) return null;
     return interpolar(CURVA_AR, t);

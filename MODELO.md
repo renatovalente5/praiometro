@@ -21,8 +21,14 @@ o HCI tal e qual:
 1. **Não tem temperatura da água.** No Mediterrâneo e nas Caraíbas, onde foi
    validado, a água está sempre boa. Em Portugal continental é o factor que
    mais gente comenta na praia.
-2. **O conforto térmico está calibrado para 30–36 °C.** É quente demais para o
-   gosto português e para o clima da costa oeste.
+2. **O conforto térmico é pontuado em *humidex*, com o planalto em 28–31.** É
+   uma escala diferente da temperatura aparente que este modelo usa, e não se
+   compara directamente com ela.
+   (A versão anterior deste documento dizia «calibrado para 30–36 °C» e que
+   isso era «quente demais para o gosto português». Foi verificado contra a
+   Tabela 3 de Rutty et al. 2020 e **está errado nas duas pontas**: a banda é
+   28–30,9 e é humidex, não temperatura do ar. Essa frase esteve anos a
+   justificar um planalto que acabava nos 31 °C aparentes.)
 3. **Dá ao vento apenas 10%.** Em Portugal a **nortada** é, na prática, o que
    mais dias estraga.
 
@@ -66,14 +72,16 @@ apareceriam lado a lado.
 
 ### Janela horária
 
-Tudo é calculado entre as **11h e as 19h**, hora local — é quando se vai à
-praia. Fora dessa janela os dados são ignorados.
+Tudo é calculado em **duas janelas** — 9h–13h e 15h–19h — e as 13h–15h ficam
+de fora. Ver «As duas partes do dia», mais abaixo, que é onde isto está
+explicado por inteiro. (Esta secção dizia «entre as 11h e as 19h» e ficou para
+trás quando a janela mudou; a janela contínua já não existe.)
 
-Dentro dela: céu pela **média**, temperatura do ar pelo **máximo**, água pela
+Dentro delas: céu pela **média**, temperatura do ar pelo **máximo**, água pela
 **média**, chuva pela **probabilidade máxima** e pelo **acumulado dentro da
 janela**, ondulação pelo **máximo**.
 
-O **vento é o percentil 75**, não a média. A média de nove horas achatava
+O **vento é o percentil 75**, não a média. A média das horas todas achatava
 exactamente o pico da tarde, que é quando a nortada sopra. Medido no Furadouro:
 média 11,2 km/h contra 15,2 no pico — o site dizia menos vento do que qualquer
 outro sítio, e tinha razão quanto à média e nenhuma quanto ao que se sente.
@@ -162,6 +170,64 @@ números na /metodologia/.** Há um teste que verifica que eles lá estão, mas
 nenhum teste sabe se são os certos — só a medição sabe.
 
 **Não** se divide a água, a ondulação nem o índice UV.
+
+### O lado quente da curva do calor, recalibrado
+
+**Agosto de 2026.** Defeito reportado: a Praia da Rocha com 34 °C no
+termómetro (36,3 aparentes), sol aberto, sem vento e sem chuva, saía
+«assim-assim». O calor dava 6 pontos em 18 — 33 % — e isso chega para a regra
+do factor limitante despromover o dia de verde para amarelo.
+
+O joelho estava nos **31 °C aparentes**, abaixo da mediana das tardes de Agosto
+no Algarve. Passou para **34**:
+
+| | antes | depois |
+|---|---|---|
+| 18/18 até | 31,0 | **34,0** |
+| 40 % (despromove verde→amarelo) | 35,4 | **37,4** |
+| 20 % (o calor escreve a frase) | 38,1 | **38,8** |
+| 8 % (vermelho) | 39,5 | **39,8** |
+| zero | 40,5 | 40,5 |
+
+Só se mexeram quatro pares, todos do lado quente. A subida (15,5 → 25), o veto
+de frio e o zero em 40,5 ficaram byte a byte iguais, e o declive máximo
+manteve-se em **3,33 pontos por °C** — meio grau entre duas corridas de
+previsão não pode virar a cor de um dia.
+
+**A âncora dos 37,4** é o único ponto de desistência medido que existe para o
+Mediterrâneo: 867 inquéritos em 18 praias da Catalunha (Sardá et al., 2023),
+35,6 °C reais (dp 4,2). E os 34 são o topo do intervalo ideal declarado em
+quatro amostras europeias independentes. Abaixo daí não há uma única fonte que
+diga que se perde qualidade de dia de praia.
+
+**Impacto medido** (480 partes-dia, 40 praias do Minho ao Algarve): 13,5 %
+sobem de cor, **zero descem**; mediana +1, média +2,9. Alentejo, Açores e
+Madeira a zero; as fluviais do interior são as que mais mudam.
+
+**Não** se acrescentou veto de calor. Com a curva nova o calor já leva o dia a
+vermelho sozinho aos 39,8 aparentes; um veto não acrescentaria uma
+despromoção — acrescentaria só uma frase. E a assimetria com o frio está
+certa: abaixo de 16 °C não há remédio nenhum, ao passo que o calor tem a água,
+que já vale 14 pontos à parte.
+
+#### A DÍVIDA, e é para pagar sozinha
+
+A `apparent_temperature` da Open-Meteo **inclui a radiação solar**. Num dia de
+céu limpo o sol dá 26 pontos e tira pontos ao calor: é a mesma variável a puxar
+nos dois sentidos, e é essa dupla contagem — mais do que a calibração — que
+produziu o caso reportado.
+
+Alargar o planalto **compensa** a contaminação deslocando o joelho. Não a
+corrige. Quem for limpar a variável (ou trocar o `maximo` da janela pelo
+percentil 75, que é a outra dívida) tem de **remedir esta curva**, e tem de o
+fazer numa alteração separada — senão deixa de se poder atribuir o resultado a
+uma das duas mudanças.
+
+Duas ressalvas honestas sobre a medição: assenta numa só corrida de previsão de
+uma semana quente de Agosto, sem verificação contra o ERA5; e não existe um
+único inquérito de preferência térmica de banhistas **em Portugal** — todos os
+joelhos são transplantados da Catalunha, da Grécia e de uma amostra europeia
+geral.
 
 ### As escalas são curvas, não escadas
 

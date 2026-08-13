@@ -236,10 +236,34 @@ que já vale 14 pontos à parte.
 
 A `apparent_temperature` da Open-Meteo **inclui a radiação solar**. Num dia de
 céu limpo o sol dá 26 pontos e tira pontos ao calor: é a mesma variável a puxar
-nos dois sentidos, e é essa dupla contagem — mais do que a calibração — que
-produziu o caso reportado.
+nos dois sentidos.
 
-Alargar o planalto **compensa** a contaminação deslocando o joelho. Não a
+**CORRIGIDO em 13 de Agosto de 2026: esta secção exagerava.** Dizia que era a
+dupla contagem, «mais do que a calibração», que produzia o caso reportado. Foi
+medida, e não é.
+
+A dupla contagem é REAL mas é PEQUENA, e agora está medida (90 072 horas de
+praia em `archive-api`, 8 praias, Junho a Setembro de 2015 a 2025). Controlando
+o vento e o termómetro, o excesso da aparente sobre o termómetro cai apenas
+**0,1 a 0,5 °C** do céu limpo para o céu tapado — no declive mais íngreme da
+curva isso vale **1,7 pontos em 18**, e no planalto dos 25-34 °C vale **zero**.
+
+O que é grande é outra coisa, e **não é contaminação nenhuma: é física**. Na
+janela de praia a aparente mediana é 27,7 °C com céu limpo e 22,6 °C com céu
+tapado — 5,1 °C —, e a maior parte dessa queda é o **termómetro** a estar mais
+baixo, porque não houve sol para aquecer o ar. O modelo já converte isso em
+**6,8 pontos de 18**, e vai continuar a convertê-lo depois de a dívida ser paga:
+trocar a variável por uma sem radiação **não remove** este caminho.
+
+A consequência prática, e é a que interessa a quem vier a seguir: o modelo já
+encaminha «não há sol» por DOIS sítios — o factor Sol e o factor Calor —, e o
+segundo é o maior dos dois em Junho e Setembro. Qualquer castigo adicional ao
+céu **soma-se** a esse. Percentagem de horas tapadas com a aparente abaixo do
+planalto dos 25 °C: Junho 88 %, Julho 81 %, Agosto 79 %, Setembro 83 % (com céu
+limpo: 59, 43, 42 e 59 %). Uma calibração feita numa semana quente de Agosto é
+feita no único momento do ano em que o planalto esconde o efeito.
+
+Alargar o planalto **compensa** a parte pequena, deslocando o joelho. Não a
 corrige. Quem for limpar a variável (ou trocar o `maximo` da janela pelo
 percentil 75, que é a outra dívida) tem de **remedir esta curva**, e tem de o
 fazer numa alteração separada — senão deixa de se poder atribuir o resultado a
@@ -308,12 +332,59 @@ meteorologia portuguesa e a física eólica — caem na mesma banda dos 20–25 
 | 30 % | 23 |
 | 50 % | 17 |
 | 70 % | 9 |
-| ≥ 90 % | 4 |
+| 90 % | 4 |
+| 100 % | 2,5 |
 
 Acima de **60 % de nuvens** o dia não pode ser verde, por regra própria: é um
 dia mais tapado do que aberto. Enquanto a escala era uma escada, isto vinha de
 graça do corte dos 40 % do factor limitante; com a curva contínua passou a
 estar escrito à parte.
+
+#### O fundo da curva, e a fonte que faltava
+
+Até 13 de Agosto de 2026 este era o **único factor do modelo sem uma única
+fonte**: os outros quatro citam inquéritos, física ou medições, e o céu tinha
+só a frase «a razão n.º 1 para ir à praia». E o fundo da curva era **plano dos
+90 aos 100 %** — 0 % de sol valia exactamente o mesmo que 10 %.
+
+O plano era um acidente de arrastamento. No commit `d0bbc38` o peso do céu
+desceu de 28 para 26, a pedido, para dar mais peso ao vento; todas as âncoras
+foram reescaladas **menos o fundo**, que ficou nos 4 em vez de descer para 3,7.
+O rácio do dia tapado até **subiu** nessa altura, de 0,143 para 0,154.
+
+O que as fontes dizem, verificadas artigo a artigo:
+
+| índice | peso do sol | o que faz ao céu totalmente tapado |
+|---|---|---|
+| **BCI** — Morgan et al. 2000, **1354 banhistas inquiridos** | 27 % | *«falling in linear fashion to zero for absence of sunshine»* — vai a **zero** |
+| **TCI** — Mieczkowski 1985 | 20 % | **0** acima de 91,7 % de nuvens |
+| **HCI:Beach** — Rutty et al. 2020, Tabela 2 e 4 | 40 % | 2 em 10; nunca chega a zero, por decisão explícita |
+| **Praiómetro** | 26 % | 2,5 em 26 |
+
+O peso **26 não se mexeu**, e a razão é o BCI: é o único índice que perguntou a
+pessoas a sério, e mede 27 %. O fundo desceu para 2,5.
+
+**O 2,5 não é uma medição, é um limite de arquitectura, e diz-se.** Abaixo de
+2,08 (= 0,08 × 26) o céu passaria a pintar dias de vermelho **sozinho**, pela
+regra do factor limitante. Nenhuma fonte sustenta isso, e o custo seria alto:
+uma manhã em cada cinco em Agosto no noroeste é de céu tapado — Furadouro 19 %,
+Moledo 25 %, Nazaré 24 %, medido em 11 Agostos de ERA5. Há um teste em
+`testar-modelo.js` que guarda essa fronteira em **rácio** e não em pontos, para
+sobreviver à próxima mudança de peso — foi uma mudança de peso que criou isto.
+
+**Efeito, medido em 19 705 partes-dia** (Junho a Setembro de 2015 a 2025, 8
+praias de Moledo a Monte Gordo, sem chuva): nada muda abaixo dos 90 % de nuvens
+(0 em 17 383). Com 100 % de nuvens a mediana desce de 57 para 55. Mudam de cor
+**36 em 19 705** — 0,18 % —, todas de amarelo para vermelho e todas já a 45-46,
+um ponto acima do corte.
+
+**O que isto NÃO resolve.** A queixa que o originou era uma manhã de 72 no
+Furadouro com 10 % de sol, e essa passa a 71. A aritmética é fechada: 4 pontos
+de céu mais 68 de vento, calor, água e ausência de chuva. Medido em 11 Agostos,
+essa manhã está no **topo dos 4 %** dos dias tapados — tinha o mar a 19,9 °C,
+percentil 89 do Furadouro em Agosto. A parte-dia tapada mediana vale **58**, e
+**nenhuma** das 650 medidas é verde. E o HCI:Beach, aplicado a esse mesmo dia,
+dá **exactamente 72**.
 
 ### Temperatura do ar — sensação (18 pontos)
 

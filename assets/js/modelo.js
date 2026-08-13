@@ -67,7 +67,38 @@
     return interpolar(CURVA_VENTO, v);
   }
 
-  var CURVA_CEU = [[0, 26], [20, 26], [30, 23], [50, 17], [70, 9], [90, 4], [100, 4]];
+  /* O FUNDO DESTA CURVA ERA UM ACIDENTE, e esteve plano dos 90 aos 100 % desde
+     o primeiro dia do projecto: 0 % de sol dava exactamente os mesmos pontos
+     que 10 %, e o modelo não distinguia um véu de um cobertor. Veio daqui: no
+     commit d0bbc38 o peso do céu desceu de 28 para 26 — para dar mais peso ao
+     vento — e todas as âncoras foram reescaladas MENOS o fundo, que ficou nos 4
+     em vez de descer para 3,7. O rácio do dia tapado até SUBIU nessa altura.
+
+     Duas das três fontes de praia levam o sol a ZERO: o BCI (Morgan et al.
+     2000, 1354 banhistas inquiridos) diz «falling in linear fashion to zero for
+     absence of sunshine», e o TCI (Mieczkowski 1985) dá 0 acima de 91,7 % de
+     nuvens. A terceira, o HCI:Beach (Rutty et al. 2020), nunca chega a zero —
+     dá 2 em 10 ao céu totalmente tapado.
+
+     O 2,5 NÃO é uma medição, é um limite de arquitectura, e diz-se: abaixo de
+     2,08 (= 0,08 × 26) o céu passaria a pintar dias de vermelho SOZINHO pela
+     regra do factor limitante, e nenhuma fonte sustenta isso — uma manhã em
+     cada cinco em Agosto no noroeste é de céu tapado (Furadouro 19 %, Moledo
+     25 %, medido em 11 Agostos de ERA5). O teste em testar-modelo.js guarda
+     essa fronteira.
+
+     Efeito, medido em 19 705 partes-dia de época balnear (Jun-Set 2015-2025,
+     8 praias, sem chuva): NADA muda abaixo dos 90 % de nuvens (0 em 17 383).
+     Com 100 % de nuvens a mediana desce de 57 para 55. Mudam de cor 36 em
+     19 705 — 0,18 % —, todas de amarelo para vermelho e todas já a 45-46, um
+     ponto acima do corte.
+
+     O que isto NÃO resolve, e é preciso ficar escrito: a queixa que o originou
+     era uma manhã de 72 no Furadouro, e essa passa a 71. A aritmética é
+     fechada — 4 pontos de céu mais 68 de vento, calor, água e ausência de
+     chuva. O peso do céu (26) não se mexeu porque o BCI mede 27 % com pessoas
+     a sério, e o HCI:Beach dá a esse mesmo dia exactamente 72. */
+  var CURVA_CEU = [[0, 26], [20, 26], [30, 23], [50, 17], [70, 9], [90, 4], [100, 2.5]];
   function pontosCeu(n) {
     if (n == null) return null;
     return interpolar(CURVA_CEU, n);
@@ -102,11 +133,16 @@
      grau de diferença entre duas corridas de previsão não pode virar a cor do
      dia.
 
-     DÍVIDA POR PAGAR, e não é pequena: a `apparent_temperature` da Open-Meteo
-     inclui a RADIAÇÃO SOLAR. Num dia de céu limpo, o sol dá 26 pontos e tira
-     pontos ao calor — é a mesma variável a puxar nos dois sentidos, e é isso,
-     e não o gosto português, que produziu o caso reportado. Alargar o planalto
-     COMPENSA essa contaminação deslocando o joelho; não a corrige. No dia em
+     DÍVIDA POR PAGAR, e é MENOR do que aqui esteve escrito até 13 de Agosto de
+     2026: a `apparent_temperature` da Open-Meteo inclui a RADIAÇÃO SOLAR, mas
+     medido em 90 072 horas de praia (8 praias, Jun-Set de 2015 a 2025) o termo
+     da radiação vale 0,1 a 0,5 °C entre céu limpo e céu tapado — 1,7 pontos em
+     18 no declive mais íngreme, e ZERO no planalto. O que é grande é a aparente
+     descer 5,1 °C com o céu tapado, e a maior parte disso é o termómetro a
+     estar mais baixo por não ter havido sol: isso é física e não é dupla
+     contagem, e não desaparece quando a dívida for paga. Esta secção dizia que
+     era a dupla contagem que produzia o caso reportado; não era.
+     Alargar o planalto COMPENSA a parte pequena deslocando o joelho. No dia em
      que alguém trocar a variável por uma sem radiação (ou o `maximo` da janela
      pelo percentil 75, que é a outra dívida), esta curva fica errada e tem de
      ser remedida. Está escrito aqui para que ninguém faça as duas coisas ao

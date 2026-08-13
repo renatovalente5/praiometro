@@ -25,6 +25,28 @@ eq('água 13 °C', Modelo._pontos.agua(13), 0);
 eq('ar 28 °C', Modelo._pontos.ar(28), 18);
 eq('céu 10 %', Modelo._pontos.ceu(10), 26);
 
+/* O FUNDO DA CURVA DO CÉU. Esteve plano dos 90 aos 100 % desde o primeiro dia:
+   0 % de sol dava os mesmos pontos que 10 %, e nenhuma conta dava por isso
+   porque nenhuma olhava para lá dos 90. Duas asserções, e as duas são leis e
+   não valores:
+     1. a curva TEM de continuar a descer até aos 100 %. Um céu totalmente
+        tapado não pode valer o mesmo que um céu com abertas.
+     2. o céu NÃO pode, sozinho, pintar um dia de vermelho. A regra do factor
+        limitante manda para vermelho abaixo de 0,08 do peso; nenhuma das três
+        fontes de praia sustenta que um céu tapado seja, por si, um «não vá» —
+        e uma manhã em cada cinco em Agosto no noroeste é de céu tapado.
+   A segunda escreve-se em RÁCIO e não em pontos, para sobreviver a uma
+   mudança de peso: foi exactamente uma mudança de peso (28 -> 26) que deixou o
+   fundo por reescalar e criou o patamar. */
+{
+  const ceu = Modelo._pontos.ceu;
+  eq('a curva do céu continua a descer dos 90 aos 100 %', ceu(100) < ceu(90), true);
+  eq('  e não tem patamar nenhum no topo', ceu(95) > ceu(100) && ceu(90) > ceu(95), true);
+  const racio = ceu(100) / Modelo.PESOS.ceu;
+  eq('o céu sozinho não pinta um dia de vermelho (rácio > 0,08)', racio > 0.08, true);
+  console.log('    céu a 100 % de nuvens: ' + ceu(100) + ' pontos, rácio ' + racio.toFixed(3));
+}
+
 console.log('\n== a trovoada avisa, não decide ==');
 {
   const bom = {ceu:10, vento:8, ar:29, agua:22, chuva:40, mm:1, ondas:0.5,

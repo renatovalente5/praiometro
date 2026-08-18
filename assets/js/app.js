@@ -807,16 +807,48 @@
   /* A LEI DO CARTÃO, feita ESTRUTURA e não vigilância: sem valor OU sem
      palavra, a linha inteira não sai. Não há caminho neste ficheiro que
      produza um número sem a palavra ao lado. */
-  function linhaDoFactor(f, dp) {
+  /* O TRIÂNGULO, na linha do valor mau e mais nada — pedido assim. Vai a
+     `--amarelo`, que é a cor do DESCONFORTO neste cartão, e nunca a
+     `--vermelho`, que é a da SEGURANÇA e vive no aviso de trovoada. São dois
+     triângulos com dois significados, e o que os separa é a cor e a caixa:
+     este anda solto ao lado de um nome, aquele vem dentro de uma caixa
+     vermelha com texto a dizer «Aviso de segurança».
+     Leva texto para quem ouve, porque um símbolo sozinho não diz nada a um
+     leitor de ecrã — e a lei deste cartão é que nenhum número aparece sem a
+     sua palavra. */
+  var TRIANGULO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"'
+    + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M12 4 21.5 20.5H2.5Z"/><path d="M12 10.5v4"/><path d="M12 17.6v.1"/></svg>';
+
+  function linhaDoFactor(f, dp, fraco) {
     var v = valorDoFactor(f.id, f, dp);
     if (!v || !f.texto) return '';
     /* Sem sufixos: «96% de céu limpo» e «0% de hipótese» eram três palavras a
        explicar um número que a linha já nomeou. A palavra por baixo diz o que
        o número quer dizer, e é para isso que ela existe. */
     var ex = extraDoFactor(f, dp);
-    return '<li class="nums__linha">'
+    return '<li class="nums__linha' + (fraco ? ' nums__linha--fraco' : '') + '">'
       + '<span class="nums__icone" aria-hidden="true">' + (ICONES_FACTOR[f.id] || '') + '</span>'
-      + '<span class="nums__nome">' + esc(f.nome) + '</span>'
+      /* O texto para quem ouve fica FORA do `.nums__nome`, e é de propósito:
+         dentro dele colava-se ao nome e qualquer código que lesse o nome
+         recebia «Vento, ponto fraco». Apanhou-me duas vezes — a asserção da
+         ordem dos factores e a guarda nova — e essas são as vezes em que dei
+         por isso. O nome fica um nó limpo.
+         E «ponto fraco» e não «é o que trava»: há linhas marcadas ao mesmo
+         tempo, e aí o singular exclusivo seria mentira. */
+      /* O TRIÂNGULO vai DENTRO do nome, para ficar na mesma linha que ele: dois
+         itens de grelha na mesma coluna empilham um por baixo do outro, e foi
+         o que aconteceu à primeira. Como é um SVG com aria-hidden, não
+         acrescenta uma única letra ao `textContent` do nome.
+         O TEXTO para quem ouve vai FORA, e é aí que está a diferença: lá
+         dentro colava-se ao nome e quem lesse o nome recebia «Vento, ponto
+         fraco». Apanhou-me duas vezes — a asserção da ordem dos factores e a
+         guarda nova. É `position: absolute`, portanto não ocupa célula nenhuma.
+         E «ponto fraco» e não «é o que trava»: há linhas marcadas ao mesmo
+         tempo, e aí o singular exclusivo seria mentira. */
+      + '<span class="nums__nome">' + esc(f.nome)
+        + (fraco ? '<span class="nums__mau">' + TRIANGULO + '</span>' : '') + '</span>'
+      + (fraco ? '<span class="visually-hidden">, ponto fraco</span>' : '')
       + '<span class="nums__valor">' + esc(v) + '</span>'
       + '<span class="nums__palavra">' + esc(f.texto)
         + (ex ? ' <span class="nums__extra">· ' + esc(ex) + '</span>' : '') + '</span>'
@@ -843,32 +875,28 @@
      cinco linhas com cinco escalas diferentes — 83% de sol, 18 km/h de vento,
      30 °C — e ninguém tem de saber de cor qual é boa e qual é má.
 
+     Houve aqui uma frase por cima da lista a nomear o culpado. Saiu a pedido: o
+     que se quer é a MARCA na linha do valor mau, e mais nada.
+
      O corte é 0,40 e NÃO é um número novo: é o mesmo com que o modelo despromove
      um dia de verde para amarelo quando um factor sozinho está fraco de mais
      (modelo.js). Daí sai uma garantia que não é estatística, é a mesma condição
-     escrita duas vezes: NUM BLOCO VERDE NUNCA APARECE ESTA FRASE. Um dia bom
+     escrita duas vezes: NUM BLOCO VERDE NUNCA APARECE MARCA NENHUMA. Um dia bom
      abre o painel exactamente como abria.
 
-     A água fica de fora, como no cálculo do modelo: o mar gelado impede o banho,
-     não impede o dia de praia. Medido em 11 550 partes-dia com água verdadeira,
-     ela seria o pior dos cinco em 24% dos casos — é uma escolha, e está escrita.
+     Marcam-se TODOS os fracos e não só o pior: a pergunta é «qual dos valores
+     não está bom», e num dia mau pode ser mais do que um.
 
-     Sem triângulo, de propósito. Em meteorologia ▲ e ▼ já dizem tendência, e o
-     triângulo com exclamação é o símbolo de risco de lesão da ANSI Z535.4 — o
-     canal onde este cartão avisa da trovoada. Gastá-lo aqui seria roubá-lo lá. */
-  var NOMES_FRACO = { ceu: 'o sol', ar: 'o calor', vento: 'o vento', chuva: 'a chuva' };
-  function maiusculaFraco(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+     A ÁGUA entra, ao contrário do que o modelo faz no seu factor limitante —
+     onde ela está de fora por uma razão que é sobre o DIA («o mar gelado impede
+     o banho, não impede o dia de praia»). Aqui a marca é sobre O NÚMERO daquela
+     linha, e uma água a 14 °C é um número mau, diga-se o que se disser sobre o
+     dia. Medido em 11 550 partes-dia com água verdadeira: ela seria o pior dos
+     cinco em 24% dos casos, e nunca era apontada. */
+  var FRACO_RACIO = 0.40;
 
-  function factorFraco(p) {
-    var fs = p && p.v && p.v.factores;
-    if (!fs || !p.v.vetos || p.v.vetos.length) return null;   /* vetado: já se diz porquê */
-    var pior = null, racio = 0.40;
-    fs.forEach(function (f) {
-      if (!NOMES_FRACO[f.id] || f.pontos == null || !f.peso) return;
-      var r = f.pontos / f.peso;
-      if (r < racio) { racio = r; pior = f; }
-    });
-    return pior;
+  function eFraco(f) {
+    return !!(f && f.pontos != null && f.peso && (f.pontos / f.peso) < FRACO_RACIO);
   }
 
   function numerosDaParte(p) {
@@ -880,18 +908,8 @@
       var ia = ORDEM.indexOf(a.id), ib = ORDEM.indexOf(b.id);
       return (ia < 0 ? ORDEM.length : ia) - (ib < 0 ? ORDEM.length : ib);
     });
-    /* O nome do factor em DUAS partes, e não num <b> lá dentro: o medidor de
-       contraste do verificar.py salta qualquer nó que tenha filhos, e uma
-       frase com um <b> no meio escapava-lhe inteira. Assim as duas metades são
-       folhas, e as duas são medidas. */
-    var fraco = factorFraco(p);
-    var aviso = fraco
-      ? '<p class="nums__fraco">'
-        + '<span class="nums__fraco-rot">O que trava ' + esc(NOMES[p.id].com) + ':</span>'
-        + '<span class="nums__fraco-qual">' + esc(maiusculaFraco(NOMES_FRACO[fraco.id])) + '</span></p>'
-      : '';
-    return aviso + '<ul class="nums" role="list">'
-      + fs.map(function (f) { return linhaDoFactor(f, p.d); }).join('')
+    return '<ul class="nums" role="list">'
+      + fs.map(function (f) { return linhaDoFactor(f, p.d, eFraco(f)); }).join('')
       + '</ul><p class="nums__ordem">'
       + '<a href="/metodologia/">Como isto decide</a></p>';
   }

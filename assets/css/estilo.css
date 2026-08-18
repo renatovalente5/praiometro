@@ -503,23 +503,19 @@ button.bloco__cabeca:active {
 /* Os pesos (34/26/18/14/8) NÃO vão ao ecrã: são meta-informação sobre o modelo
    e não sobre o dia, e cinco números novos duplicavam a contagem de números da
    página. O peso diz-se pela ORDEM, e a ordem diz-se aqui. */
-/* «O que trava esta manhã: / o vento» — antes da lista, na MESMA grelha das
-   linhas, para a resposta cair exactamente por cima da coluna dos nomes dos
-   factores. A ligação é posicional e não precisa de seta nem de legenda.
-   A coluna 1 (a dos ícones) fica vazia de propósito: a única linha do painel
-   sem ícone é a única que não é um factor.
-   Sem cor de veredicto, que é a regra deste painel: quem carrega o peso é a
-   tinta cheia e o 700. E o rótulo e a resposta são dois nós FOLHA, para o
-   medidor de contraste os ver — ele salta tudo o que tenha filhos. */
-.nums__fraco {
-  display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: .6rem;
-  /* SEM fio próprio: a primeira linha da lista já traz o seu `border-top`, e
-     os dois juntos desenhavam um fio a dobrar. */
-  margin: 0 0 .1rem; line-height: 1.3;
+/* O TRIÂNGULO da linha do valor mau. A `--amarelo` — a cor do DESCONFORTO
+   neste cartão — e nunca a `--vermelho`, que é a da SEGURANÇA e vive no aviso
+   de trovoada. São dois triângulos com dois significados, e o que os separa é
+   a cor e a caixa: este anda solto ao lado de um nome, aquele vem dentro de
+   uma caixa vermelha a dizer «Aviso de segurança».
+   Medido sobre os três pastéis do painel: 4,62-5,13:1 no claro e 8,31-10,34:1
+   no escuro — e o mínimo para um objecto gráfico é 3:1. */
+.nums__mau {
+  display: inline-block; width: 1em; height: 1em;
+  vertical-align: -.1em; margin-left: .35rem; color: var(--amarelo);
 }
-.nums__fraco-rot  { grid-column: 2; font-size: .8rem; color: var(--tinta-2); }
-.nums__fraco-qual { grid-column: 2; font-size: 1rem; font-weight: 700; color: var(--tinta); }
-@media (max-width: 360px) { .nums__fraco { column-gap: .5rem; } }
+.nums__mau svg { width: 100%; height: 100%; display: block; }
+@media (forced-colors: active) { .nums__mau { color: CanvasText; } }
 
 .nums__ordem {
   margin-top: .6rem; padding-top: .6rem;

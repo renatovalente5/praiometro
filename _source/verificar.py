@@ -871,14 +871,15 @@ try:
     if len(falhas) == antes:
         print('  sem salto     ✓ carregar numa cabeça não mexe o ecrã')
 
-    # QUAL DAS MÉTRICAS NÃO ESTÁ BOA. O painel tem cinco linhas com cinco
-    # escalas diferentes — 83 % de sol, 18 km/h de vento, 30 °C — e ninguém tem
-    # de saber de cor qual é boa. A frase por cima diz qual é a que trava, e o
-    # corte é o MESMO 0,40 com que o modelo despromove um dia de verde para
-    # amarelo: daí sai a garantia de que num bloco VERDE ela nunca aparece.
+    # QUAL DAS MÉTRICAS NÃO ESTÁ BOA. Um triângulo ao lado do nome, nas linhas
+    # cujo valor é mau — e mais nada: não há frase, foi tirada a pedido.
+    # O corte é o MESMO 0,40 com que o modelo despromove um dia de verde para
+    # amarelo, e daí sai a garantia de que num bloco VERDE não há marca nenhuma.
+    # A ÁGUA entra aqui, ao contrário do factor limitante do modelo: a marca é
+    # sobre o número daquela linha, não sobre o dia.
     antes = len(falhas)
     vistos = {'verde': 0, 'amarelo': 0, 'vermelho': 0}
-    comFrase = {'verde': 0, 'amarelo': 0, 'vermelho': 0}
+    marcados = {'verde': 0, 'amarelo': 0, 'vermelho': 0}
     for dia in range(6):
         c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.35)
         for parte in ('manha', 'tarde'):
@@ -888,39 +889,46 @@ try:
             d=json.loads(c.js(r"""JSON.stringify((function(){
               var pn = document.querySelector('.bloco__numeros:not([hidden])');
               if (!pn) return null;
-              var li = pn.parentNode;
-              var cor = [...li.classList].map(function(k){return (k.match(/^parte--(verde|amarelo|vermelho)$/)||[])[1];})
-                        .filter(Boolean)[0] || '';
-              var f = pn.querySelector('.nums__fraco');
-              var qual = pn.querySelector('.nums__fraco-qual');
-              var nome = pn.querySelector('.nums__nome');
-              return { cor: cor, frase: f ? f.innerText.replace(/\s+/g,' ') : '',
-                       qual: qual ? qual.textContent.trim() : '',
-                       nomes: [...pn.querySelectorAll('.nums__nome')].map(function(x){return x.textContent;}),
-                       esqQual: qual ? Math.round(qual.getBoundingClientRect().left) : null,
-                       esqNome: nome ? Math.round(nome.getBoundingClientRect().left) : null };})())"""))
+              var cor = [...pn.parentNode.classList]
+                .map(function(k){return (k.match(/^parte--(verde|amarelo|vermelho)$/)||[])[1];})
+                .filter(Boolean)[0] || '';
+              return { cor: cor,
+                marcas: pn.querySelectorAll('.nums__mau').length,
+                quais: [...pn.querySelectorAll('.nums__linha')].filter(function(l){
+                  return l.querySelector('.nums__mau');})
+                  /* só o texto PRÓPRIO do nome: o `.visually-hidden` da marca
+                     vive lá dentro e vinha colado («Água do mar, ponto fraco»). */
+                  .map(function(l){var n=l.querySelector('.nums__nome');
+                    return [...n.childNodes].filter(function(k){return k.nodeType===3;})
+                      .map(function(k){return k.textContent;}).join('').trim();}),
+                semSvg: [...pn.querySelectorAll('.nums__mau')].filter(function(x){return !x.querySelector('svg');}).length,
+                semTexto: [...pn.querySelectorAll('.nums__linha')].filter(function(l){
+                  return l.querySelector('.nums__mau') && !l.querySelector('.visually-hidden');}).length,
+                foraDaLinha: pn.querySelectorAll('.nums__mau').length
+                  - pn.querySelectorAll('.nums__linha .nums__mau').length };})())"""))
             if not d or not d['cor']: continue
             vistos[d['cor']] += 1
-            if d['frase']:
-                comFrase[d['cor']] += 1
-                # A frase nomeia um factor que TEM de estar na lista, senão
-                # aponta para uma linha que não existe.
-                sem = {'o sol':'Sol','o calor':'Calor','o vento':'Vento','a chuva':'Chuva'}
-                alvo = sem.get(d['qual'].lower())
-                if not alvo: erro('a frase diz %r, que não é um factor conhecido' % d['qual'])
-                elif alvo not in d['nomes']:
-                    erro('a frase aponta para «%s» e não há linha nenhuma com esse nome: %s' % (alvo, d['nomes']))
-                # A ligação é POSICIONAL: a resposta cai por cima da coluna dos nomes.
-                if d['esqQual'] is not None and d['esqNome'] is not None and abs(d['esqQual']-d['esqNome']) > 1:
-                    erro('a resposta está a %d px e os nomes a %d — desalinhadas'
-                         % (d['esqQual'], d['esqNome']))
-    if comFrase['verde']:
-        erro('%d blocos VERDES trazem «o que trava» — num dia bom não há nada a travar'
-             % comFrase['verde'])
+            if d['marcas']:
+                marcados[d['cor']] += 1
+                # NUM DIA VERDE só a ÁGUA pode ser marcada. Os outros quatro
+                # factores são os mesmos com que o modelo despromove um dia de
+                # verde para amarelo: se um deles estivesse abaixo de 0,40, o
+                # dia não era verde. A água está de fora desse cálculo de
+                # propósito — «o mar gelado impede o banho, não impede o dia de
+                # praia» — e por isso PODE aparecer fria num dia bom. É a única
+                # excepção, e tem de continuar a ser a única.
+                if d['cor'] == 'verde':
+                    fora = [x for x in d['quais'] if x != 'Água do mar']
+                    if fora: erro('bloco VERDE com triângulo em %s — só a água pode' % fora)
+                # A LEI DO CARTÃO vale para a marca: um símbolo sozinho não diz
+                # nada a quem ouve. E um triângulo sem SVG é um espaço vazio.
+                if d['semSvg']: erro('%d marcas sem desenho nenhum lá dentro' % d['semSvg'])
+                if d['semTexto']: erro('%d linhas com triângulo e sem texto para quem ouve' % d['semTexto'])
+                if d['foraDaLinha']: erro('%d marcas fora de uma linha de factor' % d['foraDaLinha'])
     if len(falhas) == antes:
-        print('  o que trava   ✓ %d blocos: %d verdes sem frase, %d de %d amarelos e %d de %d vermelhos com frase'
-              % (sum(vistos.values()), vistos['verde'], comFrase['amarelo'], vistos['amarelo'],
-                 comFrase['vermelho'], vistos['vermelho']))
+        print('  valor mau     ✓ %d blocos: %d de %d verdes (só água), %d de %d amarelos, %d de %d vermelhos'
+              % (sum(vistos.values()), marcados['verde'], vistos['verde'],
+                 marcados['amarelo'], vistos['amarelo'], marcados['vermelho'], vistos['vermelho']))
     c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');
          if(b) b.click();})()"""); time.sleep(.3)
     c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');

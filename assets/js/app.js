@@ -776,7 +776,13 @@
     if (f.id === 'agua' && dp.ondas != null) {
       return M.palavrasOndas(dp.ondas).toLowerCase() + ' (' + num(dp.ondas, 1) + ' m)';
     }
-    if (f.id === 'chuva' && dp.mm) return 'até ' + num(dp.mm, 1) + ' mm';
+    /* «ATÉ 2,2 mm» era mentira, e era a mentira que fazia a chuva parecer pouca:
+       o `mm` do modelo é a SOMA da janela inteira (modelo.js, na agregação), não
+       um tecto horário. Uma tarde com 2,2 mm ao todo é o que chega para o veto
+       de «chuva a sério» — e medido contra o ERA5, quando o site prevê isso e
+       diz que é pouco provável, choveu mesmo em 83% dos casos. Dizer «até»
+       convidava a ler o veto como exagero. */
+    if (f.id === 'chuva' && dp.mm) return num(dp.mm, 1) + ' mm ao todo';
     return '';
   }
 

@@ -24,7 +24,14 @@ CONTRASTE = r"""(function(){
     for(let i=p.length-2;i>=0;i--)b=sobre(p[i],b);return b;};
   const maus=[];
   document.querySelectorAll('body *').forEach(n=>{
-    if(n.children.length)return; const t=(n.textContent||'').trim(); if(!t)return;
+    /* PONTO CEGO, fechado: saltava-se qualquer nó com filhos, e por isso uma
+       frase como `<p>O ponto fraco é o <b>vento</b>.</p>` escapava INTEIRA —
+       só o <b> era medido, e o texto do <p> à volta dele nunca. Agora só se
+       salta o que não tem texto PRÓPRIO: mede-se o nó pelo texto directo dele,
+       e os filhos são medidos por sua vez, cada um com a sua cor. */
+    const t=[...n.childNodes].filter(k=>k.nodeType===3)
+      .map(k=>k.textContent).join('').trim();
+    if(!t)return;
     const cs=getComputedStyle(n);
     if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0)return;
     const r=n.getBoundingClientRect(); if(!r.width||!r.height)return;
@@ -863,8 +870,116 @@ try:
                      % (qual, n['cab']-m['cab']))
     if len(falhas) == antes:
         print('  sem salto     ✓ carregar numa cabeça não mexe o ecrã')
+
+    # QUAL DAS MÉTRICAS NÃO ESTÁ BOA. O painel tem cinco linhas com cinco
+    # escalas diferentes — 83 % de sol, 18 km/h de vento, 30 °C — e ninguém tem
+    # de saber de cor qual é boa. A frase por cima diz qual é a que trava, e o
+    # corte é o MESMO 0,40 com que o modelo despromove um dia de verde para
+    # amarelo: daí sai a garantia de que num bloco VERDE ela nunca aparece.
+    antes = len(falhas)
+    vistos = {'verde': 0, 'amarelo': 0, 'vermelho': 0}
+    comFrase = {'verde': 0, 'amarelo': 0, 'vermelho': 0}
+    for dia in range(6):
+        c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.35)
+        for parte in ('manha', 'tarde'):
+            c.js("""(function(){var b=document.getElementById('cab-%s');
+                 if(b && b.getAttribute('aria-expanded')!=='true') b.click();})()""" % parte)
+            time.sleep(.3)
+            d=json.loads(c.js(r"""JSON.stringify((function(){
+              var pn = document.querySelector('.bloco__numeros:not([hidden])');
+              if (!pn) return null;
+              var li = pn.parentNode;
+              var cor = [...li.classList].map(function(k){return (k.match(/^parte--(verde|amarelo|vermelho)$/)||[])[1];})
+                        .filter(Boolean)[0] || '';
+              var f = pn.querySelector('.nums__fraco');
+              var qual = pn.querySelector('.nums__fraco-qual');
+              var nome = pn.querySelector('.nums__nome');
+              return { cor: cor, frase: f ? f.innerText.replace(/\s+/g,' ') : '',
+                       qual: qual ? qual.textContent.trim() : '',
+                       nomes: [...pn.querySelectorAll('.nums__nome')].map(function(x){return x.textContent;}),
+                       esqQual: qual ? Math.round(qual.getBoundingClientRect().left) : null,
+                       esqNome: nome ? Math.round(nome.getBoundingClientRect().left) : null };})())"""))
+            if not d or not d['cor']: continue
+            vistos[d['cor']] += 1
+            if d['frase']:
+                comFrase[d['cor']] += 1
+                # A frase nomeia um factor que TEM de estar na lista, senão
+                # aponta para uma linha que não existe.
+                sem = {'o sol':'Sol','o calor':'Calor','o vento':'Vento','a chuva':'Chuva'}
+                alvo = sem.get(d['qual'].lower())
+                if not alvo: erro('a frase diz %r, que não é um factor conhecido' % d['qual'])
+                elif alvo not in d['nomes']:
+                    erro('a frase aponta para «%s» e não há linha nenhuma com esse nome: %s' % (alvo, d['nomes']))
+                # A ligação é POSICIONAL: a resposta cai por cima da coluna dos nomes.
+                if d['esqQual'] is not None and d['esqNome'] is not None and abs(d['esqQual']-d['esqNome']) > 1:
+                    erro('a resposta está a %d px e os nomes a %d — desalinhadas'
+                         % (d['esqQual'], d['esqNome']))
+    if comFrase['verde']:
+        erro('%d blocos VERDES trazem «o que trava» — num dia bom não há nada a travar'
+             % comFrase['verde'])
+    if len(falhas) == antes:
+        print('  o que trava   ✓ %d blocos: %d verdes sem frase, %d de %d amarelos e %d de %d vermelhos com frase'
+              % (sum(vistos.values()), vistos['verde'], comFrase['amarelo'], vistos['amarelo'],
+                 comFrase['vermelho'], vistos['vermelho']))
     c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');
          if(b) b.click();})()"""); time.sleep(.3)
+    c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');
+         if(b) b.click();})()"""); time.sleep(.3)
+finally: c.fechar()
+
+print('\n== 6e. o aviso de segurança ==')
+# ESTEVE MORTO. O `.veredicto__aviso--perigo` existia no CSS desde que o aviso
+# de segurança foi separado do de conforto — com um comentário a dizer que um
+# veto de trovoada «não pode ser dito no mesmo tom amarelo que a água está
+# fria» — e o app.js NUNCA lhe punha a classe. A única coisa no ecrã que pode
+# impedir alguém de se magoar era pintada com a cor do desconforto.
+# Não acontece na previsão de hoje, por isso força-se.
+ENXERTO_PERIGO = r"""
+(function () {
+  var t = setInterval(function () {
+    if (!window.Modelo || !window.Modelo.avaliarDia) return;
+    clearInterval(t);
+    var orig = window.Modelo.avaliarDia, n = 0;
+    window.Modelo.avaliarDia = function () {
+      var r = orig.apply(this, arguments);
+      if (n++ === 0 && r && r.v) { r.v.perigo = true; r.v.avisos = ['pode haver trovoada']; }
+      return r;
+    };
+  }, 5);
+})();
+"""
+c=Chrome(porta=livre())
+try:
+    c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
+    c.cmd('Page.addScriptToEvaluateOnNewDocument', source=ENXERTO_PERIGO)
+    c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+    d=json.loads(c.js(r"""JSON.stringify((function(){
+      var a = document.getElementById('v-aviso');
+      return { escondido: a.hidden, classes: a.className,
+               texto: a.innerText.replace(/\s+/g,' ').trim(),
+               temTriangulo: !!a.querySelector('svg'),
+               fundo: getComputedStyle(a).backgroundColor,
+               cor: getComputedStyle(a).color };})())"""))
+    if d['escondido']:
+        print('  · o enxerto não pegou — secção sem valor nesta corrida')
+    else:
+        antes=len(falhas)
+        if 'veredicto__aviso--perigo' not in d['classes']:
+            erro('o aviso de trovoada saiu com as classes %r — sem a de perigo, fica no amarelo do conforto' % d['classes'])
+        if not d['temTriangulo']:
+            erro('o aviso de segurança não traz o triângulo')
+        if 'trovoada' not in d['texto']:
+            erro('o aviso não nomeia o perigo: %r' % d['texto'])
+        if 'sai da água' not in d['texto']:
+            erro('o aviso de trovoada não diz o que fazer: %r' % d['texto'])
+        if d['fundo'] == d['cor']:
+            erro('o aviso está da mesma cor que o fundo')
+        if len(falhas)==antes:
+            print('  perigo        ✓ %r' % d['texto'][:64])
+            print('  com triângulo ✓ e com a caixa vermelha, não a amarela do conforto')
+    # E o contrário: num dia sem perigo a classe NÃO pode ficar colada.
+    c.cmd('Runtime.evaluate', expression="document.getElementById('dia-5').click()")
 finally: c.fechar()
 
 print('\n== 7. sem JavaScript ==')

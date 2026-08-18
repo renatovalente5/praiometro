@@ -718,7 +718,11 @@
        E há um risco) — desde que a trovoada deixou de vetar, o segundo caso
        existe e é o mais comum. Ler `v.vetos[0]` às cegas dava «Aviso de
        segurança: undefined» num dia de nota 86. */
-    if (!v.perigo) { av.hidden = true; av.textContent = ''; return; }
+    if (!v.perigo) {
+      av.hidden = true; av.textContent = '';
+      av.className = 'veredicto__aviso';   /* senão ficava vermelho para sempre */
+      return;
+    }
     var perigos = (v.vetos || []).concat(v.avisos || []);
     var texto = 'Aviso de segurança: ' + perigos[0] + '.';
     /* Um aviso que não diz o que fazer não serve de nada a quem já está na
@@ -726,8 +730,22 @@
     if ((v.avisos || []).indexOf('pode haver trovoada') >= 0) {
       texto += ' Se ouvires trovões, sai da água e da praia.';
     }
+    /* A CLASSE ESTAVA MORTA. O `.veredicto__aviso--perigo` existe no CSS desde
+       que o aviso de segurança foi separado do de conforto — com um comentário
+       a dizer que um veto de trovoada «não pode ser dito no mesmo tom amarelo
+       que a água está fria» — e o JavaScript nunca lha punha. Resultado: a
+       única coisa no ecrã que pode impedir alguém de se magoar era pintada com
+       a cor do desconforto. É aqui, e só aqui, que o TRIÂNGULO cabe: em
+       meteorologia ▲ e ▼ já querem dizer tendência, e o triângulo com a
+       exclamação é o símbolo de risco de lesão da ANSI Z535.4. Usá-lo para
+       dizer «o vento é o que trava o dia» seria gastá-lo no sítio errado. */
+    av.className = 'veredicto__aviso veredicto__aviso--perigo';
     av.hidden = false;
-    av.textContent = texto;
+    av.innerHTML = '<span class="veredicto__aviso-icone" aria-hidden="true">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"'
+      + ' stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="M12 3.5 22 20H2Z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg></span>'
+      + '<span>' + esc(texto) + '</span>';
   }
 
   /* ============================ os números, repartidos pelas três partes ==
@@ -821,6 +839,38 @@
      a mentir. Quem quiser os pesos tem-nos na /metodologia/. */
   var ORDEM = ['ceu', 'ar', 'vento', 'agua', 'chuva'];
 
+  /* QUAL DAS MÉTRICAS NÃO ESTÁ BOA. Era a pergunta que o painel não respondia:
+     cinco linhas com cinco escalas diferentes — 83% de sol, 18 km/h de vento,
+     30 °C — e ninguém tem de saber de cor qual é boa e qual é má.
+
+     O corte é 0,40 e NÃO é um número novo: é o mesmo com que o modelo despromove
+     um dia de verde para amarelo quando um factor sozinho está fraco de mais
+     (modelo.js). Daí sai uma garantia que não é estatística, é a mesma condição
+     escrita duas vezes: NUM BLOCO VERDE NUNCA APARECE ESTA FRASE. Um dia bom
+     abre o painel exactamente como abria.
+
+     A água fica de fora, como no cálculo do modelo: o mar gelado impede o banho,
+     não impede o dia de praia. Medido em 11 550 partes-dia com água verdadeira,
+     ela seria o pior dos cinco em 24% dos casos — é uma escolha, e está escrita.
+
+     Sem triângulo, de propósito. Em meteorologia ▲ e ▼ já dizem tendência, e o
+     triângulo com exclamação é o símbolo de risco de lesão da ANSI Z535.4 — o
+     canal onde este cartão avisa da trovoada. Gastá-lo aqui seria roubá-lo lá. */
+  var NOMES_FRACO = { ceu: 'o sol', ar: 'o calor', vento: 'o vento', chuva: 'a chuva' };
+  function maiusculaFraco(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+
+  function factorFraco(p) {
+    var fs = p && p.v && p.v.factores;
+    if (!fs || !p.v.vetos || p.v.vetos.length) return null;   /* vetado: já se diz porquê */
+    var pior = null, racio = 0.40;
+    fs.forEach(function (f) {
+      if (!NOMES_FRACO[f.id] || f.pontos == null || !f.peso) return;
+      var r = f.pontos / f.peso;
+      if (r < racio) { racio = r; pior = f; }
+    });
+    return pior;
+  }
+
   function numerosDaParte(p) {
     /* Os que não estão na ORDEM vão para o fim em vez de desaparecerem. Uma
        lista de ids escrita à mão é uma armadilha: no dia em que alguém
@@ -830,7 +880,17 @@
       var ia = ORDEM.indexOf(a.id), ib = ORDEM.indexOf(b.id);
       return (ia < 0 ? ORDEM.length : ia) - (ib < 0 ? ORDEM.length : ib);
     });
-    return '<ul class="nums" role="list">'
+    /* O nome do factor em DUAS partes, e não num <b> lá dentro: o medidor de
+       contraste do verificar.py salta qualquer nó que tenha filhos, e uma
+       frase com um <b> no meio escapava-lhe inteira. Assim as duas metades são
+       folhas, e as duas são medidas. */
+    var fraco = factorFraco(p);
+    var aviso = fraco
+      ? '<p class="nums__fraco">'
+        + '<span class="nums__fraco-rot">O que trava ' + esc(NOMES[p.id].com) + ':</span>'
+        + '<span class="nums__fraco-qual">' + esc(maiusculaFraco(NOMES_FRACO[fraco.id])) + '</span></p>'
+      : '';
+    return aviso + '<ul class="nums" role="list">'
       + fs.map(function (f) { return linhaDoFactor(f, p.d); }).join('')
       + '</ul><p class="nums__ordem">'
       + '<a href="/metodologia/">Como isto decide</a></p>';

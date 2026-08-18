@@ -503,6 +503,24 @@ button.bloco__cabeca:active {
 /* Os pesos (34/26/18/14/8) NÃO vão ao ecrã: são meta-informação sobre o modelo
    e não sobre o dia, e cinco números novos duplicavam a contagem de números da
    página. O peso diz-se pela ORDEM, e a ordem diz-se aqui. */
+/* «O que trava esta manhã: / o vento» — antes da lista, na MESMA grelha das
+   linhas, para a resposta cair exactamente por cima da coluna dos nomes dos
+   factores. A ligação é posicional e não precisa de seta nem de legenda.
+   A coluna 1 (a dos ícones) fica vazia de propósito: a única linha do painel
+   sem ícone é a única que não é um factor.
+   Sem cor de veredicto, que é a regra deste painel: quem carrega o peso é a
+   tinta cheia e o 700. E o rótulo e a resposta são dois nós FOLHA, para o
+   medidor de contraste os ver — ele salta tudo o que tenha filhos. */
+.nums__fraco {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: .6rem;
+  /* SEM fio próprio: a primeira linha da lista já traz o seu `border-top`, e
+     os dois juntos desenhavam um fio a dobrar. */
+  margin: 0 0 .1rem; line-height: 1.3;
+}
+.nums__fraco-rot  { grid-column: 2; font-size: .8rem; color: var(--tinta-2); }
+.nums__fraco-qual { grid-column: 2; font-size: 1rem; font-weight: 700; color: var(--tinta); }
+@media (max-width: 360px) { .nums__fraco { column-gap: .5rem; } }
+
 .nums__ordem {
   margin-top: .6rem; padding-top: .6rem;
   border-top: 1px solid var(--borda);
@@ -846,7 +864,12 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .veredicto__aviso--perigo {
   background: var(--vermelho-luz); color: var(--vermelho);
   border: 1px solid currentColor;
+  /* O triângulo ao lado do texto, e não em vez dele: a lei da cor nunca
+     sozinha vale aqui como em todo o lado. */
+  display: flex; align-items: flex-start; gap: .5rem;
 }
+.veredicto__aviso-icone { flex: none; width: 20px; height: 20px; margin-top: .05rem; }
+.veredicto__aviso-icone svg { width: 100%; height: 100%; display: block; }
 
 /* Aviso das bandeiras, junto ao veredicto. Discreto mas presente — estava no
    rodapé, onde ninguém chega, e é a única coisa no site que pode evitar que

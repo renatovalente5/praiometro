@@ -648,7 +648,7 @@
         (abrivel
           ? '<div class="bloco__numeros" id="nums-' + p.id + '" role="group"' +
             ' aria-label="Números ' + esc(NOMES[p.id].de) + '" aria-live="off" hidden>' +
-            numerosDaParte(p) + '</div>'
+            numerosDaParte(p, a) + '</div>'
           : '') +
       '</li>';
     }).join('') + '</ol>' +
@@ -823,6 +823,15 @@
   function linhaDoFactor(f, dp, fraco) {
     var v = valorDoFactor(f.id, f, dp);
     if (!v || !f.texto) return '';
+    /* «Sem chuva à vista · 1,8 mm ao todo» é uma linha a contradizer-se, e o
+       triângulo que agora a acompanha torna isso gritante. A palavra da chuva
+       sai da PROBABILIDADE (abaixo de 10 % diz que não há chuva à vista) e os
+       milímetros vêm de outro sítio. Se há milímetros previstos, não se pode
+       dizer que não há chuva à vista. */
+    var texto = f.texto;
+    if (f.id === 'chuva' && dp && dp.mm > 0 && texto === 'Sem chuva à vista') {
+      texto = 'Pode cair um aguaceiro';
+    }
     /* Sem sufixos: «96% de céu limpo» e «0% de hipótese» eram três palavras a
        explicar um número que a linha já nomeou. A palavra por baixo diz o que
        o número quer dizer, e é para isso que ela existe. */
@@ -850,7 +859,7 @@
         + (fraco ? '<span class="nums__mau">' + TRIANGULO + '</span>' : '') + '</span>'
       + (fraco ? '<span class="visually-hidden">, ponto fraco</span>' : '')
       + '<span class="nums__valor">' + esc(v) + '</span>'
-      + '<span class="nums__palavra">' + esc(f.texto)
+      + '<span class="nums__palavra">' + esc(texto)
         + (ex ? ' <span class="nums__extra">· ' + esc(ex) + '</span>' : '') + '</span>'
       + '</li>';
   }
@@ -895,21 +904,59 @@
      cinco em 24% dos casos, e nunca era apontada. */
   var FRACO_RACIO = 0.40;
 
-  function eFraco(f) {
-    return !!(f && f.pontos != null && f.peso && (f.pontos / f.peso) < FRACO_RACIO);
+  /* E O QUE UM VETO NOMEIA, sempre. Sem isto havia um buraco que se via: o
+     cartão dizia «O dia está chumbado: chuva a sério» e a linha da chuva ficava
+     LIMPA. A razão é que a chuva se pontua pela PROBABILIDADE e o veto dispara
+     pelos MILÍMETROS — 17% de hipótese dá rácio 0,76, muito acima do corte,
+     enquanto os 2 mm acumulados chumbam o dia. Os milímetros nunca entram na
+     nota, portanto o rácio nunca os podia ver.
+     Entram os vetos da PARTE sempre, e os do DIA só quando esta parte contribui
+     mesmo para eles. O dia pode chumbar com as duas partes sãs, porque os
+     milímetros SOMAM-SE ao longo do dia — 1,2 mm de manhã e 1,2 à tarde passam
+     as duas e o dia chumba nos 2 — e é justamente esse o caso em que a
+     contradição aparecia. Mas se a chuva toda cair de manhã, uma tarde com
+     0 mm não pode levar triângulo por cima de «Sem chuva à vista»: isso seria
+     trocar uma contradição por outra.
+     Os restantes vetos agregam-se por máximo ou mínimo, não por soma, portanto
+     a parte que os provoca tem-nos como veto seu e já entra pela primeira via. */
+  var VETO_FACTOR = {
+    'chuva quase certa': 'chuva', 'chuva a sério': 'chuva',
+    'vento demasiado forte': 'vento', 'rajadas perigosas': 'vento',
+    'frio a mais': 'ar', 'mar muito cavado': 'agua'
+  };
+
+  function factoresVetados(p, a) {
+    var fora = {};
+    ((p && p.v && p.v.vetos) || []).forEach(function (t) {
+      if (VETO_FACTOR[t]) fora[VETO_FACTOR[t]] = 1;
+    });
+    ((a && a.v && a.v.vetos) || []).forEach(function (t) {
+      var id = VETO_FACTOR[t];
+      if (!id) return;
+      if (id === 'chuva' && !(p && p.d && p.d.mm > 0)) return;   /* esta parte não deu chuva nenhuma */
+      fora[id] = 1;
+    });
+    return fora;
   }
 
-  function numerosDaParte(p) {
+  function eFraco(f, vetados) {
+    if (!f) return false;
+    if (vetados && vetados[f.id]) return true;
+    return !!(f.pontos != null && f.peso && (f.pontos / f.peso) < FRACO_RACIO);
+  }
+
+  function numerosDaParte(p, a) {
     /* Os que não estão na ORDEM vão para o fim em vez de desaparecerem. Uma
        lista de ids escrita à mão é uma armadilha: no dia em que alguém
        renomear um factor, ou acrescentar um sexto, esta linha impede que ele
        se evapore do ecrã em silêncio. */
-    var fs = p.v.factores.slice().sort(function (a, b) {
-      var ia = ORDEM.indexOf(a.id), ib = ORDEM.indexOf(b.id);
-      return (ia < 0 ? ORDEM.length : ia) - (ib < 0 ? ORDEM.length : ib);
+    var fs = p.v.factores.slice().sort(function (x, y) {
+      var ix = ORDEM.indexOf(x.id), iy = ORDEM.indexOf(y.id);
+      return (ix < 0 ? ORDEM.length : ix) - (iy < 0 ? ORDEM.length : iy);
     });
+    var vetados = factoresVetados(p, a);
     return '<ul class="nums" role="list">'
-      + fs.map(function (f) { return linhaDoFactor(f, p.d, eFraco(f)); }).join('')
+      + fs.map(function (f) { return linhaDoFactor(f, p.d, eFraco(f, vetados)); }).join('')
       + '</ul><p class="nums__ordem">'
       + '<a href="/metodologia/">Como isto decide</a></p>';
   }

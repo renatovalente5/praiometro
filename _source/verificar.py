@@ -893,6 +893,10 @@ try:
                 .map(function(k){return (k.match(/^parte--(verde|amarelo|vermelho)$/)||[])[1];})
                 .filter(Boolean)[0] || '';
               return { cor: cor,
+                /* o que o ecrã diz que chumbou: a linha por cima dos blocos
+                   («O dia está chumbado: chuva a sério») e a razão do bloco. */
+                veto: ((document.getElementById('v-resposta')||{}).textContent || '') + ' ' +
+                      ((pn.parentNode.querySelector('.bloco__razao')||{}).textContent || ''),
                 marcas: pn.querySelectorAll('.nums__mau').length,
                 quais: [...pn.querySelectorAll('.nums__linha')].filter(function(l){
                   return l.querySelector('.nums__mau');})
@@ -918,8 +922,21 @@ try:
                 # praia» — e por isso PODE aparecer fria num dia bom. É a única
                 # excepção, e tem de continuar a ser a única.
                 if d['cor'] == 'verde':
-                    fora = [x for x in d['quais'] if x != 'Água do mar']
-                    if fora: erro('bloco VERDE com triângulo em %s — só a água pode' % fora)
+                    # Duas excepções, e só duas. A ÁGUA, porque está fora do
+                    # cálculo que decide o verde. E o que um VETO nomeia: o dia
+                    # pode chumbar por chuva com as partes sãs, porque os
+                    # milímetros somam-se ao longo do dia — e aí a parte verde
+                    # que contribuiu com chuva leva a marca, que era o defeito
+                    # reportado. Tudo o resto continua impossível: se uma das
+                    # outras estivesse abaixo de 0,40, o bloco não era verde.
+                    perm = {'Água do mar'}
+                    for t, nome in [('chuva', 'Chuva'), ('vento', 'Vento'), ('rajadas', 'Vento'),
+                                    ('frio', 'Calor'), ('mar muito cavado', 'Água do mar')]:
+                        if t in (d['veto'] or '').lower(): perm.add(nome)
+                    fora = [x for x in d['quais'] if x not in perm]
+                    if fora:
+                        erro('bloco VERDE com triângulo em %s — só a água, ou o que um veto nomeie (veto: %r)'
+                             % (fora, d['veto']))
                 # A LEI DO CARTÃO vale para a marca: um símbolo sozinho não diz
                 # nada a quem ouve. E um triângulo sem SVG é um espaço vazio.
                 if d['semSvg']: erro('%d marcas sem desenho nenhum lá dentro' % d['semSvg'])
@@ -934,6 +951,59 @@ try:
     c.js("""(function(){var b=document.querySelector('.bloco__cabeca[aria-expanded="true"]');
          if(b) b.click();})()"""); time.sleep(.3)
 finally: c.fechar()
+
+print('\n== 6d-bis. o veto marca a sua própria linha ==')
+# O DEFEITO REPORTADO: o cartão dizia «O dia está chumbado: chuva a sério» e a
+# linha da Chuva ficava LIMPA. A chuva pontua-se pela PROBABILIDADE e o veto
+# dispara pelos MILÍMETROS — 17 % de hipótese dá rácio 0,76, muito acima do
+# corte de 0,40, enquanto 2 mm acumulados chumbam o dia. Os milímetros nunca
+# entram na nota, portanto o rácio nunca os podia ver.
+# E o contrário também tem de valer: se a chuva toda cair de manhã, uma tarde
+# com 0 mm não pode levar triângulo por cima de «Sem chuva à vista».
+def _chuva(mm):
+    E = """
+    (function(){var t=setInterval(function(){ if(!window.Modelo||!window.Modelo.avaliarDia) return;
+      clearInterval(t); var o=window.Modelo.avaliarDia,n=0;
+      window.Modelo.avaliarDia=function(){var r=o.apply(this,arguments);
+        if(n++===0&&r&&r.v){ r.v.nota=null; r.v.cor='vermelho'; r.v.vetos=['chuva a sério'];
+          if(r.partes&&r.partes[0]&&r.partes[0].d) r.partes[0].d.mm = %s; }
+        return r;};},5);})();
+    """ % mm
+    c=Chrome(porta=livre())
+    try:
+        c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
+        c.cmd('Page.addScriptToEvaluateOnNewDocument', source=E)
+        c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
+        c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+        c.js("""(function(){var b=document.getElementById('cab-manha');
+             if(b && b.getAttribute('aria-expanded')!=='true') b.click();})()"""); time.sleep(.5)
+        return json.loads(c.js(r"""JSON.stringify((function(){
+          var pn=document.querySelector('.bloco__numeros:not([hidden])');
+          if(!pn) return null;
+          var l=[...pn.querySelectorAll('.nums__linha')].find(function(x){
+            var n=x.querySelector('.nums__nome');
+            return [...n.childNodes].filter(function(k){return k.nodeType===3;})
+                    .map(function(k){return k.textContent;}).join('').trim()==='Chuva';});
+          return { titulo: document.getElementById('v-resposta').textContent,
+                   marcada: !!(l && l.querySelector('.nums__mau')),
+                   palavra: l ? (l.querySelector('.nums__palavra')||{}).innerText : '' };})())"""))
+    finally: c.fechar()
+
+antes = len(falhas)
+com = _chuva('1.8')
+sem = _chuva('0')
+if not com or 'chumbado' not in (com['titulo'] or ''):
+    print('  · o enxerto não pegou — secção sem valor nesta corrida')
+else:
+    if not com['marcada']:
+        erro('o dia está chumbado por chuva, a manhã tem 1,8 mm e a linha da Chuva não leva marca')
+    if 'Sem chuva à vista' in (com['palavra'] or ''):
+        erro('a linha diz «Sem chuva à vista» com milímetros previstos: %r' % com['palavra'])
+    if sem and sem['marcada']:
+        erro('a manhã não deu chuva nenhuma e leva marca à mesma')
+    if len(falhas) == antes:
+        print('  com chuva     ✓ %r' % (com['palavra'] or '').replace('\n', ' ')[:52])
+        print('  sem chuva     ✓ a parte seca não leva marca por chuva que caiu noutra')
 
 print('\n== 6e. o aviso de segurança ==')
 # ESTEVE MORTO. O `.veredicto__aviso--perigo` existia no CSS desde que o aviso

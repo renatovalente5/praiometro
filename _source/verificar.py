@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Bateria de verificação do Praiómetro."""
-import json, os, socket, socketserver, sys, threading, http.server, time
+import json, os, re, socket, socketserver, sys, threading, http.server, time
 RAIZ=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(RAIZ,'_source'))
 from cdp import Chrome
@@ -1155,6 +1155,43 @@ try:
     if len(falhas) == antes:
         print('  offline       ✓ abre sem rede, com estilo, %d atalhos e a procura' % e['atalhos'])
         print('  sem previsão  ✓ %d ficheiros no esqueleto, zero da Open-Meteo ou do Supabase' % len(d['urls']))
+
+    # NA AREIA, HORAS DEPOIS. O sessionStorage é por separador e sobrevive a um
+    # recarregar; horas depois, num telemóvel, já não existe. É esse o caso que
+    # interessa: a previsão vem da reserva no localStorage, e AÍ tem de dizer
+    # de que horas é. Um número velho servido como novo é a pior coisa que este
+    # site pode fazer, pior do que não abrir.
+    antes = len(falhas)
+    c.cmd('Network.emulateNetworkConditions', offline=False, latency=0,
+          downloadThroughput=-1, uploadThroughput=-1)
+    c.cmd('Network.setCacheDisabled', cacheDisabled=False)
+    time.sleep(.4)
+    c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    guardadas = int(c.js("Object.keys(localStorage).filter(function(k){"
+                         "return k.indexOf('pm:g:')===0;}).length"))
+    visivelComRede = c.js("document.getElementById('v-antiga').hidden ? 0 : 1")
+    if not guardadas: erro('a previsão não ficou guardada na reserva')
+    if visivelComRede: erro('COM rede o cartão diz que a previsão é guardada — só pode dizer sem rede')
+    c.js("sessionStorage.clear()")
+    c.cmd('Network.setCacheDisabled', cacheDisabled=True)
+    c.cmd('Network.emulateNetworkConditions', offline=True, latency=0,
+          downloadThroughput=0, uploadThroughput=0)
+    time.sleep(.4)
+    c.abrir('http://127.0.0.1:%d/'%_P, espera=5.0); time.sleep(3.5)
+    a2=json.loads(c.js(r"""JSON.stringify({
+      blocos: document.querySelectorAll('.bloco').length,
+      nota: (document.querySelector('.bloco__nota')||{}).textContent || '',
+      antiga: document.getElementById('v-antiga').hidden ? ''
+              : document.getElementById('v-antiga').textContent})"""))
+    if a2['blocos'] != 2 or not a2['nota']:
+        erro('sem rede e com reserva, o cartão não mostrou a previsão: %s' % a2)
+    elif not a2['antiga']:
+        erro('MOSTROU A PREVISÃO SEM DIZER QUE É VELHA — %s de nota, sem aviso nenhum' % a2['nota'])
+    elif not re.search(r'\d+h\d\d', a2['antiga']):
+        erro('o aviso não diz a HORA a que a previsão foi buscada: %r' % a2['antiga'])
+    if len(falhas) == antes:
+        print('  na areia      ✓ %r' % a2['antiga'])
 finally:
     c.fechar(); _srv.shutdown()
 

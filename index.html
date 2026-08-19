@@ -160,6 +160,11 @@
           <div class="veredicto__ident">
             <p class="veredicto__praia" id="v-praia"></p>
             <p class="veredicto__dia" id="v-dia"></p>
+            <!-- Só fala quando os números vieram da reserva, ou seja quando a
+                 rede falhou. Fica ANTES dos blocos de propósito: quem vai ler
+                 um 84 tem de saber que ele é de há três horas antes de o ler,
+                 e não depois. -->
+            <p class="veredicto__antiga" id="v-antiga" hidden></p>
           </div>
           <button class="estrela" id="v-estrela" type="button" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z"/></svg>

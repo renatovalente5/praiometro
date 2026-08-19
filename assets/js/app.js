@@ -323,6 +323,45 @@
      eram dois pedidos, e os favoritos passariam a quatro — a Open-Meteo é
      gratuita e sem chave, mas responde 429 a quem abusa. */
   var TTL = 30 * 60 * 1000;
+
+  /* A RESERVA, para quem está na areia com uma barra de rede. O sessionStorage
+     acima morre quando o separador fecha; esta cópia fica no localStorage e
+     sobrevive. Quando a rede falha, é ela que responde.
+
+     A REGRA, e não tem excepção: uma previsão velha NUNCA é servida sem se
+     dizer que é velha e de que horas é. Um site de praia que mostra o sol de
+     ontem por baixo de chuva é pior do que um site que não abre. O
+     `previsaoDe` guarda a hora e a interface é obrigada a mostrá-la.
+
+     Só a ÚLTIMA praia fica guardada: uma destas respostas são centenas de KB
+     (seis dias, hora a hora, quatro modelos) e o localStorage anda nos 5 MB.
+     Guardar todas as praias visitadas enchia-o e partia os favoritos. */
+  var previsaoDe = null;      /* hora da mais VELHA das respostas servidas da reserva */
+
+  function reservaGuardar(url, agora, d) {
+    try {
+      localStorage.setItem('pm:g:' + url, JSON.stringify({ t: agora, d: d }));
+      /* Ficam as duas mais recentes — que são a previsão e o mar da mesma
+         praia. Tudo o que for mais antigo sai. */
+      var meus = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('pm:g:') === 0) {
+          var t = 0;
+          try { t = (JSON.parse(localStorage.getItem(k)) || {}).t || 0; } catch (e) { }
+          meus.push([t, k]);
+        }
+      }
+      meus.sort(function (a, b) { return b[0] - a[0]; });
+      meus.slice(2).forEach(function (x) { localStorage.removeItem(x[1]); });
+    } catch (e) { }
+  }
+
+  function reservaLer(url) {
+    try { return JSON.parse(localStorage.getItem('pm:g:' + url) || 'null'); }
+    catch (e) { return null; }
+  }
+
   function buscar(url) {
     var agora = new Date().getTime();
     try {
@@ -334,7 +373,13 @@
       return r.json();
     }).then(function (d) {
       try { sessionStorage.setItem('pm:c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
+      reservaGuardar(url, agora, d);
       return d;
+    }).catch(function (e) {
+      var g = reservaLer(url);
+      if (!g) throw e;
+      previsaoDe = previsaoDe == null ? g.t : Math.min(previsaoDe, g.t);
+      return g.d;
     });
   }
 
@@ -342,6 +387,7 @@
      aí não se mexe no foco, porque ninguém pediu nada. */
   function escolher(praia, automatico) {
     praiaActual = praia;
+    previsaoDe = null;          /* praia nova: a marca da reserva recomeça */
     var focoAoPedir = doc.activeElement;
     esconderSugestoes();
     caixa.value = praia.n;
@@ -375,6 +421,7 @@
          em vez de a voltar a pedir. */
       if (veredictos[0]) coresFav[F.id(praia)] = veredictos[0].cor;
       desenhar();
+      desenharReserva();
       /* Sem isto o foco ficava no <body> depois de escolher: quem anda de
          teclado tinha de percorrer a página toda outra vez para chegar ao
          resultado que acabou de pedir. Mas a resposta pode demorar segundos
@@ -400,6 +447,26 @@
       avaliacoes = []; parteAberta = null;
       var f = el('v-sem-mar'); if (f) { f.innerHTML = ''; f.removeAttribute('data-k'); }
     });
+  }
+
+  /* A LINHA DA PREVISÃO GUARDADA. Só aparece quando os números que estão no
+     ecrã vieram da reserva, ou seja, quando a rede falhou. Diz a que HORAS
+     foram buscados, porque é isso que permite a quem está na areia decidir se
+     confia neles — «das 9h14» numa tarde de Agosto é uma informação, «previsão
+     guardada» sozinho não é nada.
+     Num dia diferente do de hoje diz também o dia, senão a hora sozinha mente
+     por omissão sobre a idade verdadeira. */
+  function desenharReserva() {
+    var p = el('v-antiga');
+    if (!p) return;
+    if (previsaoDe == null) { p.hidden = true; p.textContent = ''; return; }
+    var d = new Date(previsaoDe), agora = new Date();
+    var hora = ('0' + d.getHours()).slice(-2) + 'h' + ('0' + d.getMinutes()).slice(-2);
+    var mesmoDia = d.toDateString() === agora.toDateString();
+    p.textContent = 'Sem rede. Esta previsão foi buscada '
+      + (mesmoDia ? 'às ' + hora
+                  : 'a ' + d.getDate() + '/' + (d.getMonth() + 1) + ' às ' + hora) + '.';
+    p.hidden = false;
   }
 
   /* ---------------------------------------------------------- desenhar */

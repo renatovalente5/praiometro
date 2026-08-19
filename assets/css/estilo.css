@@ -550,6 +550,14 @@ button.bloco__cabeca:active {
    pintavam sairam com elas. */
 .partes__sem { font-size: 1.05rem; color: var(--tinta-2); line-height: 1.45; }
 
+/* A previsão guardada. Usa a caixa do aviso de conforto — o amarelo — e nunca
+   a de segurança: não é um perigo, é uma ressalva sobre a idade do número. */
+.veredicto__antiga {
+  margin: .5rem 0 0; padding: .5rem .7rem; border-radius: var(--raio);
+  background: var(--amarelo-luz); color: var(--amarelo);
+  font-size: .85rem; font-weight: 600; line-height: 1.4;
+}
+
 .veredicto__aviso {
   margin-top: .9rem; padding: .6rem .8rem; border-radius: var(--raio);
   background: var(--amarelo-luz); color: var(--amarelo); font-size: .88rem; font-weight: 600;

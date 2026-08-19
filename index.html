@@ -35,6 +35,19 @@
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <!-- O SERVICE WORKER, para isto abrir na areia com uma barra de rede. Fica
+       aqui e não no app.js por uma razão: regista-se DEPOIS do load, para não
+       disputar largura de banda com a primeira previsão, que é a única coisa
+       que a pessoa está mesmo à espera. O que ele guarda e o que se recusa a
+       guardar está escrito no próprio /sw.js — e a previsão NÃO é guardada
+       por ele em circunstância nenhuma. -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () { });
+      });
+    }
+  </script>
   <link rel="preconnect" href="https://api.open-meteo.com" />
   <!-- A api.open-meteo fica em preconnect porque os cinco atalhos existem para
        serem clicados. A marine-api só é chamada em praias de mar, e por isso

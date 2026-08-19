@@ -1102,6 +1102,62 @@ try:
     c.cmd('Runtime.evaluate', expression="document.getElementById('dia-5').click()")
 finally: c.fechar()
 
+print('\n== 6f. abre sem rede, e não guarda previsão ==')
+# Duas propriedades, e a segunda é mais importante do que a primeira: um site
+# de praia que serve o sol de ontem por baixo de chuva é pior do que um site
+# que não abre. O service worker guarda o ESQUELETO e recusa-se a guardar
+# qualquer coisa que não seja deste domínio.
+# NOTA: corre contra o _site/, e não contra a raiz, porque é lá que o
+# `__VERSAO__` está preenchido pelo gerador.
+import socketserver as _ss, http.server as _hs, threading as _th
+class _Q(_hs.SimpleHTTPRequestHandler):
+    def log_message(self, *a): pass
+_P = livre()
+_srv = _ss.TCPServer(('127.0.0.1', _P), lambda *a, **k: _Q(*a, directory=RAIZ + '/_site', **k))
+_th.Thread(target=_srv.serve_forever, daemon=True).start()
+c=Chrome(porta=livre())
+try:
+    c.cmd('Emulation.setDeviceMetricsOverride', width=375, height=812, deviceScaleFactor=1, mobile=True)
+    c.abrir('http://127.0.0.1:%d/'%_P, espera=2.6)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    time.sleep(2.0)
+    d=json.loads(c.js("""(async function(){
+      var r = await navigator.serviceWorker.getRegistration();
+      var ns = await caches.keys(), urls = [];
+      for (const n of ns) { var ca = await caches.open(n);
+        for (const q of await ca.keys()) urls.push(q.url); }
+      return JSON.stringify({activo: !!(r && r.active), caches: ns, urls: urls});})()"""))
+    antes = len(falhas)
+    if not d['activo']: erro('o service worker não ficou activo')
+    if len(d['caches']) != 1:
+        erro('deviam ficar exactamente %d caches e ficaram %s' % (1, d['caches']))
+    intrusos = [u for u in d['urls'] if 'open-meteo' in u or 'supabase' in u]
+    if intrusos: erro('o service worker guardou PREVISÃO ou CONTA: %s' % intrusos[:3])
+    if len(d['urls']) < 10: erro('só %d ficheiros no esqueleto — falta lá coisa' % len(d['urls']))
+    # E agora sem rede. O `setCacheDisabled` NÃO é decoração: sem ele, a cache
+    # HTTP do próprio Chrome serve a página e o teste passa mesmo com o service
+    # worker partido — medido. Desligada, o que responde é só este código.
+    c.cmd('Network.enable')
+    c.cmd('Network.setCacheDisabled', cacheDisabled=True)
+    c.cmd('Network.emulateNetworkConditions', offline=True, latency=0,
+          downloadThroughput=0, uploadThroughput=0)
+    time.sleep(.5)
+    c.abrir('http://127.0.0.1:%d/'%_P, espera=4.0)
+    e=json.loads(c.js(r"""JSON.stringify({
+      atalhos: document.querySelectorAll('.atalho').length,
+      procura: !!document.getElementById('procura'),
+      fundo: getComputedStyle(document.body).backgroundColor,
+      erro: document.body.innerText.indexOf('ERR_') >= 0})"""))
+    if e['erro'] or not e['procura'] or not e['atalhos']:
+        erro('sem rede o site não abriu: %s' % e)
+    if e['fundo'] in ('rgba(0, 0, 0, 0)', 'rgb(255, 255, 255)'):
+        erro('sem rede o site abriu SEM ESTILO (fundo %s) — o CSS não veio da cache' % e['fundo'])
+    if len(falhas) == antes:
+        print('  offline       ✓ abre sem rede, com estilo, %d atalhos e a procura' % e['atalhos'])
+        print('  sem previsão  ✓ %d ficheiros no esqueleto, zero da Open-Meteo ou do Supabase' % len(d['urls']))
+finally:
+    c.fechar(); _srv.shutdown()
+
 print('\n== 7. sem JavaScript ==')
 c=Chrome(porta=livre())
 try:

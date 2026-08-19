@@ -38,6 +38,7 @@ const ALLOW = [
   'robots.txt',
   'sitemap.xml',
   'manifest.webmanifest',
+  'sw.js',
 ];
 const ALLOW_PASTAS = ['assets', 'data', 'metodologia', 'nortada', 'praias'];
 
@@ -69,6 +70,31 @@ const conta = { n: 0, bytes: 0 };
 for (const f of ALLOW) { conta.n++; conta.bytes += copiarFicheiro(f); }
 for (const d of ALLOW_PASTAS) copiarPasta(d, conta);
 
+/* ------------------------------------------- a versão do service worker */
+/* O `sw.js` tem um `__VERSAO__` e é AQUI que ele é preenchido, com um resumo
+   do conteúdo dos ficheiros que ele guarda. Um número escrito à mão era a
+   armadilha clássica dos service workers: no dia em que alguém mudasse o CSS
+   e se esquecesse de o subir, metade das pessoas ficava com o site antigo
+   PARA SEMPRE, e sem um erro à vista. Assim, mexer no CSS muda a versão. */
+{
+  const crypto = require('crypto');
+  const h = crypto.createHash('sha256');
+  for (const f of ['index.html', 'assets/css/estilo.css', 'assets/css/texto.css',
+                   'assets/js/modelo.js', 'assets/js/app.js', 'assets/js/favoritos.js',
+                   'assets/js/conta.js', 'data/praias.json', 'manifest.webmanifest']) {
+    h.update(fs.readFileSync(path.join(RAIZ, f)));
+  }
+  const versao = h.digest('hex').slice(0, 12);
+  const alvo = path.join(SAIDA, 'sw.js');
+  const src = fs.readFileSync(alvo, 'utf8');
+  if (!src.includes('__VERSAO__')) {
+    console.error('NÃO PUBLICAR — o sw.js não tem __VERSAO__ para preencher');
+    process.exit(1);
+  }
+  fs.writeFileSync(alvo, src.replace('__VERSAO__', versao));
+  console.log('service worker: versão ' + versao);
+}
+
 /* Aqui escrevia-se um .nojekyll. Foi tirado por não servir para nada, das
    duas maneiras: publicado por Action o Jekyll não chega a correr, e mesmo
    que corresse o ficheiro nunca lá chegava — o upload-pages-artifact exclui
@@ -92,7 +118,7 @@ if (intrusos.length) {
   intrusos.forEach(f => console.error('   ' + f));
   process.exit(1);
 }
-for (const obrigatorio of ['CNAME', 'index.html', 'robots.txt', 'sitemap.xml',
+for (const obrigatorio of ['CNAME', 'index.html', 'robots.txt', 'sitemap.xml', 'sw.js',
                            'assets/css/estilo.css', 'assets/css/texto.css',
                            'data/praias.json', 'data/mapa.json', 'metodologia/index.html',
                            'nortada/index.html', 'praias/index.html',

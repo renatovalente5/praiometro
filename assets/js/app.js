@@ -939,9 +939,31 @@
     return fora;
   }
 
-  function eFraco(f, vetados) {
+  /* E MILÍMETROS BASTANTES, mesmo sem veto. A chuva pontua-se pela
+     PROBABILIDADE, e 12% de hipótese dá rácio alto — mas «0,8 mm ao todo» é
+     água a cair em cima de quem lá está. Sem isto, uma tarde com chuva prevista
+     e sem veto ficava sem marca nenhuma.
+
+     0,5 mm não é um número escolhido a gosto. Medido em 16 128 partes-dia
+     (16 praias, Maio a Outubro de 2023, 2024 e 2025, previsão arquivada dos
+     mesmos quatro modelos contra o que o ERA5 registou):
+
+        mm previstos   parte-dia acabou com >= 0,5 mm
+        zero                 0,7 %
+        0 a 0,3             23,9 %
+        0,3 a 0,8           49,8 %
+        0,8 a 1,5           64,1 %
+        1,5 a 2             77,4 %
+        2 ou mais           93,2 %   <- é aqui que o veto dispara
+
+     O joelho está nos 0,5: acima disso acerta 75% e marca 7,0% das partes-dia.
+     A 0,2 marcaria 11,1% e acertaria 63,2% — demasiada marca para o que diz. */
+  var FRACO_MM = 0.5;
+
+  function eFraco(f, vetados, dp) {
     if (!f) return false;
     if (vetados && vetados[f.id]) return true;
+    if (f.id === 'chuva' && dp && dp.mm >= FRACO_MM) return true;
     return !!(f.pontos != null && f.peso && (f.pontos / f.peso) < FRACO_RACIO);
   }
 
@@ -956,7 +978,7 @@
     });
     var vetados = factoresVetados(p, a);
     return '<ul class="nums" role="list">'
-      + fs.map(function (f) { return linhaDoFactor(f, p.d, eFraco(f, vetados)); }).join('')
+      + fs.map(function (f) { return linhaDoFactor(f, p.d, eFraco(f, vetados, p.d)); }).join('')
       + '</ul><p class="nums__ordem">'
       + '<a href="/metodologia/">Como isto decide</a></p>';
   }

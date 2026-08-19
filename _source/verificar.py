@@ -1005,6 +1005,48 @@ else:
         print('  com chuva     ✓ %r' % (com['palavra'] or '').replace('\n', ' ')[:52])
         print('  sem chuva     ✓ a parte seca não leva marca por chuva que caiu noutra')
 
+# E SEM VETO NENHUM, só milímetros. A chuva pontua-se pela probabilidade, e 12%
+# de hipótese dá rácio alto — mas «0,8 mm ao todo» é água a cair em cima de
+# quem lá está. O limiar de 0,5 mm é medido, não é gosto: em 16 128 partes-dia
+# (previsão arquivada contra o ERA5), abaixo de 0,3 mm previstos só 24% acabam
+# com chuva a sério, e a partir de 0,5 são 75%.
+def _mm(mm):
+    E = """
+    (function(){var t=setInterval(function(){ if(!window.Modelo||!window.Modelo.avaliarDia) return;
+      clearInterval(t); var o=window.Modelo.avaliarDia,n=0;
+      window.Modelo.avaliarDia=function(){var r=o.apply(this,arguments);
+        if(n++===0&&r&&r.partes&&r.partes[0]&&r.partes[0].d){ r.partes[0].d.mm=%s; }
+        return r;};},5);})();
+    """ % mm
+    c=Chrome(porta=livre())
+    try:
+        c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
+        c.cmd('Page.addScriptToEvaluateOnNewDocument', source=E)
+        c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
+        c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+        c.js("""(function(){var b=document.getElementById('cab-manha');
+             if(b && b.getAttribute('aria-expanded')!=='true') b.click();})()"""); time.sleep(.5)
+        return json.loads(c.js(r"""JSON.stringify((function(){
+          var pn=document.querySelector('.bloco__numeros:not([hidden])');
+          if(!pn) return null;
+          var l=[...pn.querySelectorAll('.nums__linha')].find(function(x){
+            var n=x.querySelector('.nums__nome');
+            return [...n.childNodes].filter(function(k){return k.nodeType===3;})
+                    .map(function(k){return k.textContent;}).join('').trim()==='Chuva';});
+          return { marcada: !!(l&&l.querySelector('.nums__mau')),
+                   vetado: (document.getElementById('v-resposta').textContent||'').indexOf('chumbado')>=0 };})())"""))
+    finally: c.fechar()
+
+antes = len(falhas)
+baixo, alto = _mm('0.3'), _mm('0.8')
+if baixo is None or alto is None or baixo.get('vetado') or alto.get('vetado'):
+    print('  · o enxerto não pegou — o limiar dos milímetros fica por medir')
+else:
+    if baixo['marcada']: erro('0,3 mm previstos e a chuva já leva marca — o limiar medido é 0,5')
+    if not alto['marcada']: erro('0,8 mm previstos e a chuva não leva marca — chove mesmo em 64%% dos casos')
+    if len(falhas) == antes:
+        print('  0,5 mm        ✓ 0,3 mm não marca, 0,8 mm marca, sem veto nenhum')
+
 print('\n== 6e. o aviso de segurança ==')
 # ESTEVE MORTO. O `.veredicto__aviso--perigo` existia no CSS desde que o aviso
 # de segurança foi separado do de conforto — com um comentário a dizer que um

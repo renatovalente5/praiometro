@@ -201,7 +201,12 @@
              mesma em todas as 995. A HORA não: espalha-se 39 minutos de norte
              a sul. A nota por baixo é ESTÁTICA e diz o que a linha NÃO diz. -->
         <div class="mare" id="v-mare" hidden>
-          <p class="mare__horas" id="v-mare-horas"></p>
+          <!-- A curva é desenhada pelo JavaScript. O `aria-labelledby` aponta
+               para o texto escondido logo a seguir: um desenho que só existe
+               para quem vê não entra neste cartão. -->
+          <svg class="mare__svg" id="v-mare-svg" viewBox="0 0 300 78"
+               preserveAspectRatio="none" role="img" aria-labelledby="v-mare-txt"></svg>
+          <p class="visually-hidden" id="v-mare-txt"></p>
           <p class="mare__nota">Na baixa-mar há mais areal. Horas do mar aberto — numa ria ou num estuário a maré chega mais tarde.</p>
         </div>
         <p class="veredicto__aviso" id="v-aviso" hidden></p>

@@ -33,6 +33,9 @@ CONTRASTE = r"""(function(){
       .map(k=>k.textContent).join('').trim();
     if(!t)return;
     const cs=getComputedStyle(n);
+    /* SVG: o que pinta o texto é o `fill`, não o `color`. Sem isto o medidor
+       lia a cor errada e dava por bom um rótulo que podia estar ilegível. */
+    const svg = n.ownerSVGElement != null;
     if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0)return;
     const r=n.getBoundingClientRect(); if(!r.width||!r.height)return;
     /* Texto escondido à vista (.visually-hidden): 1px recortado, lido só por
@@ -40,7 +43,7 @@ CONTRASTE = r"""(function(){
        media-se, e dava falsos positivos no tema escuro. */
     if(r.width<=2&&r.height<=2)return;
     if(cs.clipPath&&cs.clipPath.indexOf('inset(50%')===0)return;
-    const f=px(cs.color),b=fundo(n); const a=lum(sobre(f,b)),bb=lum(b);
+    const f=px(svg && cs.fill && cs.fill!=='none' ? cs.fill : cs.color),b=fundo(n); const a=lum(sobre(f,b)),bb=lum(b);
     const rc=(Math.max(a,bb)+.05)/(Math.min(a,bb)+.05);
     const s=parseFloat(cs.fontSize),g=s>=24||(s>=18.66&&+cs.fontWeight>=700);
     if(rc<(g?3:4.5))maus.push(t.slice(0,28)+' @'+Math.round(s)+'px '+rc.toFixed(2));});
@@ -1062,8 +1065,13 @@ try:
         c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.4)
         d=json.loads(c.js(r"""JSON.stringify({
           visivel: !document.getElementById('v-mare').hidden,
-          texto: document.getElementById('v-mare-horas').innerText,
-          nota: (document.querySelector('.mare__nota')||{}).innerText || ''})"""))
+          texto: document.getElementById('v-mare-txt').textContent,
+          nota: (document.querySelector('.mare__nota')||{}).innerText || '',
+          pontos: document.querySelectorAll('#v-mare-svg .mare__ponto').length,
+          horas: document.querySelectorAll('#v-mare-svg .mare__hora').length,
+          curva: ((document.querySelector('#v-mare-svg .mare__linha')||{}).getAttribute
+                  ? document.querySelector('#v-mare-svg .mare__linha').getAttribute('d') : ''),
+          rotulo: document.getElementById('v-mare-svg').getAttribute('aria-labelledby')})"""))
         vistos += 1
         if not d['visivel']:
             if d['texto'].strip(): erro('a maré está escondida mas tem texto: %r' % d['texto'])
@@ -1091,6 +1099,19 @@ try:
                 erro('duas «%s-mar» seguidas — um pico contado a dobrar: %r' % (tipos[i], t))
         if 'mais areal' not in d['nota'] or 'mar aberto' not in d['nota']:
             erro('falta a nota estática do que a maré NÃO diz: %r' % d['nota'])
+        # O DESENHO. A curva tem de existir e ter forma — um `d` curto seria uma
+        # linha recta, ou seja, dados em falta a passar por maré.
+        if len(d['curva']) < 200:
+            erro('a curva da maré está vazia ou é uma recta: %d caracteres' % len(d['curva']))
+        # Um ponto e um rótulo por extremo, e nem mais nem menos.
+        if d['pontos'] != len(re.findall(r'-mar às', d['texto'])):
+            erro('%d pontos no desenho para %d extremos no texto'
+                 % (d['pontos'], len(re.findall(r'-mar às', d['texto']))))
+        if d['horas'] != d['pontos']:
+            erro('%d rótulos de hora para %d pontos' % (d['horas'], d['pontos']))
+        # UM DESENHO QUE SÓ EXISTE PARA QUEM VÊ NÃO ENTRA NESTE CARTÃO.
+        if d['rotulo'] != 'v-mare-txt':
+            erro('o SVG da maré não aponta para o texto que o descreve: %r' % d['rotulo'])
     if len(falhas) == antes:
         print('  maré          ✓ %d dos %d dias com maré na janela, só horas, sempre a alternar'
               % (comMare, vistos))

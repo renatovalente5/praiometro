@@ -537,6 +537,16 @@ caso) para 6,9 (29,7).
 **Mostram-se só os extremos entre as 9h e as 19h.** Dois terços deles caem fora
 do dia de praia — uma preia-mar às 00h27 não interessa a quem vai à areia.
 
+**Mostra-se uma CURVA, não uma frase.** Foi pedido assim, e há uma vantagem
+real: uma curva mostra a FORMA sem afirmar uma altura, portanto contorna de vez
+o problema do datum. O desenho é SVG escrito à mão — este projecto não tem
+dependências. A escala vertical é a dos SEIS dias e não a do dia aberto:
+normalizar cada dia ao seu próprio máximo faria um dia de águas mortas parecer
+igual a um de águas vivas, e essa diferença é a única coisa real que a maré tem
+para dizer ao longo da semana. A faixa cinzenta é a janela de praia, 9h-19h.
+E leva por baixo, escondido à vista, o texto que a descreve: um desenho que só
+existe para quem vê não entra neste cartão.
+
 **O que a linha NÃO diz, e está escrito no cartão por baixo dela:** não diz se a
 maré tira o areal naquela praia, porque o site não sabe o perfil de nenhuma das
 995; e as horas são do mar aberto, portanto numa ria ou num estuário a maré

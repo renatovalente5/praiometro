@@ -564,10 +564,30 @@ button.bloco__cabeca:active {
   margin-top: .9rem; padding-top: .7rem;
   border-top: 1px solid var(--borda);
 }
-.mare__horas {
-  margin: 0; font-size: .95rem; color: var(--tinta); line-height: 1.4;
+/* A curva. `preserveAspectRatio="none"` estica-a à largura do cartão, e é de
+   propósito: o que interessa é ONDE cai a maré nas horas, não a proporção
+   entre o eixo do tempo e o da altura — que nem sequer tem escala, porque não
+   se mostram metros. */
+.mare__svg { display: block; width: 100%; height: 78px; overflow: visible; }
+/* A janela de praia, 9h-19h. NEUTRA, e é de propósito: a primeira versão
+   pintava-a de `--mar` como a água, e as duas manchas azuis liam-se como a
+   mesma coisa em intensidades diferentes. Cinzento não compete com o mar. */
+.mare__janela { fill: var(--tinta); opacity: .07; }
+.mare__area   { fill: var(--mar); opacity: .28; }
+.mare__linha  { fill: none; stroke: var(--mar); stroke-width: 2;
+                stroke-linecap: round; stroke-linejoin: round; }
+.mare__ponto  { fill: var(--mar); }
+/* A hora a `--tinta`: sobre o cartão branco o `--mar` dá 4,52:1, que passa por
+   duas centésimas, e este texto é pequeno. A tinta dá mais de 12:1. */
+.mare__hora {
+  fill: var(--tinta); font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
-.mare__horas b { font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (forced-colors: active) {
+  .mare__linha { stroke: CanvasText; }
+  .mare__ponto { fill: CanvasText; }
+  .mare__area, .mare__janela { fill: none; }
+}
 .mare__nota {
   margin: .2rem 0 0; font-size: .78rem; color: var(--tinta-2); line-height: 1.45;
 }

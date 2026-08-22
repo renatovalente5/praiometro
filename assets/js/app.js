@@ -779,14 +779,86 @@
      ninguém que vá à praia — e listá-los todos era encher a linha com náutica.
      As palavras são as do Instituto Hidrográfico e do curso de nadador-salvador:
      «preia-mar» e «baixa-mar», não «maré alta» e «maré baixa». */
+  /* A CURVA, desenhada em SVG à mão. Sem biblioteca — este projecto não tem
+     dependências e não vai ter.
+
+     A ESCALA é dos SEIS DIAS e não do dia aberto: normalizar cada dia ao seu
+     próprio máximo faria um dia de águas mortas parecer igual a um de águas
+     vivas, e essa diferença é a única coisa que a maré tem de real para dizer
+     ao longo da semana (a amplitude é 99,6 % do dia).
+
+     NÃO LEVA METROS, e é a mesma razão de antes: o zero desta fonte é o
+     geóide, e o Zero Hidrográfico das tabelas portuguesas está ~2,6 m abaixo.
+     Uma CURVA não tem esse problema — mostra a forma sem afirmar uma altura.
+
+     E leva o texto por baixo, escondido à vista: um desenho que só existe para
+     quem vê não entra neste cartão. */
+  /* A altura deixa espaço para os rótulos das horas, que ficam FORA da curva:
+     em cima na preia-mar e em baixo na baixa-mar. Sem essa folga, um deles era
+     cortado pela borda da tela. */
+  var MARE_L = 300, MARE_A = 78, MARE_PAD = 14;
+
+  function pontoMare(hora, v, min, max) {
+    var x = MARE_PAD + (hora / 23) * (MARE_L - 2 * MARE_PAD);
+    var f = max > min ? (v - min) / (max - min) : 0.5;
+    return [x, MARE_A - 22 - f * (MARE_A - 48)];
+  }
+
   function desenharMare(d) {
-    var caixa = el('v-mare'), linha = el('v-mare-horas');
-    if (!caixa || !linha) return;
+    var caixa = el('v-mare'), tela = el('v-mare-svg'), txt = el('v-mare-txt');
+    if (!caixa || !tela || !txt) return;
+    var c = d && d.mareCurva;
     var ms = (d && d.mares || []).filter(function (m) { return m.h >= 9 && m.h < 20; });
-    if (!ms.length) { caixa.hidden = true; linha.innerHTML = ''; return; }
-    linha.innerHTML = 'Maré · ' + ms.map(function (m) {
-      return (m.tipo === 'preia' ? 'preia-mar' : 'baixa-mar') + ' às <b>'
-        + ('0' + m.h).slice(-2) + 'h' + ('0' + m.min).slice(-2) + '</b>';
+    if (!c || !ms.length) { caixa.hidden = true; tela.innerHTML = ''; txt.textContent = ''; return; }
+
+    /* O mínimo e o máximo dos seis dias desta praia. */
+    var min = Infinity, max = -Infinity;
+    dias.forEach(function (x) {
+      (x.mareCurva || []).forEach(function (p) {
+        if (p.v < min) min = p.v; if (p.v > max) max = p.v;
+      });
+    });
+    if (!(max > min)) { caixa.hidden = true; return; }
+
+    var pts = c.map(function (p) { return pontoMare(p.h, p.v, min, max); });
+    var linha = pts.map(function (p, i) {
+      return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+    }).join(' ');
+    var chao = MARE_A - 18;
+    var area = linha + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + chao
+             + ' L' + pts[0][0].toFixed(1) + ' ' + chao + ' Z';
+
+    /* A janela de praia, 9h-19h, sombreada: é a parte do dia de que o cartão
+       fala, e sem ela a curva não diz onde é que a maré me apanha. */
+    var x9 = pontoMare(9, 0, 0, 1)[0], x19 = pontoMare(19, 0, 0, 1)[0];
+
+    var marcas = ms.map(function (m) {
+      var p = pontoMare(m.h + m.min / 60, m.v, min, max);
+      var hora = ('0' + m.h).slice(-2) + 'h' + ('0' + m.min).slice(-2);
+      var ancora = p[0] < MARE_L * 0.25 ? 'start' : (p[0] > MARE_L * 0.75 ? 'end' : 'middle');
+      /* A hora da BAIXA-MAR vai por baixo do bloco de água, e não em cima
+         dele: sobre o azul o texto ficava com um fundo que o medidor de
+         contraste não sabe resolver — em SVG não há `background-color` para
+         ele subir. Fora do azul, o fundo é o do cartão e a medida é real. */
+      var y = m.tipo === 'preia' ? p[1] - 8 : chao + 13;
+      return '<circle class="mare__ponto" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3"/>'
+        + '<text class="mare__hora" x="' + p[0].toFixed(1) + '" y="' + y.toFixed(1)
+        + '" text-anchor="' + ancora + '">' + hora + '</text>';
+    }).join('');
+
+    /* A janela vai do topo ao chão e sem cantos redondos: é uma FAIXA DE
+       TEMPO, e com cantos e altura própria lia-se como uma caixa pousada por
+       cima do desenho. */
+    tela.innerHTML =
+      '<rect class="mare__janela" x="' + x9.toFixed(1) + '" y="0" width="'
+        + (x19 - x9).toFixed(1) + '" height="' + chao + '"/>'
+      + '<path class="mare__area" d="' + area + '"/>'
+      + '<path class="mare__linha" d="' + linha + '"/>'
+      + marcas;
+
+    txt.textContent = 'Maré: ' + ms.map(function (m) {
+      return (m.tipo === 'preia' ? 'preia-mar' : 'baixa-mar') + ' às '
+        + ('0' + m.h).slice(-2) + 'h' + ('0' + m.min).slice(-2);
     }).join(', ') + '.';
     caixa.hidden = false;
   }

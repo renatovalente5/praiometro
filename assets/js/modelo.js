@@ -724,6 +724,7 @@
     var agua = ixm.length ? media(fatia(mh.sea_surface_temperature, ixm)) : null;
     var ondas = ixm.length ? maximo(fatia(mh.wave_height, ixm)) : null;
     var mares = extremosMare(mh, dia);
+    var mareCurva = curvaMare(mh, dia);
 
     return {
       dia: dia,
@@ -743,6 +744,7 @@
       mm: soma(fatia(tempo.hourly.precipitation || [], ix)),
       ondas: ondas,
       mares: mares,
+      mareCurva: mareCurva,
       uv: maximo(fatia(tempo.hourly.uv_index, ix)),
       trovoada: temTrovoada(
         fatia(tempo.hourly.trovoada_modelos || [], ix).filter(function (x) { return x != null; }),
@@ -765,7 +767,7 @@
     return {
       dia: dia, vento: null, ventoMin: null, ventoMax: null, rajada: null,
       dirVento: null, ceu: null, ar: null, arReal: null, agua: null,
-      chuva: null, mm: null, ondas: null, mares: null, uv: null, trovoada: false,
+      chuva: null, mm: null, ondas: null, mares: null, mareCurva: null, uv: null, trovoada: false,
       lat: praia.la, lon: praia.lo, mar: praia.m === 1
     };
   }
@@ -800,6 +802,22 @@
      contra 0,9 cm — mas a altura não se mostra. */
   var MARE_ATRASO_MIN = 30;
 
+  /* A CURVA do dia, hora a hora, para se desenhar. Vai em bruto — os valores
+     como a fonte os dá — e é o ecrã que os escala. Não se normaliza aqui por
+     dia: dias de águas vivas têm de sair maiores do que dias de águas mortas,
+     e essa diferença é real (a amplitude é 99,6 % do dia). Quem escala tem de
+     o fazer com o mínimo e o máximo dos SEIS dias, não os de um. */
+  function curvaMare(mh, dia) {
+    var t = mh && mh.time, v = mh && mh.sea_level_height_msl;
+    if (!t || !v) return null;
+    var out = [];
+    for (var i = 0; i < t.length; i++) {
+      if (v[i] == null || String(t[i]).slice(0, 10) !== dia) continue;
+      out.push({ h: +String(t[i]).slice(11, 13), v: v[i] });
+    }
+    return out.length >= 12 ? out : null;
+  }
+
   function extremosMare(mh, dia) {
     var t = mh && mh.time, v = mh && mh.sea_level_height_msl;
     if (!t || !v) return null;
@@ -813,6 +831,11 @@
       var d2 = v[i - 1] - 2 * v[i] + v[i + 1];
       var desl = d2 ? 0.5 * (v[i - 1] - v[i + 1]) / d2 : 0;
       if (!(desl > -1 && desl < 1)) desl = 0;      /* três pontos iguais, ou pior */
+      /* O valor NO pico, pela mesma parábola. Não se mostra — os metros desta
+         fonte não se podem mostrar — mas é preciso para desenhar o ponto EM
+         CIMA da curva. Sem ele, o ponto ia parar ao máximo dos seis dias e
+         flutuava acima da linha num dia de águas mortas. */
+      var pico = v[i] - 0.25 * (v[i - 1] - v[i + 1]) * desl;
       var ms = new Date(t[i]).getTime() + (desl * 60 + MARE_ATRASO_MIN) * 60000;
       var q = new Date(ms);
       var iso = q.getFullYear() + '-' + ('0' + (q.getMonth() + 1)).slice(-2)
@@ -832,7 +855,7 @@
         continue;
       }
       out.push({ tipo: alto ? 'preia' : 'baixa',
-                 h: q.getHours(), min: q.getMinutes() });
+                 h: q.getHours(), min: q.getMinutes(), v: pico });
     }
     return out.length ? out : null;
   }
@@ -926,6 +949,7 @@
     HORA_FIM: HORA_FIM,
     /* expostos para os testes */
     _extremosMare: extremosMare,
+    _curvaMare: curvaMare,
     _pontos: { vento: pontosVento, ceu: pontosCeu, ar: pontosAr, agua: pontosAgua, chuva: pontosChuva }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

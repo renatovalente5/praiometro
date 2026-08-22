@@ -832,9 +832,18 @@
     var area = linha + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + chao
              + ' L' + pts[0][0].toFixed(1) + ' ' + chao + ' Z';
 
-    /* A janela de praia, 9h-19h, sombreada: é a parte do dia de que o cartão
-       fala, e sem ela a curva não diz onde é que a maré me apanha. */
-    var x9 = pontoMare(9, 0, 0, 1)[0], x19 = pontoMare(19, 0, 0, 1)[0];
+    /* DUAS faixas, e não uma. A primeira versão pintava 9h-19h seguido e
+       estava ERRADA: o modelo calcula em DUAS janelas — 9h-13h e 15h-19h — e
+       ignora de propósito as 13h-15h, que é a hora do almoço. A faixa dizia
+       «é isto que o cartão cobre» e mentia em duas horas.
+       Duas faixas resolvem a outra metade do problema também: são as mesmas
+       duas do Manhã e do Tarde que estão logo acima, e essa rima dispensa
+       legenda. Um rectângulo cinzento sozinho não se explica a ninguém. */
+    var faixas = (M.PARTES || [{ ini: 9, fim: 13 }, { ini: 15, fim: 19 }]).map(function (p) {
+      var a = pontoMare(p.ini, 0, 0, 1)[0], b = pontoMare(p.fim, 0, 0, 1)[0];
+      return '<rect class="mare__janela" x="' + a.toFixed(1) + '" y="0" width="'
+        + (b - a).toFixed(1) + '" height="' + chao + '"/>';
+    }).join('');
 
     var marcas = ms.map(function (m) {
       var p = pontoMare(m.h + m.min / 60, m.v, min, max);
@@ -853,9 +862,7 @@
     /* A janela vai do topo ao chão e sem cantos redondos: é uma FAIXA DE
        TEMPO, e com cantos e altura própria lia-se como uma caixa pousada por
        cima do desenho. */
-    tela.innerHTML =
-      '<rect class="mare__janela" x="' + x9.toFixed(1) + '" y="0" width="'
-        + (x19 - x9).toFixed(1) + '" height="' + chao + '"/>'
+    tela.innerHTML = faixas
       + '<path class="mare__area" d="' + area + '"/>'
       + '<path class="mare__linha" d="' + linha + '"/>'
       + marcas;

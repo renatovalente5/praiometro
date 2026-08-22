@@ -1071,7 +1071,9 @@ try:
           horas: document.querySelectorAll('#v-mare-svg .mare__hora').length,
           curva: ((document.querySelector('#v-mare-svg .mare__linha')||{}).getAttribute
                   ? document.querySelector('#v-mare-svg .mare__linha').getAttribute('d') : ''),
-          rotulo: document.getElementById('v-mare-svg').getAttribute('aria-labelledby')})"""))
+          rotulo: document.getElementById('v-mare-svg').getAttribute('aria-labelledby'),
+          janelas: [...document.querySelectorAll('#v-mare-svg .mare__janela')].map(function(r){
+            return [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')];})})"""))
         vistos += 1
         if not d['visivel']:
             if d['texto'].strip(): erro('a maré está escondida mas tem texto: %r' % d['texto'])
@@ -1136,6 +1138,15 @@ try:
                          .map(function(x){return x.t;})};})())"""))
         if z['choques']: erro('horas da maré sobrepostas: %s' % z['choques'])
         if z['fora']: erro('horas da maré fora da tela: %s' % z['fora'])
+        # AS FAIXAS SÃO DUAS, com a fenda do almoço entre elas. Houve uma
+        # versão com UMA faixa de 9h às 19h, e estava errada: o modelo calcula
+        # em 9h-13h e 15h-19h e ignora as 13h-15h de propósito. A faixa dizia
+        # «é isto que o cartão cobre» e mentia em duas horas.
+        js = d['janelas']
+        if len(js) != len(M_PARTES):
+            erro('%d faixas na maré para %d partes do dia' % (len(js), len(M_PARTES)))
+        elif len(js) == 2 and js[1][0] <= js[0][1] + 0.5:
+            erro('as duas faixas da maré estão coladas — a fenda das 13h-15h desapareceu: %s' % js)
     if len(falhas) == antes:
         print('  maré          ✓ %d dos %d dias, todos os extremos marcados, só horas, a alternar'
               % (comMare, vistos))

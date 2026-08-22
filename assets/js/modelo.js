@@ -542,7 +542,18 @@
       notaPropria: notaPropria,
       cor: cor, frase: frase, vetos: vetos.map(function (v) { return v.t; }),
       avisos: avisos.map(function (a) { return a.t; }),
-      perigo: vetos.concat(avisos).some(function (v) { return v.perigo; }), factores: f,
+      perigo: vetos.concat(avisos).some(function (v) { return v.perigo; }),
+      /* OS PERIGOS, à parte e por nome. O `vetos` acima é um `map` que deita
+         fora a bandeira `perigo`, e a interface, sem ela, não tinha como saber
+         QUAL dos vetos é uma questão de segurança — lia o primeiro da lista.
+         Como a chuva é empilhada antes do mar, um dia com chuva a sério E mar
+         a 3,2 m escrevia, na caixa vermelha, «Aviso de segurança: chuva quase
+         certa», e escondia o mar. A única coisa no ecrã que pode impedir
+         alguém de se magoar estava a nomear a coisa errada. */
+      perigos: vetos.concat(avisos)
+        .filter(function (v) { return v.perigo; })
+        .map(function (v) { return v.t; }),
+      factores: f,
       nortada: nortada, pior: pior ? pior.id : null, melhor: melhor ? melhor.id : null,
       limitante: (limitante && pior_racio < 0.20) ? limitante.id : null
     };
@@ -712,6 +723,7 @@
     var vento = percentil(ventosJanela, 0.75);
     var agua = ixm.length ? media(fatia(mh.sea_surface_temperature, ixm)) : null;
     var ondas = ixm.length ? maximo(fatia(mh.wave_height, ixm)) : null;
+    var mares = extremosMare(mh, dia);
 
     return {
       dia: dia,
@@ -730,6 +742,7 @@
          noite, e chumbavam tardes de sol. */
       mm: soma(fatia(tempo.hourly.precipitation || [], ix)),
       ondas: ondas,
+      mares: mares,
       uv: maximo(fatia(tempo.hourly.uv_index, ix)),
       trovoada: temTrovoada(
         fatia(tempo.hourly.trovoada_modelos || [], ix).filter(function (x) { return x != null; }),
@@ -752,9 +765,76 @@
     return {
       dia: dia, vento: null, ventoMin: null, ventoMax: null, rajada: null,
       dirVento: null, ceu: null, ar: null, arReal: null, agua: null,
-      chuva: null, mm: null, ondas: null, uv: null, trovoada: false,
+      chuva: null, mm: null, ondas: null, mares: null, uv: null, trovoada: false,
       lat: praia.la, lon: praia.lo, mar: praia.m === 1
     };
+  }
+
+  /* ------------------------------------------------------------- a maré */
+  /* AS HORAS da preia-mar e da baixa-mar, e mais nada. Duas decisões, ambas
+     medidas, e as duas contra marégrafos verdadeiros do IOC Sea Level
+     Monitoring (Vigo, Marín, Cascais e Huelva):
+
+     1. NÃO SE MOSTRAM METROS. O zero desta fonte é o GEÓIDE, não o nível médio
+        — a média anual em Cascais é −0,369 m — e o Zero Hidrográfico das
+        tabelas portuguesas está ~2,6 m abaixo dele. O Instituto Hidrográfico
+        só publica esse afastamento para uns 16 portos e este site tem 995
+        praias: escrever «1,74 m» no Furadouro seria dar precisão de tabela
+        náutica a um número tirado de uma constante média. O problema do datum
+        não se resolve com 995 praias — evita-se.
+        E a AMPLITUDE também não se mostra, por outra razão: medida em 80
+        praias, ela é 99,6 % explicada pelo DIA e 0,3 % pela PRAIA. Moledo e
+        Monte Gordo, a 520 km, dão r = 0,9955. Seria uma linha a escrever o
+        mesmo número nas 995. A HORA não: a mesma preia-mar espalha-se 39
+        minutos de norte a sul, contra os ~50 min/dia a que a maré se atrasa.
+
+     2. +30 MINUTOS, e não é um acerto a olho. Esta fonte é a média horária do
+        Copernicus (maré do atlas FES2014) carimbada no INÍCIO do intervalo, e
+        vem sistematicamente adiantada. Contra o marégrafo de Cascais, o erro
+        quadrático médio cai de 0,187 m para 0,027 m ao deslocar +30 min; as
+        quatro estações, de 42,4 N a 37,1 N, dão 29,5 a 32,9 minutos.
+
+     E o pico lê-se por PARÁBOLA sobre três horas, não pela hora mais próxima:
+     medido contra o marégrafo ao minuto, o erro na hora cai de 16,1 min de
+     média (47 no pior caso) para 6,9 (29,7). Na altura seria indiferente — 1,8
+     contra 0,9 cm — mas a altura não se mostra. */
+  var MARE_ATRASO_MIN = 30;
+
+  function extremosMare(mh, dia) {
+    var t = mh && mh.time, v = mh && mh.sea_level_height_msl;
+    if (!t || !v) return null;
+    var out = [];
+    for (var i = 1; i < v.length - 1; i++) {
+      if (v[i] == null || v[i - 1] == null || v[i + 1] == null) continue;
+      var alto = v[i] >= v[i - 1] && v[i] >= v[i + 1];
+      var baixo = v[i] <= v[i - 1] && v[i] <= v[i + 1];
+      if (!alto && !baixo) continue;
+      /* Parábola pelos três pontos: o pico verdadeiro cai ENTRE horas. */
+      var d2 = v[i - 1] - 2 * v[i] + v[i + 1];
+      var desl = d2 ? 0.5 * (v[i - 1] - v[i + 1]) / d2 : 0;
+      if (!(desl > -1 && desl < 1)) desl = 0;      /* três pontos iguais, ou pior */
+      var ms = new Date(t[i]).getTime() + (desl * 60 + MARE_ATRASO_MIN) * 60000;
+      var q = new Date(ms);
+      var iso = q.getFullYear() + '-' + ('0' + (q.getMonth() + 1)).slice(-2)
+              + '-' + ('0' + q.getDate()).slice(-2);
+      if (iso !== dia) continue;                   /* o deslocamento pode mudar o dia */
+      /* UM PATAMAR conta uma vez, não duas. Com `>=` nos dois lados, duas
+         horas com o mesmo valor satisfazem ambas a condição e a maré saía
+         «baixa-mar 05h00 · baixa-mar 05h00». Extremos consecutivos verdadeiros
+         distam 5,9 a 6,6 h (mediana 6,2), portanto dois do MESMO tipo a menos
+         de três horas são o mesmo — e fica o do meio do patamar. */
+      var ant = out[out.length - 1];
+      if (ant && ant.tipo === (alto ? 'preia' : 'baixa')
+          && Math.abs((q.getHours() * 60 + q.getMinutes()) - (ant.h * 60 + ant.min)) < 180) {
+        var meio = ((ant.h * 60 + ant.min) + (q.getHours() * 60 + q.getMinutes())) / 2;
+        ant.h = Math.floor(meio / 60) % 24;
+        ant.min = Math.round(meio % 60);
+        continue;
+      }
+      out.push({ tipo: alto ? 'preia' : 'baixa',
+                 h: q.getHours(), min: q.getMinutes() });
+    }
+    return out.length ? out : null;
   }
 
   /**
@@ -845,6 +925,7 @@
     HORA_INI: HORA_INI,
     HORA_FIM: HORA_FIM,
     /* expostos para os testes */
+    _extremosMare: extremosMare,
     _pontos: { vento: pontosVento, ceu: pontosCeu, ar: pontosAr, agua: pontosAgua, chuva: pontosChuva }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

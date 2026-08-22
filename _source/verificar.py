@@ -1047,6 +1047,55 @@ else:
     if len(falhas) == antes:
         print('  0,5 mm        ✓ 0,3 mm não marca, 0,8 mm marca, sem veto nenhum')
 
+print('\n== 6g. a maré ==')
+# SÓ HORAS, e é uma decisão medida: os metros desta fonte não se podem mostrar
+# (o zero dela é o geóide, e o Zero Hidrográfico das tabelas portuguesas está
+# ~2,6 m abaixo — o IH só o publica para uns 16 portos e o site tem 995
+# praias), e a amplitude é 99,6 % do DIA e 0,3 % da PRAIA: seria o mesmo número
+# em todas. A hora não — espalha-se 39 min de norte a sul.
+c=novo(390,900,True)
+try:
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    antes=len(falhas)
+    vistos, comMare = 0, 0
+    for dia in range(6):
+        c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.4)
+        d=json.loads(c.js(r"""JSON.stringify({
+          visivel: !document.getElementById('v-mare').hidden,
+          texto: document.getElementById('v-mare-horas').innerText,
+          nota: (document.querySelector('.mare__nota')||{}).innerText || ''})"""))
+        vistos += 1
+        if not d['visivel']:
+            if d['texto'].strip(): erro('a maré está escondida mas tem texto: %r' % d['texto'])
+            continue
+        comMare += 1
+        t = d['texto']
+        # NUNCA metros: o datum desta fonte não os paga.
+        if re.search(r'\d+[,.]\d+\s*m\b', t) or re.search(r'\d+\s*m\b', t):
+            erro('a maré mostra METROS, e o datum desta fonte não os paga: %r' % t)
+        # As palavras do Instituto Hidrográfico, não «maré alta»/«maré baixa».
+        if 'maré alta' in t.lower() or 'maré baixa' in t.lower():
+            erro('a maré usa «maré alta/baixa» em vez de «preia-mar/baixa-mar»: %r' % t)
+        if not re.search(r'(preia|baixa)-mar às \d\dh\d\d', t):
+            erro('a maré não diz uma hora no formato esperado: %r' % t)
+        # Só o que cai dentro do dia de praia: dois terços dos extremos ficam
+        # fora das 9h-19h, e a preia-mar das 00h27 não interessa a ninguém.
+        for h, m in re.findall(r'(\d\d)h(\d\d)', t):
+            if not (9 <= int(h) < 20):
+                erro('a maré mostra %sh%s, fora do dia de praia (9h-19h): %r' % (h, m, t))
+        # Alternam: duas preia-mares seguidas seriam um pico contado a dobrar,
+        # que é o defeito que os patamares da grelha horária provocam.
+        tipos = re.findall(r'(preia|baixa)-mar', t)
+        for i in range(1, len(tipos)):
+            if tipos[i] == tipos[i-1]:
+                erro('duas «%s-mar» seguidas — um pico contado a dobrar: %r' % (tipos[i], t))
+        if 'mais areal' not in d['nota'] or 'mar aberto' not in d['nota']:
+            erro('falta a nota estática do que a maré NÃO diz: %r' % d['nota'])
+    if len(falhas) == antes:
+        print('  maré          ✓ %d dos %d dias com maré na janela, só horas, sempre a alternar'
+              % (comMare, vistos))
+finally: c.fechar()
+
 print('\n== 6e. o aviso de segurança ==')
 # ESTEVE MORTO. O `.veredicto__aviso--perigo` existia no CSS desde que o aviso
 # de segurança foi separado do de conforto — com um comentário a dizer que um
@@ -1062,7 +1111,15 @@ ENXERTO_PERIGO = r"""
     var orig = window.Modelo.avaliarDia, n = 0;
     window.Modelo.avaliarDia = function () {
       var r = orig.apply(this, arguments);
-      if (n++ === 0 && r && r.v) { r.v.perigo = true; r.v.avisos = ['pode haver trovoada']; }
+      /* Trovoada (perigo) E chuva a sério (conforto) ao mesmo tempo, com a
+         chuva PRIMEIRO na lista dos vetos — que é a ordem real do modelo. É
+         este o caso em que a caixa vermelha nomeava a chuva. */
+      if (n++ === 0 && r && r.v) {
+        r.v.perigo = true;
+        r.v.vetos = ['chuva quase certa', 'chuva a sério'];
+        r.v.avisos = ['pode haver trovoada'];
+        r.v.perigos = ['pode haver trovoada'];
+      }
       return r;
     };
   }, 5);
@@ -1091,6 +1148,14 @@ try:
             erro('o aviso de segurança não traz o triângulo')
         if 'trovoada' not in d['texto']:
             erro('o aviso não nomeia o perigo: %r' % d['texto'])
+        # E NÃO NOMEIA O QUE NÃO É PERIGO. Lia-se `vetos[0]`, que é o primeiro
+        # veto e não o primeiro PERIGO: como a chuva é empilhada antes do mar,
+        # um dia de chuva a sério com o mar a 3,2 m escrevia, na caixa
+        # vermelha, «Aviso de segurança: chuva quase certa» e escondia o mar.
+        for conforto in ('chuva quase certa', 'chuva a sério', 'frio a mais'):
+            if conforto in d['texto']:
+                erro('a caixa de SEGURANÇA nomeia «%s», que é conforto e não perigo: %r'
+                     % (conforto, d['texto']))
         if 'sai da água' not in d['texto']:
             erro('o aviso de trovoada não diz o que fazer: %r' % d['texto'])
         if d['fundo'] == d['cor']:

@@ -387,5 +387,38 @@ console.log('\n== a janela parte-se, e o dia não muda ==');
        .filter((k) => k in Modelo), []);
 }
 
+console.log('\n== a maré ==');
+/* Um PATAMAR — duas horas com o mesmo valor no pico — satisfaz `>=` dos dois
+   lados e era contado DUAS vezes: a maré saía «baixa-mar 05h00 · baixa-mar
+   05h00». Não se apanha pelo ecrã, porque depende de o patamar calhar dentro
+   das 9h-19h; apanha-se aqui. */
+(function () {
+  function serie(vals, dia) {
+    return { time: vals.map(function (_, i) {
+               return dia + 'T' + ('0' + i).slice(-2) + ':00'; }),
+             sea_level_height_msl: vals };
+  }
+  /* baixa com PATAMAR às 3-4, preia às 9, baixa às 15, preia às 21 */
+  var v = [0, -.5, -.9, -1.0, -1.0, -.9, -.5, 0, .6, 1.0, .6, 0, -.5, -.9, -1.0, -1.05, -1.0, -.9, -.5, 0, .6, 1.0, .6, 0];
+  var r = Modelo._extremosMare(serie(v, '2026-08-22'), '2026-08-22') || [];
+  var seguidos = r.filter(function (x, i) { return i && x.tipo === r[i - 1].tipo; });
+  eq('um patamar conta uma vez, não duas', seguidos.length, 0);
+  eq('e os extremos alternam preia/baixa',
+     r.map(function (x) { return x.tipo; }).join(','), 'baixa,preia,baixa,preia');
+
+  /* Os +30 min do desfasamento medido contra quatro marégrafos do IOC (Vigo,
+     Marín, Cascais e Huelva): esta fonte é a média horária do Copernicus
+     carimbada no INÍCIO do intervalo e vem adiantada. O pico desta série está
+     exactamente às 9h; com a correcção tem de sair às 9h30. */
+  var pico = r.filter(function (x) { return x.tipo === 'preia'; })[0];
+  eq('o pico leva os +30 min medidos contra os marégrafos',
+     ('0' + pico.h).slice(-2) + 'h' + ('0' + pico.min).slice(-2), '09h30');
+
+  /* Sem dados de mar (praia de rio) não há maré, e não rebenta. */
+  eq('sem dados de mar devolve null', Modelo._extremosMare(null, '2026-08-22'), null);
+  eq('com a coluna em falta devolve null',
+     Modelo._extremosMare({ time: ['2026-08-22T00:00'] }, '2026-08-22'), null);
+})();
+
 console.log(`\n${falhas === 0 ? '✓ TODOS OS TESTES PASSARAM' : '✗ ' + falhas + ' FALHAS'}\n`);
 process.exit(falhas ? 1 : 0);

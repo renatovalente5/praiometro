@@ -312,7 +312,11 @@
     return 'https://marine-api.open-meteo.com/v1/marine'
       + '?latitude=' + a.map(function (p) { return p.la; }).join(',')
       + '&longitude=' + a.map(function (p) { return p.lo; }).join(',')
-      + '&hourly=sea_surface_temperature,wave_height'
+      /* O `sea_level_height_msl` NÃO custa um pedido novo: entra na lista deste,
+         que já se faz. Verificado que é maré a sério medindo a amplitude em
+         sítios de maré conhecida: Baleares 0,20 m, Furadouro 2,84, Canal de
+         Bristol 10,22. */
+      + '&hourly=sea_surface_temperature,wave_height,sea_level_height_msl'
       + '&timezone=auto&forecast_days=' + (dias || 6);
   }
 
@@ -570,6 +574,7 @@
     el('v-dia').textContent = nomeDiaLongo(d.dia, diaEscolhido);
 
     desenharPartes(a);
+    desenharMare(d);
     desenharAvisos(d, v);
     horaDesenhada = new Date().getHours();
   }
@@ -769,6 +774,23 @@
     return palavra(v.cor, i);
   }
 
+  /* A MARÉ, só as horas que caem dentro do dia de praia. Dois terços dos
+     extremos acontecem fora das 9h-19h — a preia-mar das 00h27 não interessa a
+     ninguém que vá à praia — e listá-los todos era encher a linha com náutica.
+     As palavras são as do Instituto Hidrográfico e do curso de nadador-salvador:
+     «preia-mar» e «baixa-mar», não «maré alta» e «maré baixa». */
+  function desenharMare(d) {
+    var caixa = el('v-mare'), linha = el('v-mare-horas');
+    if (!caixa || !linha) return;
+    var ms = (d && d.mares || []).filter(function (m) { return m.h >= 9 && m.h < 20; });
+    if (!ms.length) { caixa.hidden = true; linha.innerHTML = ''; return; }
+    linha.innerHTML = 'Maré · ' + ms.map(function (m) {
+      return (m.tipo === 'preia' ? 'preia-mar' : 'baixa-mar') + ' às <b>'
+        + ('0' + m.h).slice(-2) + 'h' + ('0' + m.min).slice(-2) + '</b>';
+    }).join(', ') + '.';
+    caixa.hidden = false;
+  }
+
   function desenharAvisos(d, v) {
     /* Os avisos de CONFORTO saíram do cartão a pedido: o protector solar, o
        vento que se levanta de tarde e o mar cavado a metro e meio. Eram três
@@ -790,8 +812,16 @@
       av.className = 'veredicto__aviso';   /* senão ficava vermelho para sempre */
       return;
     }
-    var perigos = (v.vetos || []).concat(v.avisos || []);
-    var texto = 'Aviso de segurança: ' + perigos[0] + '.';
+    /* SÓ os perigos, e TODOS eles. Lia-se `vetos[0]`, que é o primeiro veto e
+       não o primeiro perigo: num dia de chuva a sério com o mar a 3,2 m, a
+       caixa vermelha dizia «chuva quase certa» e escondia o mar. E nomeia-se
+       mais do que um, porque quando há dois é quando mais importa. */
+    var perigos = v.perigos || [];
+    if (!perigos.length) { av.hidden = true; av.textContent = ''; av.className = 'veredicto__aviso'; return; }
+    var lista = perigos.length > 1
+      ? perigos.slice(0, -1).join(', ') + ' e ' + perigos[perigos.length - 1]
+      : perigos[0];
+    var texto = 'Aviso de segurança: ' + lista + '.';
     /* Um aviso que não diz o que fazer não serve de nada a quem já está na
        areia — e este aparece ao lado de «Dia de praia». */
     if ((v.avisos || []).indexOf('pode haver trovoada') >= 0) {

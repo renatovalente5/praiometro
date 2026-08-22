@@ -558,6 +558,20 @@ button.bloco__cabeca:active {
   font-size: .85rem; font-weight: 600; line-height: 1.4;
 }
 
+/* A MARÉ. Sem caixa de cor: não é um aviso nem um veredicto, é um facto sobre
+   o mar. Um fio em cima separa-a dos blocos sem lhe dar peso de secção. */
+.mare {
+  margin-top: .9rem; padding-top: .7rem;
+  border-top: 1px solid var(--borda);
+}
+.mare__horas {
+  margin: 0; font-size: .95rem; color: var(--tinta); line-height: 1.4;
+}
+.mare__horas b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mare__nota {
+  margin: .2rem 0 0; font-size: .78rem; color: var(--tinta-2); line-height: 1.45;
+}
+
 .veredicto__aviso {
   margin-top: .9rem; padding: .6rem .8rem; border-radius: var(--raio);
   background: var(--amarelo-luz); color: var(--amarelo); font-size: .88rem; font-weight: 600;

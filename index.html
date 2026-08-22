@@ -194,6 +194,16 @@
         <!-- A NOTA DO DIA e a FRASE DA RAZÃO sairam daqui a pedido. A nota do
              dia continua a ver-se, na célula deste dia na tira de baixo; o que
              cada parte tem contra si continua a ler-se ao abrir os números. -->
+        <!-- A MARÉ. Só as horas: os metros desta fonte não se podem mostrar
+             (o zero dela é o geóide e o Zero Hidrográfico das tabelas
+             portuguesas está ~2,6 m abaixo, e o IH só o publica para uns 16
+             portos), e a amplitude é 99,6 % do DIA e 0,3 % da PRAIA — seria a
+             mesma em todas as 995. A HORA não: espalha-se 39 minutos de norte
+             a sul. A nota por baixo é ESTÁTICA e diz o que a linha NÃO diz. -->
+        <div class="mare" id="v-mare" hidden>
+          <p class="mare__horas" id="v-mare-horas"></p>
+          <p class="mare__nota">Na baixa-mar há mais areal. Horas do mar aberto — numa ria ou num estuário a maré chega mais tarde.</p>
+        </div>
         <p class="veredicto__aviso" id="v-aviso" hidden></p>
         <!-- Só fala quando NÃO há mar: praia de rio, ou um ponto do mapa sem
              dados marinhos. É o que explica a ausência do factor «Água do mar»

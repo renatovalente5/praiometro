@@ -503,6 +503,46 @@ aviso de trovoada no mesmo amarelo que «a água está fria» é um aviso que
 ninguém lê. E um dia vetado **deixa de mostrar a nota** — um 94 na tira ao lado de
 «Hoje não» destrói a confiança em tudo o resto.
 
+### A maré
+
+Entrou em 22 de Agosto de 2026. **Não pontua**: não entra nos pesos, não veta,
+não é factor limitante. É um facto sobre o mar, dito ao lado do veredicto.
+
+**Só HORAS, e a razão é dupla e medida.**
+
+Os METROS não se podem mostrar. A fonte é a Marine API da Open-Meteo, que serve
+o `sea_level_height_msl` do Copernicus (`cmems_mod_glo_phy_anfc_merged-sl`), com
+a maré do atlas FES2014. O zero dela é o **geóide**, não o nível médio — a média
+anual em Cascais é −0,369 m — e o **Zero Hidrográfico** das tabelas do Instituto
+Hidrográfico está ~2,6 m abaixo dele (medido em Leixões +2,59, Cascais +2,67,
+Sines +2,57, Lagos +2,65). O IH só publica esse afastamento para uns 16 portos e
+o site tem 995 praias: escrever «1,74 m» no Furadouro seria dar precisão de
+tabela náutica a um número tirado de uma constante média.
+
+A AMPLITUDE também não, por outra razão: medida em 80 praias do continente, ela
+é **99,6 % explicada pelo DIA e 0,3 % pela PRAIA**. Moledo e Monte Gordo, a
+520 km, dão r = 0,9955 e 0,113 m de diferença média. Seria uma linha a escrever
+o mesmo número nas 995. A HORA não é assim: a mesma preia-mar espalha-se **39
+minutos** de norte a sul (máximo 42), contra os ~50 min/dia a que a maré atrasa.
+
+**+30 minutos**, e não é um acerto a olho. A fonte é a média horária carimbada
+no início do intervalo e vem adiantada. Contra o marégrafo de Cascais do IOC, o
+erro quadrático médio cai de 0,187 m para **0,027 m** ao deslocar +30 min; quatro
+estações, de 42,4 N a 37,1 N, dão 29,5 a 32,9 minutos.
+
+**O pico lê-se por parábola** sobre três horas, não pela hora mais próxima:
+contra o marégrafo ao minuto, o erro na hora cai de 16,1 min de média (47 no pior
+caso) para 6,9 (29,7).
+
+**Mostram-se só os extremos entre as 9h e as 19h.** Dois terços deles caem fora
+do dia de praia — uma preia-mar às 00h27 não interessa a quem vai à areia.
+
+**O que a linha NÃO diz, e está escrito no cartão por baixo dela:** não diz se a
+maré tira o areal naquela praia, porque o site não sabe o perfil de nenhuma das
+995; e as horas são do mar aberto, portanto numa ria ou num estuário a maré
+chega mais tarde (o marégrafo de Lagos, num plano restrito, mede metade da
+amplitude com 2h16 de atraso).
+
 ## Os cortes
 
 | Pontuação | Cor | Veredicto |

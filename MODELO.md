@@ -534,16 +534,18 @@ estações, de 42,4 N a 37,1 N, dão 29,5 a 32,9 minutos.
 contra o marégrafo ao minuto, o erro na hora cai de 16,1 min de média (47 no pior
 caso) para 6,9 (29,7).
 
-**Mostram-se só os extremos entre as 9h e as 19h.** Dois terços deles caem fora
-do dia de praia — uma preia-mar às 00h27 não interessa a quem vai à areia.
-
 **Mostra-se uma CURVA, não uma frase.** Foi pedido assim, e há uma vantagem
 real: uma curva mostra a FORMA sem afirmar uma altura, portanto contorna de vez
 o problema do datum. O desenho é SVG escrito à mão — este projecto não tem
 dependências. A escala vertical é a dos SEIS dias e não a do dia aberto:
 normalizar cada dia ao seu próprio máximo faria um dia de águas mortas parecer
 igual a um de águas vivas, e essa diferença é a única coisa real que a maré tem
-para dizer ao longo da semana. A faixa cinzenta é a janela de praia, 9h-19h.
+para dizer ao longo da semana. A faixa cinzenta é a janela de praia, 9h-19h — mas os pontos e as horas
+marcam TODOS os extremos que a curva mostra, e não só os que caem lá dentro:
+um desenho com quatro picos e um só ponto marcado deixa quem olha a perguntar
+porque é que os outros três não contam. São 3 ou 4 por dia civil (medido em 60
+dias-praia: 4 em 50 deles, 3 nos outros, porque quatro ocupam ~24,8 h e um
+transborda para o dia seguinte).
 E leva por baixo, escondido à vista, o texto que a descreve: um desenho que só
 existe para quem vê não entra neste cartão.
 

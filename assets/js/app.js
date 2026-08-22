@@ -808,7 +808,11 @@
     var caixa = el('v-mare'), tela = el('v-mare-svg'), txt = el('v-mare-txt');
     if (!caixa || !tela || !txt) return;
     var c = d && d.mareCurva;
-    var ms = (d && d.mares || []).filter(function (m) { return m.h >= 9 && m.h < 20; });
+    /* TODOS os extremos que a curva mostra, e não só os da janela de praia:
+       um desenho com três picos e um só ponto marcado deixa quem olha a
+       perguntar porque é que os outros dois não contam. Se estão desenhados,
+       são marcados. */
+    var ms = (d && d.mares) || [];
     if (!c || !ms.length) { caixa.hidden = true; tela.innerHTML = ''; txt.textContent = ''; return; }
 
     /* O mínimo e o máximo dos seis dias desta praia. */

@@ -1086,11 +1086,9 @@ try:
             erro('a maré usa «maré alta/baixa» em vez de «preia-mar/baixa-mar»: %r' % t)
         if not re.search(r'(preia|baixa)-mar às \d\dh\d\d', t):
             erro('a maré não diz uma hora no formato esperado: %r' % t)
-        # Só o que cai dentro do dia de praia: dois terços dos extremos ficam
-        # fora das 9h-19h, e a preia-mar das 00h27 não interessa a ninguém.
-        for h, m in re.findall(r'(\d\d)h(\d\d)', t):
-            if not (9 <= int(h) < 20):
-                erro('a maré mostra %sh%s, fora do dia de praia (9h-19h): %r' % (h, m, t))
+        # TODOS os extremos da curva são marcados. Houve uma versão que só
+        # mostrava os das 9h-19h, e o desenho ficava com três picos e um só
+        # ponto — quem olha pergunta porque é que os outros não contam.
         # Alternam: duas preia-mares seguidas seriam um pico contado a dobrar,
         # que é o defeito que os patamares da grelha horária provocam.
         tipos = re.findall(r'(preia|baixa)-mar', t)
@@ -1103,6 +1101,14 @@ try:
         # linha recta, ou seja, dados em falta a passar por maré.
         if len(d['curva']) < 200:
             erro('a curva da maré está vazia ou é uma recta: %d caracteres' % len(d['curva']))
+        # TODOS OS EXTREMOS DA CURVA ESTÃO MARCADOS. Comparar os pontos com o
+        # texto não chega: se alguém voltar a filtrar, os dois encolhem juntos
+        # e a asserção não dá por nada — medido, a mutação passou.
+        # Um dia civil tem 3 ou 4 extremos (medido em 60 dias-praia: 4 em 50
+        # deles, 3 nos outros, porque quatro ocupam ~24,8 h e um transborda).
+        # Filtrar pela janela de praia deixaria 1 ou 2. Daí o corte em 3.
+        if d['pontos'] < 3:
+            erro('só %d extremos marcados — um dia tem 3 ou 4, alguém está a filtrar' % d['pontos'])
         # Um ponto e um rótulo por extremo, e nem mais nem menos.
         if d['pontos'] != len(re.findall(r'-mar às', d['texto'])):
             erro('%d pontos no desenho para %d extremos no texto'
@@ -1112,8 +1118,26 @@ try:
         # UM DESENHO QUE SÓ EXISTE PARA QUEM VÊ NÃO ENTRA NESTE CARTÃO.
         if d['rotulo'] != 'v-mare-txt':
             erro('o SVG da maré não aponta para o texto que o descreve: %r' % d['rotulo'])
+        # OS RÓTULOS NÃO SE PISAM NEM SAEM DA TELA. Com quatro extremos num dia
+        # e o cartão a 375 px, as horas ficam a poucos pixéis umas das outras;
+        # as altas vão por cima da curva e as baixas por baixo do bloco de água,
+        # e é isso que as separa. Se alguém mexer nessa altura, isto apanha.
+        z=json.loads(c.js(r"""JSON.stringify((function(){
+          var ts=[...document.querySelectorAll('#v-mare-svg .mare__hora')];
+          var svg=document.getElementById('v-mare-svg').getBoundingClientRect();
+          var r=ts.map(function(x){var b=x.getBoundingClientRect();
+            return {t:x.textContent, e:b.left, d:b.right, c:b.top};});
+          var ch=[];
+          for(var i=0;i<r.length;i++) for(var j=i+1;j<r.length;j++)
+            if (r[i].d>r[j].e && r[j].d>r[i].e && Math.abs(r[i].c-r[j].c)<12)
+              ch.push(r[i].t+' x '+r[j].t);
+          return {choques: ch,
+                  fora: r.filter(function(x){return x.e<svg.left-1||x.d>svg.right+1;})
+                         .map(function(x){return x.t;})};})())"""))
+        if z['choques']: erro('horas da maré sobrepostas: %s' % z['choques'])
+        if z['fora']: erro('horas da maré fora da tela: %s' % z['fora'])
     if len(falhas) == antes:
-        print('  maré          ✓ %d dos %d dias com maré na janela, só horas, sempre a alternar'
+        print('  maré          ✓ %d dos %d dias, todos os extremos marcados, só horas, a alternar'
               % (comMare, vistos))
 finally: c.fechar()
 

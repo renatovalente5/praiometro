@@ -204,10 +204,11 @@
           <!-- A curva é desenhada pelo JavaScript. O `aria-labelledby` aponta
                para o texto escondido logo a seguir: um desenho que só existe
                para quem vê não entra neste cartão. -->
-          <svg class="mare__svg" id="v-mare-svg" viewBox="0 0 300 78"
-               preserveAspectRatio="none" role="img" aria-labelledby="v-mare-txt"></svg>
+          <svg class="mare__svg" id="v-mare-svg" viewBox="0 0 300 78" role="img" aria-labelledby="v-mare-txt"></svg>
+          <!-- Este fica, e não é teimosia: é o nome acessível do desenho, para
+               quem usa leitor de ecrã. Sem ele o SVG fica mudo e o gráfico
+               passa a existir só para quem vê. Não aparece no ecrã. -->
           <p class="visually-hidden" id="v-mare-txt"></p>
-          <p class="mare__nota">Na baixa-mar há mais areal. Horas do mar aberto — numa ria ou num estuário a maré chega mais tarde.</p>
         </div>
         <p class="veredicto__aviso" id="v-aviso" hidden></p>
         <!-- Só fala quando NÃO há mar: praia de rio, ou um ponto do mapa sem

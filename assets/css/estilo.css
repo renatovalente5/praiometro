@@ -588,9 +588,6 @@ button.bloco__cabeca:active {
   .mare__ponto { fill: CanvasText; }
   .mare__area, .mare__janela { fill: none; }
 }
-.mare__nota {
-  margin: .2rem 0 0; font-size: .78rem; color: var(--tinta-2); line-height: 1.45;
-}
 
 .veredicto__aviso {
   margin-top: .9rem; padding: .6rem .8rem; border-radius: var(--raio);

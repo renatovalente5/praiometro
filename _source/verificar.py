@@ -57,6 +57,13 @@ M_PARTES = json.loads(_sp.run(['node','-e',
   "process.stdout.write(JSON.stringify(globalThis.Modelo.PARTES.map(function(p){return p.nome;})))" % RAIZ],
   capture_output=True, text=True).stdout)
 
+# as horas das janelas, para a faixa da maré — o M_PARTES acima só traz os nomes
+M_HORAS = json.loads(_sp.run(['node','-e',
+  "require('%s/assets/js/modelo.js');"
+  "process.stdout.write(JSON.stringify(globalThis.Modelo.PARTES.map(function(p){"
+  "return [p.ini, p.fim];})))" % RAIZ],
+  capture_output=True, text=True).stdout)
+
 falhas=[]
 def erro(m): falhas.append(m); print('   ✗ '+m)
 
@@ -1018,7 +1025,23 @@ def _mm(mm):
     (function(){var t=setInterval(function(){ if(!window.Modelo||!window.Modelo.avaliarDia) return;
       clearInterval(t); var o=window.Modelo.avaliarDia,n=0;
       window.Modelo.avaliarDia=function(){var r=o.apply(this,arguments);
-        if(n++===0&&r&&r.partes&&r.partes[0]&&r.partes[0].d){ r.partes[0].d.mm=%s; }
+        if(n++===0&&r&&r.partes&&r.partes[0]&&r.partes[0].d){
+          r.partes[0].d.mm=%s;
+          /* e a PROBABILIDADE baixa: num dia de chuva o rácio do factor já é
+             mau por si e marcava a linha pelo caminho certo, sem o ensaio dos
+             milímetros chegar a dizer nada. */
+          r.partes[0].d.chuva=5;
+          if(r.partes[0].v&&r.partes[0].v.factores)
+            r.partes[0].v.factores.forEach(function(f){
+              if(f.id==='chuva'){ f.valor=5; f.pontos=f.peso; }});
+          /* LIMPAM-SE os vetos verdadeiros: o que está em ensaio são os
+             MILÍMETROS sozinhos. Num dia de chuva a sério o veto do dia marca
+             a linha por si, e a guarda chumbava sem haver defeito nenhum. */
+          r.v.vetos=[]; r.v.perigos=[]; r.v.perigo=false;
+          if(r.v.nota==null) r.v.nota=70;
+          r.partes.forEach(function(x){ if(x.v){ x.v.vetos=[];
+            if(x.v.nota==null) x.v.nota=70; } });
+        }
         return r;};},5);})();
     """ % mm
     c=Chrome(porta=livre())
@@ -1072,6 +1095,8 @@ try:
           curva: ((document.querySelector('#v-mare-svg .mare__linha')||{}).getAttribute
                   ? document.querySelector('#v-mare-svg .mare__linha').getAttribute('d') : ''),
           rotulo: document.getElementById('v-mare-svg').getAttribute('aria-labelledby'),
+          svgL: (function(){var v=document.getElementById('v-mare-svg').getAttribute('viewBox');
+                 return +v.split(' ')[2] - 28;})(),
           janelas: [...document.querySelectorAll('#v-mare-svg .mare__janela')].map(function(r){
             return [+r.getAttribute('x'), +r.getAttribute('x') + +r.getAttribute('width')];})})"""))
         vistos += 1
@@ -1097,8 +1122,11 @@ try:
         for i in range(1, len(tipos)):
             if tipos[i] == tipos[i-1]:
                 erro('duas «%s-mar» seguidas — um pico contado a dobrar: %r' % (tipos[i], t))
-        if 'mais areal' not in d['nota'] or 'mar aberto' not in d['nota']:
-            erro('falta a nota estática do que a maré NÃO diz: %r' % d['nota'])
+        # A nota visível saiu a pedido. O que NÃO pode sair é o texto escondido:
+        # é o nome acessível do desenho, e sem ele o gráfico passa a existir só
+        # para quem vê.
+        if not d['texto'].strip():
+            erro('o SVG da maré ficou sem o texto que o descreve — mudo para leitores de ecrã')
         # O DESENHO. A curva tem de existir e ter forma — um `d` curto seria uma
         # linha recta, ou seja, dados em falta a passar por maré.
         if len(d['curva']) < 200:
@@ -1136,20 +1164,53 @@ try:
           return {choques: ch,
                   fora: r.filter(function(x){return x.e<svg.left-1||x.d>svg.right+1;})
                          .map(function(x){return x.t;})};})())"""))
+        # A ESCALA DO SVG TEM DE SER 1. O viewBox era fixo em 300 unidades e o
+        # `preserveAspectRatio="none"` esticava o desenho até à largura do
+        # cartão — e esticava TAMBÉM as letras. Medido: 1,06x no telemóvel, onde
+        # não se nota, e 1,8x no computador, onde as horas saem deformadas. Foi
+        # assim que o defeito chegou ao ar. Agora o viewBox é escrito em pixéis.
+        e=json.loads(c.js(r"""JSON.stringify((function(){
+          var s=document.getElementById('v-mare-svg');
+          var r=s.getBoundingClientRect(), vb=s.getAttribute('viewBox').split(' ').map(Number);
+          return {x: r.width/vb[2], y: r.height/vb[3], vb: s.getAttribute('viewBox')};})())"""))
+        if abs(e['x'] - 1) > 0.02 or abs(e['y'] - 1) > 0.02:
+            erro('o SVG da maré está esticado x%.2f y%.2f (viewBox %s) — as letras deformam'
+                 % (e['x'], e['y'], e['vb']))
         if z['choques']: erro('horas da maré sobrepostas: %s' % z['choques'])
         if z['fora']: erro('horas da maré fora da tela: %s' % z['fora'])
-        # AS FAIXAS SÃO DUAS, com a fenda do almoço entre elas. Houve uma
-        # versão com UMA faixa de 9h às 19h, e estava errada: o modelo calcula
-        # em 9h-13h e 15h-19h e ignora as 13h-15h de propósito. A faixa dizia
-        # «é isto que o cartão cobre» e mentia em duas horas.
+        # A FAIXA É UMA E CONTÍNUA, do princípio da manhã ao fim da tarde —
+        # pedido assim. Esteve partida em duas, com a fenda do almoço à vista.
+        # O que ela marca é o DIA DE PRAIA, e não «as horas que pontuam»: essa
+        # distinção é de cálculo e vive na /metodologia/.
+        # Mas os EXTREMOS têm de continuar a sair do modelo: se alguém mudar as
+        # janelas e a faixa ficar com as horas antigas, isto apanha.
         js = d['janelas']
-        if len(js) != len(M_PARTES):
-            erro('%d faixas na maré para %d partes do dia' % (len(js), len(M_PARTES)))
-        elif len(js) == 2 and js[1][0] <= js[0][1] + 0.5:
-            erro('as duas faixas da maré estão coladas — a fenda das 13h-15h desapareceu: %s' % js)
+        if len(js) != 1:
+            erro('a maré tem %d faixas e devia ter uma contínua' % len(js))
+        else:
+            largura = js[0][1] - js[0][0]
+            horas = M_HORAS[-1][1] - M_HORAS[0][0]
+            esperado = d['svgL'] * horas / 23.0
+            if abs(largura - esperado) > 4:
+                erro('a faixa mede %.0f px e as %dh do dia de praia dão %.0f'
+                     % (largura, horas, esperado))
+    # E A MESMA COISA NUM ECRÃ LARGO, que é onde o esticão aparecia: a 390 px
+    # a escala era 1,06 e passava despercebida; a 1280 era 1,8.
+    c.cmd('Emulation.setDeviceMetricsOverride', width=1280, height=900,
+          deviceScaleFactor=1, mobile=False)
+    time.sleep(.6)
+    c.js("document.getElementById('dia-0').click()"); time.sleep(.5)
+    w=json.loads(c.js(r"""JSON.stringify((function(){
+      var s=document.getElementById('v-mare-svg');
+      if(!s || s.closest('#v-mare').hidden) return null;
+      var r=s.getBoundingClientRect(), vb=s.getAttribute('viewBox').split(' ').map(Number);
+      return {x: r.width/vb[2], larg: Math.round(r.width)};})())"""))
+    if w and abs(w['x'] - 1) > 0.02:
+        erro('a 1280 px o SVG da maré está esticado x%.2f (largura %d)' % (w['x'], w['larg']))
     if len(falhas) == antes:
         print('  maré          ✓ %d dos %d dias, todos os extremos marcados, só horas, a alternar'
               % (comMare, vistos))
+        print('  sem esticão   ✓ escala 1:1 a 390 e a 1280 px — as letras não deformam')
 finally: c.fechar()
 
 print('\n== 6e. o aviso de segurança ==')
@@ -1302,10 +1363,16 @@ try:
     c.abrir('http://127.0.0.1:%d/'%_P, espera=5.0); time.sleep(3.5)
     a2=json.loads(c.js(r"""JSON.stringify({
       blocos: document.querySelectorAll('.bloco').length,
+      /* num dia VETADO não há nota nenhuma — a previsão mostra-se por
+         palavras. Pedir a nota fazia esta guarda depender do tempo que
+         estivesse a fazer no dia em que ela corresse, e num dia de chuva a
+         sério chumbava sem haver defeito nenhum. */
+      palavras: [...document.querySelectorAll('.bloco__palavra')]
+                  .map(function(x){return x.textContent.trim();}).filter(Boolean).length,
       nota: (document.querySelector('.bloco__nota')||{}).textContent || '',
       antiga: document.getElementById('v-antiga').hidden ? ''
               : document.getElementById('v-antiga').textContent})"""))
-    if a2['blocos'] != 2 or not a2['nota']:
+    if a2['blocos'] != 2 or a2['palavras'] != 2:
         erro('sem rede e com reserva, o cartão não mostrou a previsão: %s' % a2)
     elif not a2['antiga']:
         erro('MOSTROU A PREVISÃO SEM DIZER QUE É VELHA — %s de nota, sem aviso nenhum' % a2['nota'])

@@ -796,10 +796,16 @@
   /* A altura deixa espaço para os rótulos das horas, que ficam FORA da curva:
      em cima na preia-mar e em baixo na baixa-mar. Sem essa folga, um deles era
      cortado pela borda da tela. */
-  var MARE_L = 300, MARE_A = 78, MARE_PAD = 14;
+  /* A LARGURA É MEDIDA, não é uma constante. O `viewBox` era fixo em 300 e o
+     `preserveAspectRatio="none"` esticava tudo até à largura do cartão — e
+     esticava TAMBÉM as letras. No telemóvel a escala é 1,06 e não se nota; no
+     computador é 1,8 e as horas saem deformadas. Medido nas três larguras.
+     Agora o viewBox é escrito em pixéis reais: a escala fica a 1 e uma letra
+     de 11 px é uma letra de 11 px em qualquer ecrã. */
+  var MARE_A = 78, MARE_PAD = 14;
 
-  function pontoMare(hora, v, min, max) {
-    var x = MARE_PAD + (hora / 23) * (MARE_L - 2 * MARE_PAD);
+  function pontoMare(largura, hora, v, min, max) {
+    var x = MARE_PAD + (hora / 23) * (largura - 2 * MARE_PAD);
     var f = max > min ? (v - min) / (max - min) : 0.5;
     return [x, MARE_A - 22 - f * (MARE_A - 48)];
   }
@@ -824,7 +830,13 @@
     });
     if (!(max > min)) { caixa.hidden = true; return; }
 
-    var pts = c.map(function (p) { return pontoMare(p.h, p.v, min, max); });
+    /* Desesconde-se ANTES de medir: um elemento com [hidden] mede zero, e o
+       desenho saía todo empilhado no canto esquerdo. */
+    caixa.hidden = false;
+    var L = Math.max(240, Math.round(tela.getBoundingClientRect().width));
+    tela.setAttribute('viewBox', '0 0 ' + L + ' ' + MARE_A);
+
+    var pts = c.map(function (p) { return pontoMare(L, p.h, p.v, min, max); });
     var linha = pts.map(function (p, i) {
       return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1);
     }).join(' ');
@@ -832,23 +844,25 @@
     var area = linha + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + chao
              + ' L' + pts[0][0].toFixed(1) + ' ' + chao + ' Z';
 
-    /* DUAS faixas, e não uma. A primeira versão pintava 9h-19h seguido e
-       estava ERRADA: o modelo calcula em DUAS janelas — 9h-13h e 15h-19h — e
-       ignora de propósito as 13h-15h, que é a hora do almoço. A faixa dizia
-       «é isto que o cartão cobre» e mentia em duas horas.
-       Duas faixas resolvem a outra metade do problema também: são as mesmas
-       duas do Manhã e do Tarde que estão logo acima, e essa rima dispensa
-       legenda. Um rectângulo cinzento sozinho não se explica a ninguém. */
-    var faixas = (M.PARTES || [{ ini: 9, fim: 13 }, { ini: 15, fim: 19 }]).map(function (p) {
-      var a = pontoMare(p.ini, 0, 0, 1)[0], b = pontoMare(p.fim, 0, 0, 1)[0];
-      return '<rect class="mare__janela" x="' + a.toFixed(1) + '" y="0" width="'
-        + (b - a).toFixed(1) + '" height="' + chao + '"/>';
-    }).join('');
+    /* UMA faixa CONTÍNUA, do princípio da manhã ao fim da tarde. Foi pedida
+       assim, depois de ter estado partida em duas.
+       O que ela diz, e é preciso ser exacto: é o DIA DE PRAIA — das 9h às 19h,
+       que é o intervalo de que este cartão fala. NÃO é «as horas que o modelo
+       pontua»: essas são duas, 9h-13h e 15h-19h, e as 13h-15h ficam de fora de
+       propósito. Essa distinção é de cálculo e vive na /metodologia/, não num
+       rectângulo cinzento.
+       Os extremos vêm do `Modelo.PARTES` e não de números escritos à mão: no
+       dia em que as janelas mudarem, a faixa acompanha. */
+    var ps = M.PARTES || [{ ini: 9, fim: 13 }, { ini: 15, fim: 19 }];
+    var xIni = pontoMare(L, ps[0].ini, 0, 0, 1)[0];
+    var xFim = pontoMare(L, ps[ps.length - 1].fim, 0, 0, 1)[0];
+    var faixas = '<rect class="mare__janela" x="' + xIni.toFixed(1) + '" y="0" width="'
+      + (xFim - xIni).toFixed(1) + '" height="' + chao + '"/>';
 
     var marcas = ms.map(function (m) {
-      var p = pontoMare(m.h + m.min / 60, m.v, min, max);
+      var p = pontoMare(L, m.h + m.min / 60, m.v, min, max);
       var hora = ('0' + m.h).slice(-2) + 'h' + ('0' + m.min).slice(-2);
-      var ancora = p[0] < MARE_L * 0.25 ? 'start' : (p[0] > MARE_L * 0.75 ? 'end' : 'middle');
+      var ancora = p[0] < L * 0.25 ? 'start' : (p[0] > L * 0.75 ? 'end' : 'middle');
       /* A hora da BAIXA-MAR vai por baixo do bloco de água, e não em cima
          dele: sobre o azul o texto ficava com um fundo que o medidor de
          contraste não sabe resolver — em SVG não há `background-color` para
@@ -871,8 +885,19 @@
       return (m.tipo === 'preia' ? 'preia-mar' : 'baixa-mar') + ' às '
         + ('0' + m.h).slice(-2) + 'h' + ('0' + m.min).slice(-2);
     }).join(', ') + '.';
-    caixa.hidden = false;
   }
+
+  /* A largura muda quando a janela muda, e o desenho tem de a acompanhar —
+     senão redimensionar o browser deixa a curva com a escala da largura
+     anterior, que é o mesmo defeito por outra porta. Adiado, para não redesenhar
+     sessenta vezes durante o arrasto. */
+  var mareTimer = null;
+  addEventListener('resize', function () {
+    clearTimeout(mareTimer);
+    mareTimer = setTimeout(function () {
+      if (dias && dias[diaEscolhido]) desenharMare(dias[diaEscolhido]);
+    }, 150);
+  });
 
   function desenharAvisos(d, v) {
     /* Os avisos de CONFORTO saíram do cartão a pedido: o protector solar, o

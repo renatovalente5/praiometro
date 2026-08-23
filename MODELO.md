@@ -540,12 +540,12 @@ o problema do datum. O desenho é SVG escrito à mão — este projecto não tem
 dependências. A escala vertical é a dos SEIS dias e não a do dia aberto:
 normalizar cada dia ao seu próprio máximo faria um dia de águas mortas parecer
 igual a um de águas vivas, e essa diferença é a única coisa real que a maré tem
-para dizer ao longo da semana. As faixas cinzentas são as DUAS janelas do modelo — 9h-13h e 15h-19h — com a
-fenda das 13h-15h à vista, que é a hora que o modelo ignora de propósito. Foram
-uma faixa só de 9h às 19h até 25 de Agosto de 2026, e estavam erradas: diziam
-«é isto que o cartão cobre» e mentiam em duas horas. Duas faixas resolvem também
-o problema de um rectângulo cinzento não se explicar a ninguém — são as mesmas
-duas do Manhã e do Tarde que estão logo acima, e essa rima dispensa legenda.
+para dizer ao longo da semana. A faixa cinzenta é o DIA DE PRAIA, das 9h às 19h, contínua. Esteve partida em
+duas — 9h-13h e 15h-19h, com a fenda do almoço à vista — e voltou a ser uma a
+pedido. É preciso ser exacto sobre o que ela diz: marca o intervalo de que o
+cartão fala, e NÃO «as horas que o modelo pontua», que são duas e deixam as
+13h-15h de fora. Essa distinção é de cálculo e vive nesta página, não num
+rectângulo cinzento. Os extremos da faixa saem do `Modelo.PARTES`.
 
 Os pontos e as horas
 marcam TODOS os extremos que a curva mostra, e não só os que caem lá dentro:

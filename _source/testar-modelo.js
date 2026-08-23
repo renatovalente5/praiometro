@@ -62,7 +62,11 @@ console.log('\n== a trovoada avisa, não decide ==');
   // mas um dia mesmo mau continua chumbado, e pela chuva
   const mau = Modelo.classificarDia({...bom, trovoada:true, chuva:85, mm:6, ceu:90});
   eq('dia de tempestade a sério continua vermelho', mau.cor, 'vermelho');
-  eq('e sem nota', mau.nota, null);
+  /* A nota deixou de desaparecer: um dia vetado TEM nota, e ela cai na banda
+     do vermelho. Era `null` até 23 de Agosto de 2026, e 38,9 % das partes-dia
+     ficavam sem número nenhum. */
+  eq('e com nota, na banda do vermelho', mau.nota != null && mau.nota < 45, true);
+  eq('e a nota abaixo do que ele valia sem o veto', mau.nota < mau.notaBruta, true);
   eq('vetado pela chuva, não pela trovoada', mau.vetos.indexOf('chuva quase certa') >= 0, true);
 }
 
@@ -187,8 +191,12 @@ if (dirs != null) {
 // ela deixou de vetar, usa-se um veto a sério — rajadas acima de 65 km/h.
 const vt = Modelo.classificarDia({ceu:5, vento:8, ar:29, agua:23, chuva:0, mm:0, ondas:0.4,
   rajada:80, dirVento:180, lat:37.08, lon:-8.25, mar:true, trovoada:false});
-if (vt.nota !== null) { falhas++; console.log('  ✗ dia vetado ainda mostra nota ' + vt.nota); }
-else console.log(`  ✓ dia vetado não mostra nota (bruta era ${vt.notaBruta})`);
+/* A REGRA NOVA: o veto entra na NOTA em vez de a apagar. A nota tem de existir,
+   tem de cair na banda do vermelho, e tem de ser menor do que a soma crua. */
+if (vt.nota == null) { falhas++; console.log('  ✗ dia vetado ficou sem nota nenhuma'); }
+else if (vt.nota >= 45) { falhas++; console.log('  ✗ dia vetado com nota ' + vt.nota + ', fora da banda do vermelho'); }
+else if (vt.nota >= vt.notaBruta) { falhas++; console.log('  ✗ o veto não baixou a nota: ' + vt.nota + ' contra ' + vt.notaBruta); }
+else console.log(`  ✓ dia vetado mostra ${vt.nota}, dentro do vermelho (valia ${vt.notaBruta})`);
 if (!vt.perigo) { falhas++; console.log('  ✗ rajadas perigosas deviam marcar perigo'); }
 else console.log('  ✓ veto de segurança marcado como perigo');
 if (!/^Não vá/.test(vt.frase)) { falhas++; console.log('  ✗ frase de perigo devia ser mais forte: ' + vt.frase); }
@@ -386,6 +394,49 @@ console.log('\n== a janela parte-se, e o dia não muda ==');
      ['metadesDoDia', 'conselhoMetades', 'LIMIAR_METADES', 'PRAZO_METADES']
        .filter((k) => k in Modelo), []);
 }
+
+console.log('\n== a cor sai da nota, e só dela ==');
+/* A queixa que originou isto: um dia VERMELHO com 61 ao lado de um AMARELO com
+   52. A cor era decidida à parte da nota, e as bandas sobrepunham-se — medido
+   em 13 648 partes-dia: verde 70-94, amarelo 45-83, vermelho 22-77, com 40,4 %
+   dos vermelhos a valer mais do que o amarelo mais baixo. */
+(function () {
+  var base = { dia: '2026-08-24', ceu: 20, ar: 26, arReal: 25, vento: 8, ventoMin: 6,
+    ventoMax: 10, rajada: 14, dirVento: 200, chuva: 0, mm: 0, agua: 20, ondas: 0.8,
+    uv: 7, trovoada: false, lat: 41, lon: -8.7, mar: true };
+  var casos = [
+    ['dia bom', {}], ['chuva a sério', { chuva: 80, mm: 5 }],
+    ['vento 38 km/h', { vento: 38, rajada: 55 }], ['céu tapado', { ceu: 85 }],
+    ['mar cavado', { ondas: 3.2 }], ['frio a mais', { ar: 14, arReal: 13 }],
+    ['rajadas perigosas', { rajada: 80 }], ['chuva quase certa', { chuva: 85 }],
+  ];
+  var maus = [];
+  casos.forEach(function (c) {
+    var v = Modelo.classificarDia(Object.assign({}, base, c[1]));
+    if (v.nota == null) { maus.push(c[0] + ' ficou sem nota'); return; }
+    var esperada = v.nota >= 70 ? 'verde' : (v.nota >= 45 ? 'amarelo' : 'vermelho');
+    if (v.cor !== esperada)
+      maus.push(c[0] + ': nota ' + v.nota + ' devia dar ' + esperada + ' e deu ' + v.cor);
+  });
+  eq('a cor de cada caso é a que a nota manda', maus, []);
+
+  /* E a penalização NUNCA sobe a nota. */
+  var subiu = [];
+  casos.forEach(function (c) {
+    var v = Modelo.classificarDia(Object.assign({}, base, c[1]));
+    if (v.nota != null && v.notaBruta != null && v.nota > v.notaBruta)
+      subiu.push(c[0] + ': ' + v.notaBruta + ' -> ' + v.nota);
+  });
+  eq('a penalização nunca sobe a nota', subiu, []);
+
+  /* O DIA é a média das partes, e nunca acima do que a sua penalização deixa.
+     Sem o `min`, duas partes a 39 davam um dia a 17 — a penalização aplicada
+     duas vezes. */
+  var d = Object.assign({}, base, { chuva: 80, mm: 5 });
+  var parte = Modelo.classificarDia(d);
+  var dia = Modelo.classificarDia(d, { nota: parte.nota });
+  eq('o dia com a média das partes não volta a ser penalizado', dia.nota, parte.nota);
+})();
 
 console.log('\n== a maré ==');
 /* Um PATAMAR — duas horas com o mesmo valor no pico — satisfaz `>=` dos dois

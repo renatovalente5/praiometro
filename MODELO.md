@@ -500,8 +500,10 @@ As cores dizem se vale a pena ir, não se é seguro estar.
 
 Os vetos marcados como aviso de segurança são ditos noutro tom e noutra cor: um
 aviso de trovoada no mesmo amarelo que «a água está fria» é um aviso que
-ninguém lê. E um dia vetado **deixa de mostrar a nota** — um 94 na tira ao lado de
-«Hoje não» destrói a confiança em tudo o resto.
+ninguém lê. E um dia vetado **não pode mostrar a nota que teria sem o veto** —
+um 94 na tira ao lado de «Hoje não» destrói a confiança em tudo o resto. Até 23
+de Agosto de 2026 a nota simplesmente desaparecia; hoje o veto entra NA nota e
+ela cai na banda do vermelho (ver «A nota manda na cor»).
 
 ### A maré
 
@@ -561,6 +563,48 @@ maré tira o areal naquela praia, porque o site não sabe o perfil de nenhuma da
 995; e as horas são do mar aberto, portanto numa ria ou num estuário a maré
 chega mais tarde (o marégrafo de Lagos, num plano restrito, mede metade da
 amplitude com 2h16 de atraso).
+
+### A nota manda na cor
+
+Entrou em 23 de Agosto de 2026, a partir de um defeito reportado: um dia
+**vermelho com 61** ao lado de um **amarelo com 52**.
+
+A causa era estrutural. A cor decidia-se À PARTE da nota: um veto ou um factor
+catastrófico pintavam o dia de vermelho e a nota ficava onde estava — ou
+desaparecia. Medido em 13 648 partes-dia (8 praias, Junho a Setembro de 2023 a
+2025):
+
+- **38,9 %** não tinham nota nenhuma;
+- as bandas **sobrepunham-se**: verde 70–94, amarelo 45–**83**, vermelho 22–**77**;
+- **40,4 %** dos vermelhos valiam mais do que o amarelo mais baixo, e **15 %**
+  mais do que a mediana dos amarelos.
+
+Agora há uma regra só: **a penalização entra na nota, e a cor sai dos cortes da
+nota**. Depois disto: nenhuma parte-dia fica sem nota, as bandas ficam verde
+70–94, amarelo 45–69 e vermelho 8–44 **sem sobreposição**, e **0,0 % mudam de
+cor** — nenhum veredicto muda, só o número passa a acompanhá-lo.
+
+**Como se mapeia, e porque não é um tecto seco.** Cortar em 44 amontoava
+**66,9 %** dos dias vetados no mesmo número, todos a parecer igualmente maus.
+Mapeia-se, e a ordem entre eles fica de pé (espalham-se de 8 a 38, com o valor
+mais repetido a levar 10,2 %):
+
+| situação | o que acontece à nota |
+|---|---|
+| sem penalização | fica igual |
+| veto, ou factor limitante abaixo de 0,08 | `[0,100]` → `[0,44]` |
+| despromovido (limitante < 0,40, ou céu > 60 %) | `[70,100]` → `[45,69]` |
+
+A despromoção só acontece a quem era verde, portanto a nota está sempre em
+`[70,100]` quando ela se aplica.
+
+**E o dia continua a ser a média das suas partes** — e nunca acima do que a sua
+própria penalização deixa. O `min` das duas coisas existe por um caso real: a
+chuva soma-se ao longo do dia, portanto o DIA pode estar vetado com as duas
+partes sãs, e aí a média delas seria alta de mais para um dia chumbado. O tecto
+devolve `null` quando não há penalização nenhuma, e isso não é um detalhe: a
+soma do dia é mais severa do que a média das suas partes — é o que a média veio
+corrigir — e um tecto cego desfazia essa correcção.
 
 ## Os cortes
 

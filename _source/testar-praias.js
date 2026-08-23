@@ -80,11 +80,21 @@ function ok(cond, texto) {
          e esta é a asserção que impede que volte. Com duas parcelas a média
          está SEMPRE entre elas — se isto falhar, o cartão mostra três números
          que não fecham e a pessoa vê uma conta mal feita. */
-      ok(a.v.notaBruta === Math.round((ns[0] + ns[1]) / 2),
-         onde + ': a nota do dia é ' + a.v.notaBruta + ' e a média das partes é '
-         + ((ns[0] + ns[1]) / 2).toFixed(1) + ' (' + ns.join(', ') + ')');
-      ok(a.v.notaBruta >= Math.min(ns[0], ns[1]) && a.v.notaBruta <= Math.max(ns[0], ns[1]),
-         onde + ': a nota do dia (' + a.v.notaBruta + ') cai fora das partes ' + ns.join('-'));
+      var m = Math.round((ns[0] + ns[1]) / 2);
+      /* A nota do dia é a MÉDIA das duas — e nunca acima do que a penalização
+         do próprio dia deixa. O `min` existe por um caso real: a chuva
+         soma-se ao longo do dia, portanto o DIA pode estar vetado com as duas
+         partes sãs, e aí a média delas seria alta de mais para um dia
+         chumbado. Sem veto nem despromoção do dia, é a média exacta. */
+      ok(a.v.nota <= m,
+         onde + ': a nota do dia é ' + a.v.nota + ' e a média das partes é ' + m
+         + ' (' + ns.join(', ') + ') — o dia nunca pode valer MAIS do que as suas partes');
+      var penalizado = (a.v.vetos && a.v.vetos.length) || a.v.nota < a.v.notaBruta;
+      ok(a.v.nota === m || penalizado,
+         onde + ': a nota do dia (' + a.v.nota + ') não é a média (' + m
+         + ') e o dia não tem penalização que o justifique');
+      ok(a.v.nota <= Math.max(ns[0], ns[1]),
+         onde + ': a nota do dia (' + a.v.nota + ') está acima da melhor parte ' + ns.join('-'));
 
       /* A água e a ondulação são as do DIA, e são as que cada parte usou. O
          painel escreve «igual de manhã e à tarde», e tem de ser verdade. */
@@ -119,11 +129,17 @@ function ok(cond, texto) {
       ok(v.nota === null || (v.nota >= 0 && v.nota <= 100), onde + ': nota fora de 0-100 (' + v.nota + ')');
       ok(typeof v.frase === 'string' && v.frase.length > 0, onde + ': frase vazia');
       ok(Array.isArray(v.factores) && v.factores.length >= 4, onde + ': factores a menos');
-      /* Um dia vetado nunca pode mostrar nota — «Nota 94» ao lado de «Hoje não»
-         destruiria a confiança em tudo o resto. */
-      ok(!(v.vetos && v.vetos.length) || v.nota === null, onde + ': tem veto E mostra nota ' + v.nota);
-      /* E o contrário: sem veto tem sempre nota. */
-      ok((v.vetos && v.vetos.length) || v.nota !== null, onde + ': sem veto e sem nota');
+      /* TODA a parte-dia tem nota. Era `null` quando havia veto, e 38,9 % das
+         partes-dia ficavam sem número nenhum — saiu a pedido. */
+      ok(v.nota !== null, onde + ': ficou sem nota nenhuma');
+      /* E o veto entra NA nota: um dia vetado cai na banda do vermelho. */
+      ok(!(v.vetos && v.vetos.length) || v.nota < 45,
+         onde + ': tem veto e mostra ' + v.nota + ', fora da banda do vermelho');
+      /* A COR SAI DA NOTA, e só dela. É a queixa que originou isto: um dia
+         vermelho com 61 ao lado de um amarelo com 52. */
+      var esperada = v.nota >= 70 ? 'verde' : (v.nota >= 45 ? 'amarelo' : 'vermelho');
+      ok(v.cor === esperada,
+         onde + ': nota ' + v.nota + ' pede ' + esperada + ' e a cor é ' + v.cor);
       /* A cor não pode contrariar a nota. */
       if (v.nota !== null) {
         ok(!(v.nota >= 70 && v.cor === 'vermelho'), onde + ': nota ' + v.nota + ' mas vermelho');
@@ -146,9 +162,11 @@ function ok(cond, texto) {
     var pesoTotal = usaveis.reduce(function (s, f) { return s + f.peso; }, 0);
     var obtidos = usaveis.reduce(function (s, f) { return s + f.pontos; }, 0);
     ok(pesoTotal > 0, rot + ': nenhum factor utilizável');
-    if (veredictos[0].nota !== null) {
-      ok(Math.abs(veredictos[0].nota - Math.round(obtidos / pesoTotal * 100)) <= 0,
-         rot + ': a nota ' + veredictos[0].nota + ' não bate com ' + obtidos + '/' + pesoTotal);
+    /* Compara-se a SOMA CRUA e não a nota mostrada: a nota já traz a
+       penalização do veto ou do factor limitante, e essa não sai desta conta. */
+    if (veredictos[0].notaBruta !== null) {
+      ok(Math.abs(veredictos[0].notaBruta - Math.round(obtidos / pesoTotal * 100)) <= 0,
+         rot + ': a soma crua ' + veredictos[0].notaBruta + ' não bate com ' + obtidos + '/' + pesoTotal);
     }
     ok(Math.abs(pesoTotal - (p.m ? 100 : 86)) < 0.6,
        rot + ': pesos ' + pesoTotal.toFixed(1) + ' (esperado ' + (p.m ? 100 : 86) + ')');

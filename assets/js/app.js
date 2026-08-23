@@ -611,46 +611,10 @@
     return a.cor !== b.cor;
   }
 
-  /* As seis combinações de cores diferentes, escritas à mão: «de manhã sim, de
-     tarde não» é uma frase que qualquer português já disse na vida, e nenhum
-     gerador a acerta. Nenhuma é imperativa — o site descreve, não manda. */
-  var FRASES_PARTIDO = {
-    'verde|amarelo':    'A manhã está melhor.',
-    'verde|vermelho':   'De manhã sim, de tarde não.',
-    'amarelo|verde':    'A tarde está melhor.',
-    'amarelo|vermelho': 'De manhã ainda dá; de tarde não.',
-    'vermelho|verde':   'De manhã não, de tarde sim.',
-    'vermelho|amarelo': 'De manhã não; de tarde, ainda dá.'
-  };
-
-  /* Alguma das partes sem número (vetada, ou sem previsão). */
-  function semNumero(partes) {
-    return haDados(partes) && partes.some(function (p) { return p.v.nota == null; });
-  }
-
-  /* O DIA pode ficar sem nota COM AS DUAS PARTES SÃS, e isto não é teórico: o
-     veto da chuva conta os milímetros por SOMA, e o dia é a união exacta das
-     duas partes. 1,2 mm de manhã e 1,2 mm à tarde passam as duas — o veto é aos
-     2 — e o dia chumba em 2,4. Sem esta linha ficava um cartão de barra
-     vermelha por cima de dois blocos verdes de 94, e nada no ecrã a dizer
-     «chuva a sério»: era a linha do total que o dizia, e ela saiu a pedido.
-     Reproduzível: classificarDia com mm=2.4 no dia e mm=1.2 em cada parte. */
-  function razaoDoDia(a) {
-    var v = a && a.v;
-    if (!v || v.nota != null || !v.vetos.length) return '';
-    return 'O dia está chumbado: ' + v.vetos[0] + '.';
-  }
-
-  function respostaPartida(partes) {
-    for (var i = 0; i < 2; i++) {
-      var pv = partes[i].v, N = NOMES[partes[i].id];
-      if (!pv || pv.nota == null) {
-        return pv && pv.vetos.length ? N.chumbo + ': ' + pv.vetos[0] + '.'
-                                     : 'Não há previsão para ' + N.com + '.';
-      }
-    }
-    return FRASES_PARTIDO[partes[0].v.cor + '|' + partes[1].v.cor] || '';
-  }
+  /* Aqui viviam o FRASES_PARTIDO, o semNumero, o razaoDoDia e o
+     respostaPartida — tudo o que escrevia a linha por cima dos blocos. Saíram
+     com ela: a linha existia para explicar uma parte SEM número, e desde que a
+     penalização passou a entrar na nota já não há partes sem número. */
 
   /* Só no dia de hoje, e só depois de a janela fechar. `>=` e não `>`: às 13h
      em ponto a manhã já acabou. */
@@ -675,7 +639,15 @@
        extenso era dizer duas vezes a mesma coisa. O que fica é o caso em que
        uma das partes NÃO TEM número: aí não há nada no bloco que explique
        porquê, e a frase é a única coisa que o diz. */
-    resp.textContent = semNumero(partes) ? respostaPartida(partes) : razaoDoDia(a);
+    /* A LINHA POR CIMA DOS BLOCOS SAIU, a pedido — «A tarde está chumbada:
+       chuva quase certa.» e as suas irmãs. Ela existia para explicar uma parte
+       SEM número, e desde que a penalização passou a entrar na nota já não há
+       partes sem número: cada bloco mostra o seu, na banda da sua cor, e a
+       palavra ao lado diz o resto.
+       O que se perde, e fica dito: num dia chumbado por chuva, o cartão deixa
+       de nomear a chuva. O aviso VERMELHO de segurança continua a nomear o que
+       é perigo — trovoada, rajadas, mar cavado — que é o que não pode faltar. */
+    resp.textContent = '';
     caixa.className = 'partes';
     caixa.innerHTML = '<ol class="partes__blocos">' + partes.map(function (p) {
       var pv = p.v, pp = jaPassou(p);

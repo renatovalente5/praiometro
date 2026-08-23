@@ -421,9 +421,11 @@
     var usaveis = f.filter(function (x) { return x.pontos != null; });
     var pesoTotal = usaveis.reduce(function (s, x) { return s + x.peso; }, 0);
     var obtidos = usaveis.reduce(function (s, x) { return s + x.pontos; }, 0);
-    var nota = pesoTotal ? Math.round(obtidos / pesoTotal * 100) : null;
-    var notaPropria = nota;
-    if (op && op.nota != null) nota = op.nota;
+    /* A SOMA CRUA, antes de qualquer penalização. Fica guardada porque é ela
+       que diz quanto o dia valeria sem o veto — é o que a `notaBruta` sempre
+       significou, e o que a interface usa para não mentir sobre o resto. */
+    var bruta = pesoTotal ? Math.round(obtidos / pesoTotal * 100) : null;
+    var nota = bruta;
 
     /* ------- vetos: sozinhos mandam o dia para vermelho ------- */
     /* Os vetos com `perigo: true` são questões de segurança, não de conforto, e
@@ -477,25 +479,64 @@
       if (r < pior_racio) { pior_racio = r; limitante = x; }
     });
 
-    /* Um dia vetado não pode continuar a exibir a nota que teria sem o veto.
-       A revisão apanhou «Nota 94 em 100» ao lado de «Hoje não», e a nota é o
-       que as pessoas acreditam. Um veto zera a nota, porque é isso que ele
-       significa: o resto deixou de contar. */
+    /* ------- a nota e a cor, e a nota MANDA -------
+       Até 23 de Agosto de 2026 a cor era decidida À PARTE da nota: um veto ou
+       um factor catastrófico pintavam o dia de vermelho e a nota ficava onde
+       estava, ou desaparecia. Daí saía o que um utilizador apanhou e reportou:
+       um dia VERMELHO com 61 ao lado de um AMARELO com 52.
+
+       Medido em 13 648 partes-dia (8 praias, Jun-Set de 2023 a 2025):
+         · 38,9 % não tinham nota NENHUMA;
+         · as bandas sobrepunham-se — verde 70-94, amarelo 45-83, vermelho
+           22-77 — e 40,4 % dos vermelhos valiam mais do que o amarelo mais
+           baixo, 15 % mais do que a mediana dos amarelos.
+
+       Agora há UMA regra: a penalização entra na NOTA, e a cor sai dos cortes
+       da nota. A nota nunca sobe por causa disto, e o veredicto de nenhum dia
+       muda — medido: 0,0 % mudam de cor, 83,9 % das notas ficam iguais.
+
+       COMO se mapeia, e porque não é um tecto seco: cortar a 44 amontoava
+       66,9 % dos dias vetados no mesmo número, todos a parecer igualmente
+       maus. Mapeia-se, e a ordem entre eles fica de pé (medido: espalham-se
+       de 8 a 38, com o valor mais repetido a levar 10,2 %). */
+    var CORTE_VERDE = 70, CORTE_AMARELO = 45;
+    /* O TECTO sai sempre da soma CRUA desta janela, e não da nota imposta.
+       O dia recebe a média das partes, que já vêm penalizadas; se a
+       penalização se voltasse a aplicar por cima, duas partes a 39 davam um
+       dia a 17. O dia é a média das partes E nunca acima do que a sua própria
+       penalização permite — `min` das duas coisas. É o que resolve o caso em
+       que o DIA está vetado e as partes não: a chuva soma-se ao longo do dia,
+       e aí a média das partes sãs seria alta de mais para um dia chumbado. */
+    /* Devolve o TECTO, ou `null` quando não há penalização nenhuma. O `null` é
+       essencial e custou-me um teste: se um dia sem penalização devolvesse a
+       sua própria soma como tecto, o `min` mordia à mesma — a soma do DIA é
+       mais severa do que a média das suas partes, porque a chuva entra por
+       soma e a ondulação por máximo numa janela mais longa. Foi justamente
+       isso que a média das partes veio corrigir, e um tecto cego desfazia-o. */
+    function tectoDe(base) {
+      if (base == null) return null;
+      if (vetos.length || pior_racio < 0.08) {
+        return Math.round(base * (CORTE_AMARELO - 1) / 100);
+      }
+      if (base >= CORTE_VERDE && (pior_racio < 0.40 || (d.ceu != null && d.ceu > 60))) {
+        return CORTE_AMARELO
+             + Math.round((base - CORTE_VERDE) * (CORTE_VERDE - 1 - CORTE_AMARELO)
+                          / (100 - CORTE_VERDE));
+      }
+      return null;
+    }
+    var tecto = tectoDe(bruta);
+    var imposta = op && op.nota != null ? op.nota : null;
+    nota = imposta != null
+      ? (tecto == null ? imposta : Math.min(imposta, tecto))
+      : (tecto == null ? bruta : tecto);
+
     var cor;
-    if (vetos.length) cor = 'vermelho';
-    else if (pior_racio < 0.08) cor = 'vermelho';
-    else {
-      cor = nota >= 70 ? 'verde' : (nota >= 45 ? 'amarelo' : 'vermelho');
-      /* Um factor muito fraco não pode ser mascarado pelos outros: com tudo o
-         resto bom, a soma chega a 70 e o dia aparecia como «Dia de praia». */
-      if (cor === 'verde' && pior_racio < 0.40) cor = 'amarelo';
-      /* O céu tem regra própria, e agora tem de ser dita: um dia mais tapado
-         do que aberto (>60% de nuvens) não é dia de praia a sério. Isto vinha
-         de graça do corte em 0,40 enquanto a escala do céu era uma escada com
-         degrau nos 60% — com a curva contínua, 0,40 só apanha os 67% para
-         cima, e os 61-66% passavam a verde. Medido em Carcavelos: 72% de
-         nuvens com tudo o resto bom dava 71 pontos e «Dia de praia». */
-      if (cor === 'verde' && d.ceu != null && d.ceu > 60) cor = 'amarelo';
+    if (vetos.length || pior_racio < 0.08) {
+      cor = 'vermelho';
+    } else {
+      cor = nota == null ? 'vermelho'
+          : (nota >= CORTE_VERDE ? 'verde' : (nota >= CORTE_AMARELO ? 'amarelo' : 'vermelho'));
     }
 
     /* ------- a frase: sai do factor que mais pontos perdeu ------- */
@@ -535,11 +576,16 @@
     }
 
     return {
-      nota: vetos.length ? null : nota, notaBruta: nota, razao: razao,
-      /* A nota que esta janela daria a si própria, sem a média das partes.
-         É a que as PARTES usam para se somarem, e a que o teste da média
-         compara — sem ela, impor a média e depois medi-la era circular. */
-      notaPropria: notaPropria,
+      /* A NOTA JÁ TRAZ A PENALIZAÇÃO. Era `vetos.length ? null : nota` — um
+         veto apagava-a — e daí vinham 38,9 % de partes-dia sem número nenhum.
+         Agora um dia vetado tem nota, e ela cai na banda do vermelho. */
+      nota: nota,
+      /* Quanto valeria sem penalização nenhuma. Não é o que se mostra. */
+      notaBruta: bruta,
+      razao: razao,
+      /* A nota que esta janela daria a si própria, sem a média das partes —
+         já penalizada, para as partes se somarem pelo que MOSTRAM. */
+      notaPropria: (op && op.nota != null) ? null : nota,
       cor: cor, frase: frase, vetos: vetos.map(function (v) { return v.t; }),
       avisos: avisos.map(function (a) { return a.t; }),
       perigo: vetos.concat(avisos).some(function (v) { return v.perigo; }),

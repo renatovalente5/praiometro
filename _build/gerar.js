@@ -92,7 +92,29 @@ for (const d of ALLOW_PASTAS) copiarPasta(d, conta);
     process.exit(1);
   }
   fs.writeFileSync(alvo, src.replace('__VERSAO__', versao));
-  console.log('service worker: versão ' + versao);
+
+  /* E A MESMA VERSÃO NOS URLS DOS FICHEIROS que as páginas carregam. Sem isto
+     há uma janela em que o service worker serve o `app.js` VELHO por baixo do
+     `index.html` NOVO: a navegação vai primeiro à rede e traz o HTML de hoje,
+     os ficheiros respondem da cache e só se actualizam por trás. Foi
+     reportado — o gráfico das marés apareceu estreito e centrado, porque o
+     JavaScript antigo escrevia um viewBox de 300 unidades num HTML que já não
+     tinha o `preserveAspectRatio="none"` que o esticava.
+     Com a versão no URL, HTML novo pede ficheiros novos, e os dois nunca se
+     misturam. */
+  let carimbadas = 0;
+  (function andar(dir) {
+    for (const nome of fs.readdirSync(dir)) {
+      const abs = path.join(dir, nome);
+      if (fs.statSync(abs).isDirectory()) { andar(abs); continue; }
+      if (!/\.html$/.test(nome)) continue;
+      const antes = fs.readFileSync(abs, 'utf8');
+      const depois = antes.replace(/(["'])(\/assets\/(?:js|css)\/[^"'?]+\.(?:js|css))\1/g,
+                                   (_, q, u) => q + u + '?v=' + versao + q);
+      if (depois !== antes) { fs.writeFileSync(abs, depois); carimbadas++; }
+    }
+  })(SAIDA);
+  console.log('service worker: versão ' + versao + ' (carimbada em ' + carimbadas + ' páginas)');
 }
 
 /* Aqui escrevia-se um .nojekyll. Foi tirado por não servir para nada, das

@@ -25,14 +25,18 @@ const CACHE = 'praiometro-' + VERSAO;
 /* O que é preciso para o site abrir com a rede desligada. As páginas de praia
    e a metodologia NÃO estão aqui de propósito: são 8 ficheiros grandes que
    ninguém precisa na areia, e enchiam a cache de quem só quer ver se hoje dá. */
+/* Os ficheiros de código levam a VERSÃO no URL, tal como o HTML os pede: sem
+   isso o esqueleto guardava `/assets/js/app.js` e a página pedia
+   `/assets/js/app.js?v=...`, e eram duas entradas diferentes — o pré-carregado
+   nunca era usado e o offline dependia de sorte. */
 const ESQUELETO = [
   '/',
-  '/assets/css/estilo.css',
-  '/assets/css/texto.css',
-  '/assets/js/modelo.js',
-  '/assets/js/app.js',
-  '/assets/js/favoritos.js',
-  '/assets/js/conta.js',
+  '/assets/css/estilo.css?v=' + VERSAO,
+  '/assets/css/texto.css?v=' + VERSAO,
+  '/assets/js/modelo.js?v=' + VERSAO,
+  '/assets/js/app.js?v=' + VERSAO,
+  '/assets/js/favoritos.js?v=' + VERSAO,
+  '/assets/js/conta.js?v=' + VERSAO,
   '/data/praias.json',
   '/manifest.webmanifest',
   '/assets/img/icon-192.png',

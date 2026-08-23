@@ -456,17 +456,15 @@ try:
         # está melhor») era dizer duas vezes a mesma coisa — saiu a pedido.
         semNumero = any(not b['nota'] for b in d['blocos'])
         diaSemNota = not d['notaDoDia']
-        if semNumero and not d['resposta']:
-            erro('dia %d: uma parte sem número e sem frase a explicar porquê' % dia)
-        # O DIA pode chumbar COM AS DUAS PARTES SÃS: a chuva conta os milímetros
-        # por soma e o dia é a união exacta das duas partes — 1,2 mm de manhã e
-        # 1,2 à tarde passam as duas e o dia chumba nos 2. Aí a razão TEM de
-        # estar escrita; senão ficam dois blocos verdes debaixo de um cartão
-        # vermelho e nada no ecrã diz «chuva a sério».
-        if diaSemNota and not semNumero and not d['resposta']:
-            erro('dia %d: o dia chumbou com as duas partes sãs e nada o explica' % dia)
-        if not semNumero and not diaSemNota and d['resposta']:
-            erro('dia %d: nada falta e há frase por cima: %r' % (dia, d['resposta']))
+        # A LINHA POR CIMA DOS BLOCOS SAIU, a pedido. Ela existia para explicar
+        # uma parte sem número — e desde que a penalização entra na nota, não
+        # há partes sem número. Fica a asserção do contrário: nunca há texto.
+        if d['resposta'].strip():
+            erro('dia %d: voltou a haver texto por cima dos blocos: %r' % (dia, d['resposta']))
+        if semNumero:
+            erro('dia %d: uma parte ficou sem número — todas têm de ter nota' % dia)
+        if diaSemNota:
+            erro('dia %d: a tira ficou sem nota — todos os dias têm de ter uma' % dia)
 
         if [n.split(' ·')[0] for n in nomes] != ['Manhã','Tarde']:
             erro('dia %d: nomes das partes: %s' % (dia, nomes))
@@ -481,8 +479,14 @@ try:
         # verifica que, QUANDO há número, ele é mesmo a média das duas.
         if len(notas) == 2 and not diaSemNota:
             media = int(sum(int(n) for n in notas)/2 + 0.5)
-            if int(d['notaDoDia']) != media:
-                erro('dia %d: a tira diz %s e a média das duas é %d — %s'
+            # A nota do dia é a MÉDIA das duas — e nunca acima do que a
+            # penalização do próprio dia deixa. O tecto existe por um caso
+            # real: a chuva soma-se ao longo do dia, portanto o DIA pode estar
+            # vetado com as duas partes sãs, e aí a média delas seria alta de
+            # mais para um dia chumbado. O que NÃO pode acontecer nunca é o
+            # dia valer MAIS do que as suas partes — era essa a queixa.
+            if int(d['notaDoDia']) > media:
+                erro('dia %d: a tira diz %s e a média das duas é %d — o dia não pode valer MAIS: %s'
                      % (dia, d['notaDoDia'], media, notas))
         if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
             erro('dia %d: o cartão faz transbordar (%s)' % (dia, d['transbordo']))
@@ -668,7 +672,9 @@ ENXERTO = r"""
     window.Modelo.avaliarDia = function () {
       var r = orig.apply(this, arguments);
       if (n++ === 0 && r && r.v && r.partes[0] && r.partes[0].v && r.partes[1] && r.partes[1].v) {
-        r.v.nota = null; r.v.cor = 'vermelho'; r.v.vetos = ['chuva a sério'];
+        /* o DIA chumbado com as duas partes sãs: a nota do dia cai na banda do
+           vermelho, que é o que substituiu a frase que explicava isto. */
+        r.v.nota = 41; r.v.cor = 'vermelho'; r.v.vetos = ['chuva a sério'];
         r.partes[0].v.nota = 94; r.partes[0].v.cor = 'verde'; r.partes[0].v.vetos = [];
         r.partes[1].v.nota = 94; r.partes[1].v.cor = 'verde'; r.partes[1].v.vetos = [];
       }
@@ -690,14 +696,19 @@ try:
       cor: document.body.getAttribute('data-cor')})"""))
     if d['notas'] != ['94','94'] or d['cor'] != 'vermelho':
         print('  · o enxerto não pegou (%s / %s) — secção sem valor nesta corrida' % (d['notas'], d['cor']))
-    elif d['notaTira']:
-        erro('o dia chumbou e a tira continua a mostrar %s' % d['notaTira'])
-    elif not d['resposta'].strip():
-        erro('cartão vermelho, dois blocos verdes de 94 e nada no ecrã a explicar porquê')
-    elif 'chuva' not in d['resposta']:
-        erro('a linha não nomeia o veto: %r' % d['resposta'])
+    elif not d['notaTira']:
+        erro('o dia chumbado ficou sem nota na tira — todos os dias têm de ter uma')
+    elif int(d['notaTira']) >= 45:
+        # A frase que explicava isto saiu a pedido. Quem carrega a informação
+        # agora é a NOTA: o veto entra nela e ela cai na banda do vermelho.
+        # Sem isto ficavam dois blocos verdes de 94 debaixo de um cartão
+        # vermelho com uma nota alta, que era a contradição de origem.
+        erro('o dia está chumbado e a tira mostra %s, fora da banda do vermelho' % d['notaTira'])
+    elif d['resposta'].strip():
+        erro('voltou a haver texto por cima dos blocos: %r' % d['resposta'])
     else:
-        print('  dia chumbado  ✓ %r' % d['resposta'])
+        print('  dia chumbado  ✓ a tira mostra %s, dentro do vermelho, com as partes a 94'
+              % d['notaTira'])
 finally: c.fechar()
 
 print('\n== 6c-ter. o tema escuro ==')
@@ -975,8 +986,19 @@ def _chuva(mm):
     (function(){var t=setInterval(function(){ if(!window.Modelo||!window.Modelo.avaliarDia) return;
       clearInterval(t); var o=window.Modelo.avaliarDia,n=0;
       window.Modelo.avaliarDia=function(){var r=o.apply(this,arguments);
-        if(n++===0&&r&&r.v){ r.v.nota=null; r.v.cor='vermelho'; r.v.vetos=['chuva a sério'];
-          if(r.partes&&r.partes[0]&&r.partes[0].d) r.partes[0].d.mm = %s; }
+        if(n++===0&&r&&r.v){ r.v.nota=20; r.v.cor='vermelho'; r.v.vetos=['chuva a sério'];
+          if(r.partes&&r.partes[0]&&r.partes[0].d){
+            r.partes[0].d.mm = %s;
+            /* a PROBABILIDADE baixa: num dia de chuva o rácio do factor já é
+               mau por si e marcava a linha pelo caminho certo, sem o ensaio
+               dos milímetros chegar a dizer nada. */
+            r.partes[0].d.chuva = 5;
+            if(r.partes[0].v&&r.partes[0].v.factores)
+              r.partes[0].v.factores.forEach(function(f){
+                if(f.id==='chuva'){ f.valor=5; f.pontos=f.peso; }});
+            r.partes.forEach(function(x){ if(x.v){ x.v.vetos=[];
+              if(x.v.nota==null) x.v.nota=70; } });
+          } }
         return r;};},5);})();
     """ % mm
     c=Chrome(porta=livre())
@@ -1173,6 +1195,20 @@ try:
           var s=document.getElementById('v-mare-svg');
           var r=s.getBoundingClientRect(), vb=s.getAttribute('viewBox').split(' ').map(Number);
           return {x: r.width/vb[2], y: r.height/vb[3], vb: s.getAttribute('viewBox')};})())"""))
+        # E A LARGURA É A DOS BLOCOS. Foi reportado que o gráfico saía estreito
+        # e centrado: o `app.js` velho servido de cache escrevia um viewBox de
+        # 300 unidades num HTML que já não tinha o `preserveAspectRatio="none"`
+        # que o esticava, e o `meet` por omissão encaixava-o ao meio. Os URLs
+        # passaram a levar a versão para as duas metades nunca se misturarem —
+        # isto é a rede por baixo disso.
+        lb=json.loads(c.js(r"""JSON.stringify((function(){
+          var b=document.querySelector('.bloco'), m=document.getElementById('v-mare-svg');
+          if(!b||!m) return null;
+          return {bloco: b.getBoundingClientRect().width,
+                  mare: m.getBoundingClientRect().width};})())"""))
+        if lb and abs(lb['mare'] - lb['bloco']) > 1:
+            erro('o gráfico da maré mede %.0f px e os blocos %.0f — devia ocupar a mesma largura'
+                 % (lb['mare'], lb['bloco']))
         if abs(e['x'] - 1) > 0.02 or abs(e['y'] - 1) > 0.02:
             erro('o SVG da maré está esticado x%.2f y%.2f (viewBox %s) — as letras deformam'
                  % (e['x'], e['y'], e['vb']))

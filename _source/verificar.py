@@ -14,9 +14,31 @@ def livre():
     de lá não se atropelarem."""
     return porta_livre()
 class Q(http.server.SimpleHTTPRequestHandler):
+    """O servidor tem de ser DE VÁRIAS LINHAS, e isto custou quatro corridas.
+
+    Estava um `socketserver.TCPServer`, que atende UMA ligação de cada vez. O
+    Chrome faz *preconnect*: abre sockets adiantados sem mandar pedido nenhum,
+    para o caso de precisar deles. O servidor aceitava um desses e ficava
+    bloqueado no `readline()` à espera de uma linha de pedido que nunca vinha —
+    e tudo o resto atrás dele na fila.
+
+    O sintoma era o `Page.navigate` a esgotar os 90s do socket do DevTools,
+    sempre num Chrome novo e sempre a meio da bateria, o que apontava para todo
+    o lado menos para aqui: o Chrome respondia ao `Runtime.evaluate` e só
+    empatava a navegar, porque o `Page.navigate` só volta quando a resposta
+    começa a chegar. Nas minhas experiências locais nunca aconteceu por acaso —
+    tinha lá um `ThreadingHTTPServer`.
+
+    O `timeout` é a segunda fechadura: uma ligação muda deixa de prender uma
+    linha para sempre, mesmo que apareça outra maneira de o Chrome as abrir.
+    """
+    timeout = 20
+    protocol_version = 'HTTP/1.0'
     def log_message(self,*a): pass
 PORTA=livre()
-srv=socketserver.TCPServer(('127.0.0.1',PORTA), lambda *a,**k: Q(*a,directory=RAIZ,**k))
+srv=http.server.ThreadingHTTPServer(('127.0.0.1',PORTA),
+                                    lambda *a,**k: Q(*a,directory=RAIZ,**k))
+srv.daemon_threads = True
 threading.Thread(target=srv.serve_forever,daemon=True).start()
 
 # ---------------------------------------------------------------- contraste
@@ -1967,9 +1989,13 @@ print('\n== 6f. abre sem rede, e não guarda previsão ==')
 # `__VERSAO__` está preenchido pelo gerador.
 import socketserver as _ss, http.server as _hs, threading as _th
 class _Q(_hs.SimpleHTTPRequestHandler):
+    timeout = 20
+    protocol_version = 'HTTP/1.0'
     def log_message(self, *a): pass
 _P = livre()
-_srv = _ss.TCPServer(('127.0.0.1', _P), lambda *a, **k: _Q(*a, directory=RAIZ + '/_site', **k))
+_srv = _hs.ThreadingHTTPServer(('127.0.0.1', _P),
+                               lambda *a, **k: _Q(*a, directory=RAIZ + '/_site', **k))
+_srv.daemon_threads = True
 _th.Thread(target=_srv.serve_forever, daemon=True).start()
 _vivo = True
 c=Chrome(porta=livre())

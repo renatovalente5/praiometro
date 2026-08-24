@@ -125,7 +125,16 @@ _ASSINATURA = r"""(function(){
   var t = d.querySelector('.dias'), v = d.querySelector('#v-partes');
   function cx(e){ if(!e) return '-'; var b=e.getBoundingClientRect();
     return Math.round(b.top)+','+Math.round(b.height); }
-  return n+'|'+Math.round(r.height)+'|'+cx(t)+'|'+cx(v)+'|'+scrollY;})()"""
+  /* O SCROLL DE CADA ROLO ENTRA NA CONTA. Faltava, e o `trazerDiaAVista()`
+     mexe no `scrollLeft` da tira DEPOIS de a página estar montada: as
+     coordenadas eram lidas com a tira numa posição e a fotografia saía com ela
+     noutra, portanto amostrava-se o céu entre cartões. Dava 3,23:1 numa
+     palavra que se lê bem, e só no TELEMÓVEL — que é a única largura onde a
+     tira chega a rolar. A altura da página não mexia, logo o resto da
+     assinatura não via nada. */
+  var rolos = [...d.querySelectorAll('.dias, [style*="overflow"], .sugestoes')]
+    .map(function(e){ return e.scrollLeft+','+e.scrollTop; }).join(';');
+  return n+'|'+Math.round(r.height)+'|'+cx(t)+'|'+cx(v)+'|'+scrollY+'|'+rolos;})()"""
 
 
 def contraste(c, tentativa=0):
@@ -259,9 +268,20 @@ def escolherPraia(c, i=0, limite=60.0):
             time.sleep(.35)          # a última pintura
             return time.time() - t0
         time.sleep(.25)
-    # E diz-se UMA vez, aqui, em vez de deixar a secção seguinte queixar-se de
-    # blocos em falta e de painéis vazios — que é o que se via no runner.
-    erro('a previsão não chegou em %.0fs: a tira ficou com %d dias' % (limite, n))
+    # E DIZ-SE O QUE O ECRÃ MOSTRAVA, não só que não chegou. «A tira ficou com
+    # 0 dias» manda-nos adivinhar; a mensagem de estado e o que a rede devolveu
+    # dizem se foi a API, se foi o clique, ou se foi a página que nem carregou.
+    try:
+        d = json.loads(c.js(r"""JSON.stringify({
+          estado: (document.getElementById('procura-estado')||{}).textContent || '',
+          vazio: !!(document.getElementById('vazio')||{}).hidden === false,
+          praias: (window.PRAIAS && PRAIAS.length) || 0,
+          atalhos: document.querySelectorAll('.atalho').length,
+          resultado: !(document.getElementById('resultado')||{}).hidden})"""))
+    except Exception as e:
+        d = {'erro ao ler o ecrã': str(e)}
+    erro('a previsão não chegou em %.0fs (a tira ficou com %d dias): %s'
+         % (limite, n, json.dumps(d, ensure_ascii=False)))
     return None
 
 

@@ -213,6 +213,16 @@ class Chrome:
             [encontrar_chrome(), '--headless=new', '--disable-gpu', '--no-sandbox',
              '--no-first-run', '--mute-audio', '--hide-scrollbars',
              '--disable-dev-shm-usage', '--lang=' + locale,
+             # O RESOLVEDOR DE NOMES DO SISTEMA, e não o assíncrono do Chrome.
+             # No runner do GitHub o Node alcançava a api.open-meteo.com sem
+             # falhar uma vez e o Chrome dizia «Failed to fetch» a cada duas —
+             # mesma máquina, mesma rede, mesmo instante. A diferença é que o
+             # Chrome resolve nomes por sua conta, e num runner sem rota IPv6
+             # isso dá-lhe falhas que o resolvedor do sistema não tem.
+             '--disable-features=AsyncDns',
+             # E nada de adivinhar ligações que ninguém pediu: o preconnect já
+             # tinha prendido o servidor de testes uma vez.
+             '--dns-prefetch-disable',
              '--remote-debugging-port=%d' % porta,
              '--user-data-dir=' + self.perfil, 'about:blank'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,

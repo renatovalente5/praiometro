@@ -11,6 +11,24 @@ var MODELOS = ['ecmwf_ifs025', 'icon_seamless', 'gfs_seamless', 'ukmo_seamless']
 var PRAIAS = JSON.parse(fs.readFileSync(__dirname + '/../data/praias.json', 'utf8'));
 var QUANTAS = parseInt(process.argv[2] || '40', 10);
 
+/* A API AINDA RESPONDE? Sem isto, com a quota do dia esgotada, este ficheiro
+   cospe quarenta linhas de «excepção — Cannot read properties of undefined» e
+   parece que o modelo se partiu. Não se partiu: é o 429 da Open-Meteo, cujo
+   tecto são 10 000 pedidos por dia POR IP. Não afecta quem visita o site —
+   cada browser fala com a API a partir do IP de quem lá está — mas afecta
+   quem corre os testes muitas vezes seguidas. Um teste que não sabe dizer «não
+   consegui medir» manda-nos perseguir defeitos que não existem. */
+async function apiViva() {
+  try {
+    var r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.18'
+      + '&longitude=-8.69&hourly=temperature_2m&forecast_days=1&models=ecmwf_ifs025');
+    if (r.ok) return null;
+    var t = '';
+    try { t = (await r.text()).slice(0, 150); } catch (e) { }
+    return 'HTTP ' + r.status + ' ' + t;
+  } catch (e) { return String(e && e.message || e); }
+}
+
 /* Amostra espalhada de norte a sul, e com praias de rio pelo meio, em vez das
    primeiras N do ficheiro — que seriam todas do mesmo canto do país. */
 function amostra(n) {
@@ -35,6 +53,17 @@ function ok(cond, texto) {
 }
 
 (async function () {
+  var morta = await apiViva();
+  if (morta) {
+    console.log('\n' + '='.repeat(56));
+    console.log('NÃO É POSSÍVEL MEDIR: a Open-Meteo não responde.');
+    console.log('  ' + morta);
+    console.log('');
+    console.log('  Não é defeito do site: a previsão é pedida pelo browser de quem');
+    console.log('  visita, com o IP dele. É a quota DESTE computador que se esgotou.');
+    console.log('='.repeat(56) + '\n');
+    process.exit(2);
+  }
   var praias = amostra(QUANTAS);
   var mar = praias.filter(function (p) { return p.m; });
   console.log('\nA pedir ' + praias.length + ' praias (' + mar.length + ' de mar, '

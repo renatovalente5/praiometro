@@ -32,7 +32,25 @@
   /* céu */
   --ceu-a: #7dd3e8;
   --ceu-b: #cdeef6;
+  --sol-a: #ffe27a;
+  --sol-b: #ffd24d;
+  --sol-o: .9;
   --mar: #0e7490;
+
+  /* A TINTA DO CABEÇALHO, que não é a do corpo. O <h1> e o claim estão por
+     cima do céu — do gradiente e, num telemóvel, do SOL — e não por cima de
+     `--fundo`. Medir contra o fundo dava-os por bons; medido no píxel, o claim
+     ficava a 4,10:1 no céu inicial, com a norma a pedir 4,5:1. */
+  --tinta-ceu: #10222e;
+  /* E A TINTA ESBATIDA DO CÉU. Os rótulos de secção («ONDE FICA», «FAVORITOS»)
+     estão fora de qualquer cartão, logo o que têm por trás é o céu — que no
+     dia mau é um cinzento a #8b9aa6. Com `--tinta-3` davam 2,89:1, e a norma
+     pede 4,5:1. O `--tinta-3` está medido «em branco e no fundo», e o comentário
+     dele diz isso mesmo: o céu não estava na lista. */
+  --tinta-ceu-2: #263138;
+  /* Os nomes dos concelhos, no mapa: o `--carta` por baixo deles é claro, mas o
+     traço do concelho e o mar por baixo não são, e mediram-se 3,91:1. */
+  --tinta-mapa: #3c4d58;
 
   --raio: 14px;
   --raio-g: 22px;
@@ -56,6 +74,17 @@
     --amarelo: #fbcb52;  --amarelo-luz: #3a2f0d;
     --vermelho: #ff8a80; --vermelho-luz: #3d1714;
     --ceu-a: #0f3a4a;    --ceu-b: #0b2530;
+    /* O SOL APAGA-SE NO ESCURO, e não é preciosismo: um disco a #ffd24d com
+       90 % de opacidade por trás de texto claro dava 1,36:1 no «Praiómetro» e
+       1,17:1 no claim — a norma pede 4,5:1, e a cauda de cada linha
+       desaparecia mesmo. Um sol a arder num tema escuro também nunca fez
+       sentido nenhum; fica a brasa, que é o que se vê de noite. */
+    --sol-a: #6b4f1e;
+    --sol-b: #513a12;
+    --sol-o: .5;
+    --tinta-ceu: #eaf4f8;
+    --tinta-ceu-2: #9cb1bd;
+    --tinta-mapa: #95acb9;
     --mar: #38bdf8;
     --sombra: 0 1px 2px rgba(0,0,0,.4), 0 14px 34px -14px rgba(0,0,0,.7);
   }
@@ -111,8 +140,9 @@ a { color: inherit; }
 }
 .ceu__sol {
   position: absolute; top: 6vh; right: 12vw; width: 22vmin; height: 22vmin;
-  border-radius: 50%; background: radial-gradient(circle, #ffe27a 0 42%, #ffd24d 58%, transparent 72%);
-  filter: blur(.4px); opacity: .9; transition: opacity 1s ease, transform 1s ease;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sol-a) 0 42%, var(--sol-b) 58%, transparent 72%);
+  filter: blur(.4px); opacity: var(--sol-o); transition: opacity 1s ease, transform 1s ease;
 }
 .ceu__mar {
   position: absolute; inset: auto 0 0 0; height: 26vh;
@@ -268,7 +298,7 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
    vista também no telemóvel — estava escondida a um píxel de largura. */
 .marca__claim {
   grid-column: 1 / -1; display: block;
-  font-size: clamp(1rem, 3.6vw, 1.2rem); font-weight: 700; color: var(--tinta-2);
+  font-size: clamp(1rem, 3.6vw, 1.2rem); font-weight: 700; color: var(--tinta-ceu);
   margin-top: .1rem; text-wrap: balance;
 }
 .marca__icone { width: 1.15em; height: 1.15em; color: var(--mar); flex: none; }
@@ -659,7 +689,7 @@ button.bloco__cabeca:active {
   font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
   /* .25rem e não .5rem: a tira abaixo ganhou .25rem de `padding-block` para
      caber o anel do favorito escolhido, e a soma mantém o espaço de antes. */
-  color: var(--tinta-3); margin-bottom: .25rem;
+  color: var(--tinta-ceu-2); margin-bottom: .25rem;
 }
 .favoritos__lista {
   list-style: none; display: flex; gap: .45rem; overflow-x: auto;
@@ -929,7 +959,7 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .mapa { margin-top: 1.1rem; }
 .mapa__titulo {
   font-size: .74rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--tinta-3); margin-bottom: .5rem;
+  letter-spacing: .06em; color: var(--tinta-ceu-2); margin-bottom: .5rem;
 }
 .mapa__tela {
   background: var(--carta); border: 1px solid var(--borda);
@@ -944,7 +974,7 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
   stroke-width: .8; stroke-linejoin: round;
 }
 .m-nome {
-  font-family: var(--f); font-weight: 700; fill: var(--tinta-3);
+  font-family: var(--f); font-weight: 700; fill: var(--tinta-mapa);
   text-anchor: middle;
   /* `paint-order: stroke` desenha o contorno ANTES do preenchimento: o nome
      fica legível por cima do traço do concelho sem uma caixa por trás. */

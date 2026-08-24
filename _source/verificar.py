@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Bateria de verificação do Praiómetro."""
-import json, os, re, socket, socketserver, sys, threading, http.server, time
+import base64, json, os, re, socket, socketserver, sys, threading, http.server, time
 RAIZ=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(RAIZ,'_source'))
-from cdp import Chrome
+from cdp import Chrome, descodificar_png
 def livre():
     s=socket.socket(); s.bind(('127.0.0.1',0)); p=s.getsockname()[1]; s.close(); return p
 class Q(http.server.SimpleHTTPRequestHandler):
@@ -12,42 +12,139 @@ PORTA=livre()
 srv=socketserver.TCPServer(('127.0.0.1',PORTA), lambda *a,**k: Q(*a,directory=RAIZ,**k))
 threading.Thread(target=srv.serve_forever,daemon=True).start()
 
-CONTRASTE = r"""(function(){
-  const px=s=>s.match(/[\d.]+/g).map(Number);
-  const sobre=(f,b)=>{const a=f[3]===undefined?1:f[3];return [0,1,2].map(i=>f[i]*a+b[i]*(1-a));};
-  const lum=c=>{const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});
-    return .2126*r+.7152*g+.0722*b;};
-  const fundo=n=>{const p=[];let e=n;
-    while(e){const bg=px(getComputedStyle(e).backgroundColor);
-      if(bg.length>=3&&bg[3]!==0){p.push(bg);if(bg[3]===undefined||bg[3]===1)break;}e=e.parentElement;}
-    if(!p.length)return[255,255,255];let b=p[p.length-1].slice(0,3);
-    for(let i=p.length-2;i>=0;i--)b=sobre(p[i],b);return b;};
-  const maus=[];
-  document.querySelectorAll('body *').forEach(n=>{
-    /* PONTO CEGO, fechado: saltava-se qualquer nó com filhos, e por isso uma
-       frase como `<p>O ponto fraco é o <b>vento</b>.</p>` escapava INTEIRA —
-       só o <b> era medido, e o texto do <p> à volta dele nunca. Agora só se
-       salta o que não tem texto PRÓPRIO: mede-se o nó pelo texto directo dele,
-       e os filhos são medidos por sua vez, cada um com a sua cor. */
-    const t=[...n.childNodes].filter(k=>k.nodeType===3)
-      .map(k=>k.textContent).join('').trim();
-    if(!t)return;
-    const cs=getComputedStyle(n);
-    /* SVG: o que pinta o texto é o `fill`, não o `color`. Sem isto o medidor
-       lia a cor errada e dava por bom um rótulo que podia estar ilegível. */
-    const svg = n.ownerSVGElement != null;
-    if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0)return;
-    const r=n.getBoundingClientRect(); if(!r.width||!r.height)return;
+# ---------------------------------------------------------------- contraste
+#
+# MEDE-SE O PÍXEL, NÃO O DOM. A versão anterior subia pelos antepassados à
+# procura de `backgroundColor` e parava no <body>. Era cega a três coisas ao
+# mesmo tempo:
+#
+#   · camadas que não são antepassadas — a `.ceu` deste site é
+#     `position: fixed; inset: 0; z-index: -1`, portanto está POR TRÁS de
+#     metade do texto sem nunca ser mãe de nada;
+#   · gradientes e imagens — lia `backgroundColor`, que num `linear-gradient`
+#     vem transparente, e a `.ceu` é um gradiente com um sol dentro;
+#   · qualquer coisa sobreposta.
+#
+# Resultado: dava «FALHAS: 0» por cima de quatro falhas reais, a pior das quais
+# 1,21:1 — o claim por cima do sol, no tema escuro, onde a norma pede 4,5:1.
+#
+# Como funciona agora: marca-se cada elemento com texto PRÓPRIO, pinta-se esse
+# texto de transparente (só o texto — os `fill` das formas SVG ficam, senão
+# media-se um rótulo contra a página em vez de contra a barra que tem por
+# baixo), tira-se UMA captura, e amostra-se o fundo dentro das caixas de linha
+# do texto, que se obtêm por `Range` e são muito mais apertadas do que o
+# rectângulo do elemento. Fica o PIOR contraste de cada elemento: se o texto
+# atravessa um gradiente, o sítio mais fraco é o que decide se se lê.
+
+_MARCAR = r"""(function(){
+  var nos = [];
+  document.querySelectorAll('body *').forEach(function(n){
+    var t = [...n.childNodes].filter(function(k){return k.nodeType===3;})
+      .map(function(k){return k.textContent;}).join('').trim();
+    if(!t) return;
+    var cs = getComputedStyle(n);
+    if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0) return;
+    var r = n.getBoundingClientRect();
+    if(!r.width||!r.height) return;
     /* Texto escondido à vista (.visually-hidden): 1px recortado, lido só por
-       leitores de ecrã. Ninguém o VÊ, logo não tem contraste que medir — e
-       media-se, e dava falsos positivos no tema escuro. */
-    if(r.width<=2&&r.height<=2)return;
-    if(cs.clipPath&&cs.clipPath.indexOf('inset(50%')===0)return;
-    const f=px(svg && cs.fill && cs.fill!=='none' ? cs.fill : cs.color),b=fundo(n); const a=lum(sobre(f,b)),bb=lum(b);
-    const rc=(Math.max(a,bb)+.05)/(Math.min(a,bb)+.05);
-    const s=parseFloat(cs.fontSize),g=s>=24||(s>=18.66&&+cs.fontWeight>=700);
-    if(rc<(g?3:4.5))maus.push(t.slice(0,28)+' @'+Math.round(s)+'px '+rc.toFixed(2));});
-  return JSON.stringify(maus.slice(0,8));})()"""
+       leitores de ecrã. Ninguém o VÊ, logo não tem contraste que medir. */
+    if(r.width<=2&&r.height<=2) return;
+    if(cs.clipPath&&cs.clipPath.indexOf('inset(50%')===0) return;
+    /* As caixas de LINHA do texto próprio, e não o rectângulo do elemento: um
+       <p> alto com uma linha de texto no topo mediria fundo onde não há letra
+       nenhuma, e um <li> com um <span> dentro mediria o span duas vezes. */
+    /* OS PONTOS DE AMOSTRA SAEM DAQUI JÁ VALIDADOS, e a validação é um
+       `elementFromPoint`: só serve o ponto onde o browser diz que este
+       elemento (ou um filho dele) é mesmo o que lá está. Sem isso amostrava-se
+       o que estivesse por baixo de qualquer recorte — e a tira dos dias vive
+       num `overflow-x: auto`, portanto um cartão meio fora do scroller dava a
+       amostra do CÉU e um falso 3,57:1 numa palavra que se lê perfeitamente.
+       O mesmo cobre elementos tapados por outros e partes fora do ecrã. */
+    var pontos = [];
+    [...n.childNodes].forEach(function(k){
+      if(k.nodeType!==3 || !k.textContent.trim()) return;
+      var rg = document.createRange(); rg.selectNodeContents(k);
+      [...rg.getClientRects()].forEach(function(b){
+        if(b.width<=1 || b.height<=1) return;
+        var nx = Math.max(2, Math.min(5, Math.floor(b.width/12)+2));
+        var ny = Math.max(2, Math.min(3, Math.floor(b.height/6)+1));
+        for(var ix=0; ix<nx; ix++) for(var iy=0; iy<ny; iy++){
+          var x = b.left+1 + (b.width-2)*(nx===1?0:ix/(nx-1));
+          var y = b.top+1  + (b.height-2)*(ny===1?0:iy/(ny-1));
+          if(x<0||y<0||x>=innerWidth||y>=innerHeight) continue;
+          var alvo = document.elementFromPoint(x, y);
+          if(alvo && (alvo===n || n.contains(alvo))) pontos.push([Math.round(x), Math.round(y)]);
+        }
+      });
+    });
+    if(!pontos.length) return;
+    /* SVG: o que pinta o texto é o `fill`, não o `color`. */
+    var svg = n.ownerSVGElement != null;
+    /* O SELECTOR VAI JUNTO. Sem ele a falha diz «Não vale a pena @13px 3.57» e
+       não se sabe qual dos elementos com esse texto é — há a palavra do bloco,
+       a do dia na tira e a do veredicto. Custou meia hora a perseguir o
+       elemento errado. */
+    var quem = n.tagName.toLowerCase()
+      + (n.id ? '#' + n.id : '')
+      + '.' + String(n.className.baseVal !== undefined ? n.className.baseVal : n.className)
+              .trim().split(/\s+/).filter(Boolean).slice(0,2).join('.');
+    nos.push({ t: t.slice(0,24), quem: quem.replace(/\.$/, ''),
+               cor: (svg && cs.fill && cs.fill !== 'none') ? cs.fill : cs.color,
+               px: parseFloat(cs.fontSize), peso: +cs.fontWeight, pontos: pontos });
+    n.setAttribute('data-medir','1');
+  });
+  var st = document.createElement('style'); st.id = 'medir-fundo';
+  st.textContent = '[data-medir]{color:transparent!important;fill:transparent!important;'
+                 + 'text-shadow:none!important;-webkit-text-stroke-color:transparent!important;}';
+  document.head.appendChild(st);
+  return JSON.stringify({ nos: nos, larg: innerWidth, alt: innerHeight });})()"""
+
+_DESMARCAR = r"""(function(){
+  var s = document.getElementById('medir-fundo'); if(s) s.remove();
+  document.querySelectorAll('[data-medir]').forEach(function(n){ n.removeAttribute('data-medir'); });
+  return 1;})()"""
+
+
+def _lum(c):
+    def f(v):
+        v /= 255.0
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2])
+
+
+def _rgba(txt):
+    n = [float(x) for x in re.findall(r'[\d.]+', txt or '')]
+    if len(n) < 3: return None
+    return (n[0], n[1], n[2], n[3] if len(n) > 3 else 1.0)
+
+
+def contraste(c):
+    """Devolve a lista de textos abaixo do mínimo da WCAG, medidos no píxel."""
+    d = json.loads(c.js(_MARCAR))
+    png = base64.b64decode(c.cmd('Page.captureScreenshot', format='png')['data'])
+    c.js(_DESMARCAR)
+    larguraPx, alturaPx, ler = descodificar_png(png)
+    escala = larguraPx / float(d['larg']) if d['larg'] else 1.0
+    maus = []
+    for n in d['nos']:
+        f = _rgba(n['cor'])
+        if not f: continue
+        pior, piorFundo = None, None
+        for (x, y) in n['pontos']:
+            fundo = ler(int(x * escala), int(y * escala))
+            if fundo is None: continue
+            frente = [f[i] * f[3] + fundo[i] * (1 - f[3]) for i in range(3)]
+            a, b = _lum(frente), _lum(fundo)
+            r = (max(a, b) + .05) / (min(a, b) + .05)
+            if pior is None or r < pior:
+                pior, piorFundo = r, fundo
+        if pior is None: continue
+        grande = n['px'] >= 24 or (n['px'] >= 18.66 and n['peso'] >= 700)
+        if pior < (3 if grande else 4.5):
+            maus.append('%s <%s> @%dpx %.2f sobre rgb%s'
+                        % (n['t'], n.get('quem', '?'), round(n['px']), pior,
+                           tuple(int(v) for v in piorFundo)))
+    return maus[:8]
 
 # Quantas partes tem o dia, lido do próprio modelo: um número à mão aqui
 # passaria a mentir no dia em que o modelo mudasse.
@@ -66,6 +163,49 @@ M_HORAS = json.loads(_sp.run(['node','-e',
 
 falhas=[]
 def erro(m): falhas.append(m); print('   ✗ '+m)
+
+
+def _apiViva():
+    """A Open-Meteo ainda responde, ou já se esgotou a quota do dia?
+
+    Existe porque uma bateria que não sabe dizer «não consegui medir» é pior do
+    que uma que falha: com a quota esgotada, meia dúzia de secções que dependem
+    da previsão começam a devolver cartões vazios, e as mensagens que saem
+    falam de blocos em falta e de reservas que não aparecem — tudo defeitos
+    inventados. Perdeu-se uma tarde a persegui-los.
+
+    O tecto são 10 000 pedidos por dia POR IP. Não afecta quem visita o site
+    (cada browser fala com a API a partir do IP de quem lá está); afecta quem
+    corre isto muitas vezes seguidas, e cada corrida completa gasta algumas
+    dezenas."""
+    import urllib.request, urllib.error
+    u = ('https://api.open-meteo.com/v1/forecast?latitude=41.18&longitude=-8.69'
+         '&hourly=temperature_2m&forecast_days=1&models=ecmwf_ifs025')
+    try:
+        with urllib.request.urlopen(u, timeout=12) as r:
+            return r.status == 200, ''
+    except urllib.error.HTTPError as e:
+        corpo = ''
+        try: corpo = e.read().decode('utf-8', 'replace')[:160]
+        except Exception: pass
+        return False, 'HTTP %s %s' % (e.code, corpo)
+    except Exception as e:
+        return False, str(e)
+
+
+_viva, _porque = _apiViva()
+if not _viva:
+    print('\n' + '=' * 54)
+    print('NÃO É POSSÍVEL MEDIR: a Open-Meteo não responde.')
+    print('  ' + _porque)
+    print('')
+    print('  Isto NÃO é um defeito do site: a previsão é pedida pelo browser de')
+    print('  quem visita, com o IP dele. É a quota deste computador que se')
+    print('  esgotou — 10 000 pedidos por dia, e cada corrida completa gasta')
+    print('  algumas dezenas. As secções que dependem da previsão dariam')
+    print('  cartões vazios e mensagens de defeitos que não existem.')
+    print('=' * 54)
+    sys.exit(2)
 
 def novo(w,h,mob):
     c=Chrome(porta=livre())
@@ -95,10 +235,10 @@ for w,h,mob,rot in [(375,812,True,'telemóvel 375'),(1280,900,False,'computador 
         # medição abria o antigo <details id="detalhe">, que já não existe: a
         # chamada passou a falhar em silêncio e o teste media duas vezes a
         # mesma coisa. Agora abre um bloco, que é onde os números vivem.
-        con=json.loads(c.js(CONTRASTE))
+        con=contraste(c)
         c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()")
         time.sleep(.6)
-        con2=json.loads(c.js(CONTRASTE))
+        con2=contraste(c)
         print('  %-16s contraste fechado=%d aberto=%d' % ('', len(con), len(con2)))
         if con: erro('%s contraste: %s'%(rot,con))
         if con2: erro('%s contraste (com um bloco aberto): %s'%(rot,con2))
@@ -343,7 +483,7 @@ for w,h,mob,rot in [(375,812,True,'telemóvel'),(1280,900,False,'computador')]:
     try:
         c.cmd('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mob)
         c.abrir('http://127.0.0.1:%d/privacidade.html'%PORTA, espera=1.6)
-        con=json.loads(c.js(CONTRASTE))
+        con=contraste(c)
         d=json.loads(c.js("""JSON.stringify({
           transbordo:document.documentElement.scrollWidth+'/'+innerWidth,
           h2:document.querySelectorAll('h2').length,
@@ -521,7 +661,7 @@ try:
         erro('o ✕ voltou ao ecrã')
     else: print('  sem ✕          ✓ onde não há nota, há palavras')
 
-    con=json.loads(c.js(CONTRASTE))
+    con=contraste(c)
     if con: erro('contraste no cartão: %s' % con)
     else: print('  contraste     ✓ limpo')
 
@@ -724,16 +864,16 @@ try:
     mau=[]
     for dia in range(6):
         c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.3)
-        mau += json.loads(c.js(CONTRASTE))
+        mau += contraste(c)
     # Com um bloco ABERTO: é onde os números vivem, e é a zona mais apertada do
     # ficheiro — texto pequeno sobre o fundo pastel. Esta medição já apanhou o
     # «já passou» a 3,96:1, que só existia no escuro e só depois das 13h.
     c.js("var b=document.querySelector('button.bloco__cabeca'); if(b) b.click()")
     time.sleep(.6)
-    mau += json.loads(c.js(CONTRASTE))
+    mau += contraste(c)
     # e com o atalho em foco, que é a única altura em que se vê
     c.js("document.querySelector('.salta').focus()"); time.sleep(.3)
-    mau += json.loads(c.js(CONTRASTE))
+    mau += contraste(c)
     if mau: erro('contraste no tema escuro: %s' % sorted(set(mau))[:6])
     else: print('  contraste     ✓ limpo no escuro, 6 dias, painel aberto e atalho em foco')
 finally: c.fechar()
@@ -832,7 +972,7 @@ try:
     if d['pista']: erro('o convite continua visível com um painel aberto')
     if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
         erro('o painel aberto faz transbordar: %s' % d['transbordo'])
-    con=json.loads(c.js(CONTRASTE))
+    con=contraste(c)
     if con: erro('contraste com o painel aberto: %s' % con)
     else: print('  contraste     ✓ limpo com o painel aberto')
 
@@ -1377,6 +1517,42 @@ try:
     # E o contrário: num dia sem perigo a classe NÃO pode ficar colada.
     c.cmd('Runtime.evaluate', expression="document.getElementById('dia-5').click()")
 finally: c.fechar()
+
+# --------------------------------------------------------------------- 6i
+print('\n== 6i. contraste da PÁGINA INTEIRA, a rolar ==')
+# As outras medições de contraste são em sítios fixos — o topo, um painel
+# aberto, o tema escuro — e por isso nunca chegavam ao mapa nem ao rodapé.
+# Provado por mutação: devolver o `.mapa__titulo` a `--tinta-3` deixava-o a
+# 2,89:1 e a bateria dava FALHAS: 0. O céu é `position: fixed`, portanto o que
+# está por trás de um texto MUDA com a rolagem: o mesmo rótulo que passa a meio
+# da página chumba quando sobe até à parte escura do gradiente. Só se sabe
+# rolando.
+for tema in ('light', 'dark'):
+    for larg, alt, rot in ((390, 844, 'telemóvel'), (1280, 900, 'computador')):
+        c = Chrome(porta=livre())
+        try:
+            antes = len(falhas)
+            c.cmd('Emulation.setDeviceMetricsOverride', width=larg, height=alt,
+                  deviceScaleFactor=1, mobile=larg < 768)
+            c.cmd('Emulation.setEmulatedMedia',
+                  features=[{'name': 'prefers-color-scheme', 'value': tema}])
+            c.abrir('http://127.0.0.1:%d/' % PORTA, espera=2.6)
+            c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+            vistos, y, passos = {}, 0, 0
+            total = int(c.js("document.body.scrollHeight"))
+            while y < total and passos < 10:
+                c.js("scrollTo(0,%d)" % y); time.sleep(.45)
+                for m in contraste(c):
+                    k = m.split(' @')[0]
+                    if k not in vistos: vistos[k] = m
+                y += int(alt * .85); passos += 1
+            c.js("scrollTo(0,0)")
+            if vistos:
+                erro('contraste a rolar (%s, %s): %s' % (tema, rot, list(vistos.values())[:4]))
+            if len(falhas) == antes:
+                print('  %-6s %-11s ✓ limpo em %d ecrãs' % (tema, rot, passos))
+        finally:
+            c.fechar()
 
 # --------------------------------------------------------------------- 6h
 print('\n== 6h. escolher duas praias seguidas ==')

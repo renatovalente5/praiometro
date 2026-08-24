@@ -319,11 +319,30 @@ def escolherPraia(c, i=0, limite=60.0):
         # problema era outro. Conta-se pelo que está no ecrã, e pergunta-se à
         # API a partir da própria página — que é quem tem o problema.
         d = json.loads(c.js(r"""(async function(){
+          /* O URL EXACTO QUE O SITE PEDE, e não um simplificado: o simples
+             dava 200 enquanto o site dizia «não conseguimos ir buscar a
+             previsão», o que só provava que a rede estava boa. O que falha é
+             este — dez variáveis horárias, quatro modelos, seis dias. */
+          var url = 'https://api.open-meteo.com/v1/forecast'
+            + '?latitude=41.1765&longitude=-8.6936'
+            + '&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,'
+            + 'wind_direction_10m,cloud_cover,precipitation,precipitation_probability,uv_index,weather_code'
+            + '&daily=weather_code,precipitation_sum&timezone=auto&forecast_days=6'
+            + '&models=ecmwf_ifs025,icon_seamless,gfs_seamless,ukmo_seamless';
           var api = 'não tentado';
           try {
-            var r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.18'
-              + '&longitude=-8.69&hourly=temperature_2m&forecast_days=1&models=ecmwf_ifs025');
-            api = 'HTTP ' + r.status + ' ' + (await r.text()).slice(0, 120);
+            var r = await fetch(url);
+            var t = await r.text();
+            var j = null; try { j = JSON.parse(t); } catch (e) {}
+            api = 'HTTP ' + r.status
+              + (j && j.hourly
+                 ? ' | horas=' + (j.hourly.time || []).length
+                   + ' campos=' + Object.keys(j.hourly).length
+                   + ' fuso=' + j.timezone
+                   + ' vazios=' + Object.keys(j.hourly).filter(function(k){
+                       return k !== 'time' && (j.hourly[k]||[]).every(function(v){return v==null;});
+                     }).length
+                 : ' | ' + t.slice(0, 200));
           } catch (e) { api = 'excepção: ' + (e && e.message || e); }
           var lista = 'não tentado';
           try { var q = await fetch('/data/praias.json');

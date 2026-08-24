@@ -270,8 +270,22 @@ class Chrome:
                 return msg.get('result', {})
 
     def js(self, expressao):
+        """Avalia JS e DEVOLVE O VALOR — ou estoira com o erro do JavaScript.
+
+        Devolvia `None` em silêncio quando a expressão atirava: o `result` vem
+        sem `value` e o `exceptionDetails` era deitado fora. Quem chamava fazia
+        `json.loads(c.js(...))` e recebia «the JSON object must be str, bytes
+        or bytearray, not NoneType» — uma mensagem que não diz nem o ficheiro
+        do erro nem a linha do JS. Perde-se meia hora por cada uma.
+        """
         r = self.cmd('Runtime.evaluate', expression=expressao,
                      awaitPromise=True, returnByValue=True)
+        ex = r.get('exceptionDetails')
+        if ex:
+            desc = ((ex.get('exception') or {}).get('description')
+                    or ex.get('text') or 'erro desconhecido')
+            raise RuntimeError('o JavaScript atirou: %s\n  na expressão: %s'
+                               % (desc.split('\n')[0], expressao.strip()[:160]))
         return r.get('result', {}).get('value')
 
     def abrir(self, url, espera=2.0):

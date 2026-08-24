@@ -210,6 +210,19 @@ def contraste(c, tentativa=0):
             maus.append('%s <%s> @%dpx %.2f sobre rgb%s'
                         % (n['t'], n.get('quem', '?'), round(n['px']), pior,
                            tuple(int(v) for v in piorFundo)))
+    # A PROVA FICA GUARDADA. Um número numa linha de registo não chega para
+    # decidir se a falha é real ou do medidor — e já perdi três corridas a
+    # adivinhar isso a partir de «3,23:1 sobre rgb(172,184,193)». A fotografia
+    # SEM TEXTO é exactamente o que o medidor viu, e a Action guarda-a.
+    if maus:
+        try:
+            os.makedirs('/tmp/contraste', exist_ok=True)
+            nome = '/tmp/contraste/%d.png' % (len(os.listdir('/tmp/contraste')) + 1)
+            with open(nome, 'wb') as f:
+                f.write(png)
+            maus[0] += '  [%s]' % nome
+        except Exception:
+            pass
     return maus[:8]
 
 # Quantas partes tem o dia, lido do próprio modelo: um número à mão aqui
@@ -301,12 +314,26 @@ def escolherPraia(c, i=0, limite=60.0):
     # 0 dias» manda-nos adivinhar; a mensagem de estado e o que a rede devolveu
     # dizem se foi a API, se foi o clique, ou se foi a página que nem carregou.
     try:
-        d = json.loads(c.js(r"""JSON.stringify({
-          estado: (document.getElementById('procura-estado')||{}).textContent || '',
-          vazio: !!(document.getElementById('vazio')||{}).hidden === false,
-          praias: (window.PRAIAS && PRAIAS.length) || 0,
-          atalhos: document.querySelectorAll('.atalho').length,
-          resultado: !(document.getElementById('resultado')||{}).hidden})"""))
+        # O `PRAIAS` vive dentro do IIFE do app.js e NÃO está em `window`: lê-lo
+        # de fora dava sempre 0 e mandava-me atrás da lista de praias quando o
+        # problema era outro. Conta-se pelo que está no ecrã, e pergunta-se à
+        # API a partir da própria página — que é quem tem o problema.
+        d = json.loads(c.js(r"""(async function(){
+          var api = 'não tentado';
+          try {
+            var r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.18'
+              + '&longitude=-8.69&hourly=temperature_2m&forecast_days=1&models=ecmwf_ifs025');
+            api = 'HTTP ' + r.status + ' ' + (await r.text()).slice(0, 120);
+          } catch (e) { api = 'excepção: ' + (e && e.message || e); }
+          var lista = 'não tentado';
+          try { var q = await fetch('/data/praias.json');
+                lista = 'HTTP ' + q.status + ', ' + (await q.text()).length + ' bytes'; }
+          catch (e) { lista = 'excepção: ' + (e && e.message || e); }
+          return JSON.stringify({
+            estado: (document.getElementById('procura-estado')||{}).textContent || '',
+            atalhos: document.querySelectorAll('.atalho').length,
+            resultado: !(document.getElementById('resultado')||{}).hidden,
+            api: api, praiasJson: lista});})()"""))
     except Exception as e:
         d = {'erro ao ler o ecrã': str(e)}
     erro('a previsão não chegou em %.0fs (a tira ficou com %d dias): %s'

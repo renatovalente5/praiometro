@@ -110,3 +110,15 @@ jobs:
           else
             echo '✅ `verificar.py`' >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # As fotografias SEM TEXTO que o medidor de contraste usou. Um número
+      # numa linha de registo não chega para decidir se a falha é real ou do
+      # medidor; a imagem que ele viu chega sempre.
+      - name: Guardar as provas do contraste
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: contraste
+          path: /tmp/contraste
+          if-no-files-found: ignore
+          retention-days: 7

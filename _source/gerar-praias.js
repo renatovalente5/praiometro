@@ -67,8 +67,21 @@ function reunir() {
   for (const r of por.values()) {
     r.mar = r.praias.filter(p => p.m === 1).length;
     r.rio = r.praias.length - r.mar;
-    r.medidas = Object.values(NORTADA.praias)
-      .filter(m => r.praias.some(p => p.n === m.n))
+    /* PELA COORDENADA, que é a chave do próprio nortada.json — e não pelo
+       nome, que não identifica uma praia: há 50 nomes repetidos em 116 dos
+       995 registos. Casar por nome metia a «Praia da Areia Branca» da
+       Lourinhã na conta do NORTE, e o hub publicava um facto falso que a
+       própria /nortada/ desmentia: «6 praias desta região, a mais exposta é a
+       Praia da Areia Branca com 31,0 %». São 5, e a mais exposta é
+       Moledo/Afife com 19,4 % — os 31,0 % são medidos 200 km a sul, numa
+       praia que o mesmo ficheiro marca como «Oeste e Lisboa». */
+    const idsDaRegiao = new Set(r.praias.map(p => p.id));
+    r.medidas = Object.entries(NORTADA.praias)
+      .filter(([id]) => idsDaRegiao.has(id))
+      /* A coordenada segue agarrada à medida, e não é decoração: é o que
+         deixa a conferência lá em baixo perguntar «esta praia é mesmo desta
+         região?» em vez de acreditar no filtro que a acabou de escolher. */
+      .map(([id, m]) => ({ ...m, id }))
       .sort((a, b) => b.pct_nortada - a.pct_nortada);
   }
   return [...por.values()];
@@ -133,9 +146,32 @@ function ld(url, nome, migalhas) {
 
 /* Uma praia na lista. Hoje aponta para o fragmento da aplicação; quando as
    páginas de praia existirem, é esta função que muda. */
+/* Os nomes que não chegam para identificar uma praia. O app.js já tinha esta
+   regra escrita no seu `endereco()`; o gerador é que não a usava, e por isso
+   66 dos 995 links dos hubs abriam OUTRA praia — o `doEndereco()` cai para o
+   primeiro registo com aquele nome, que é o primeiro por ordem de ficheiro.
+   Quem carregava em «Praia da Areia Branca» na secção de Vila Nova de Gaia
+   recebia a da Lourinhã. */
+const REPETIDOS = (function () {
+  const conta = new Map();
+  for (const p of PRAIAS) conta.set(p.n, (conta.get(p.n) || 0) + 1);
+  return new Set([...conta].filter(([, n]) => n > 1).map(([n]) => n));
+})();
+
+/* Guarda-se cada par (praia, endereço) para a verificação lá no fim poder
+   resolvê-lo como o app.js resolve, em vez de comparar a saída com a função
+   que a produziu — que é o que o `--verificar` faz e nunca podia apanhar isto. */
+const LIGACOES = [];
+
+function enderecoDe(p) {
+  return encodeURIComponent(p.n) + (REPETIDOS.has(p.n) ? '@' + p.id : '');
+}
+
 function ligacao(p) {
   const rotulo = p.m === 1 ? '' : ' <span class="etiq">rio</span>';
-  return `<li><a href="/#${encodeURIComponent(p.n)}">${esc(p.n)}</a>${rotulo}</li>`;
+  const h = enderecoDe(p);
+  LIGACOES.push({ id: p.id, nome: p.n, href: h });
+  return `<li><a href="/#${h}">${esc(p.n)}</a>${rotulo}</li>`;
 }
 
 function listaConcelhos(r) {
@@ -301,6 +337,62 @@ ${cartoes}
 /* ---------------------------------------------------------------- escrever */
 const regioes = reunir();
 const paginas = [indice(regioes), ...regioes.map(hubRegiao)];
+
+/* CADA LIGAÇÃO TEM DE ABRIR A PRAIA QUE DIZ. Isto corre sempre, e não só no
+   `--verificar`, porque não é uma comparação de ficheiros: é resolver cada
+   endereço com a MESMA regra do app.js (`doEndereco`) e confirmar que chega à
+   praia de onde saiu. A comparação de ficheiros não podia apanhar 66 links
+   errados, porque a saída batia certo com a função que a escreveu — estava
+   errada, mas era consistente consigo própria. */
+(function conferirLigacoes() {
+  const resolver = (h) => {
+    const k = h.lastIndexOf('@');
+    const nome = decodeURIComponent(k > 0 ? h.slice(0, k) : h);
+    const coord = k > 0 ? h.slice(k + 1) : '';
+    return PRAIAS.find(x => x.n === nome && (!coord || S.id(x) === coord))
+        || PRAIAS.find(x => x.n === nome) || null;
+  };
+  const maus = LIGACOES.filter(l => {
+    const achou = resolver(l.href);
+    return !achou || S.id(achou) !== l.id;
+  });
+  if (maus.length) {
+    console.error(`✗ ${maus.length} de ${LIGACOES.length} ligações abrem outra praia:`);
+    for (const m of maus.slice(0, 5)) {
+      const foi = resolver(m.href);
+      console.error(`   «${m.nome}» (${m.id}) -> /#${m.href} abre ${foi ? S.id(foi) : 'NADA'}`);
+    }
+    process.exit(1);
+  }
+  const comCoord = LIGACOES.filter(l => l.href.includes('@')).length;
+  console.log(`✓ ${LIGACOES.length} ligações resolvem para a praia certa `
+    + `(${comCoord} precisam da coordenada)`);
+})();
+
+/* E A NORTADA QUE CADA HUB CITA É DA SUA REGIÃO. O hub escreve uma frase com
+   número e nome — «a mais exposta é X, com N %» — e essa frase é lida como
+   facto. Era falsa no Norte: citava uma praia da Lourinhã com 31,0 %, número
+   medido 200 km a sul, enquanto a /nortada/ do mesmo site a listava como
+   «Oeste e Lisboa». Compara-se contra a REGIÃO DA PRAIA nos dados, que é uma
+   fonte independente do filtro que montou a lista. */
+(function conferirNortada() {
+  const daPraia = new Map(PRAIAS.map(p => [S.id(p), p.r]));
+  const maus = [];
+  for (const r of regioes) {
+    for (const m of r.medidas) {
+      if (daPraia.get(m.id) !== r.n) {
+        maus.push(`${r.n}: cita «${m.n}» (${m.pct_nortada} %), que é de ${daPraia.get(m.id) || '?'}`);
+      }
+    }
+  }
+  if (maus.length) {
+    console.error(`✗ ${maus.length} medidas de nortada atribuídas à região errada:`);
+    for (const m of maus.slice(0, 5)) console.error('   ' + m);
+    process.exit(1);
+  }
+  const total = regioes.reduce((s, r) => s + r.medidas.length, 0);
+  console.log(`✓ as ${total} medidas de nortada citadas são das regiões que as citam`);
+})();
 
 let diferentes = 0;
 for (const p of paginas) {

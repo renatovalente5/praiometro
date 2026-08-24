@@ -534,15 +534,38 @@
       return null;
     }
     /* O TECTO DO DIA só se aplica quando as PARTES ainda não o carregam. Se
-       uma delas já está vetada ou despromovida, a média delas já traz a
-       penalização — voltar a aplicá-la é contá-la a dobrar, e foi assim que um
-       cartão mostrou 69 num dia com a manhã a 69 e a tarde a 78.
+       uma delas já está penalizada, a média delas já traz o castigo — voltar a
+       aplicá-lo é contá-lo a dobrar, e foi assim que um cartão mostrou 69 num
+       dia com a manhã a 69 e a tarde a 78.
        Medido em 3896 dias-praia (8 praias, Jun/2024 a Set/2025): o dia tem
        penalização que NENHUMA parte tem em 1,1 % dos dias — 0,46 % por veto
        (a chuva soma-se ao longo do dia e pode chumbá-lo com as duas metades
        sãs) e 0,67 % por despromoção. Nos outros 99 % o tecto do dia era
-       redundante, e era ele que afastava a nota da média. */
-    var tecto = (op && op.partesJaPenalizadas) ? null : tectoDe(bruta);
+       redundante, e era ele que afastava a nota da média.
+
+       ESPÉCIE COM ESPÉCIE, e isto custou um defeito real. Esteve aqui um
+       booleano só — «alguma parte penalizada» — a desligar QUALQUER tecto. Mas
+       as duas penalizações não são da mesma grandeza: a despromoção é leve
+       (tecto 69, «isto não é verde») e o veto é grave (tecto ≈ 44 % da soma).
+       Uma parte só despromovida deitava fora o tecto do VETO inteiro. Apanhado
+       na Praia dos Namorados a 26/08/2026: veto de «chuva a sério» com 2,88 mm,
+       as duas partes apenas despromovidas, e o dia saía 69 AMARELO em vez de
+       vermelho. Só uma parte VETADA arrasta a média o suficiente para dispensar
+       o tecto do veto. */
+    /* Duas espécies, e o nome delas sai daqui para quem pergunte: GRAVE é o
+       veto ou o factor catastrófico (tecto ≈ 44 % da soma), LEVE é a
+       despromoção (tecto 69). O `severo` tem de incluir o `pior_racio < 0.08`
+       e não só os vetos: um dia sem veto nenhum pode ter o tecto grave por
+       essa via, e foi assim que o Furadouro deu 27 a 25/08/2026 com as partes
+       a 25 e 68 (média 47) — a manhã já vinha de 56 para 25 pela mesma porta,
+       e o dia descontava-a outra vez. */
+    var severo = vetos.length > 0 || pior_racio < 0.08;
+    var proprio = tectoDe(bruta);
+    var especie = proprio == null ? null : (severo ? 'grave' : 'leve');
+    var jaCarregam = severo
+      ? !!(op && op.algumaParteGrave)
+      : !!(op && op.partesJaPenalizadas);
+    var tecto = jaCarregam ? null : proprio;
     var imposta = op && op.nota != null ? op.nota : null;
     nota = imposta != null
       ? (tecto == null ? imposta : Math.min(imposta, tecto))
@@ -600,6 +623,11 @@
       nota: nota,
       /* Quanto valeria sem penalização nenhuma. Não é o que se mostra. */
       notaBruta: bruta,
+      /* Que ESPÉCIE de penalização este objecto carrega — 'grave' (veto ou
+         factor catastrófico), 'leve' (despromoção) ou null. É o que deixa o
+         dia perguntar às suas partes se elas já trazem o mesmo castigo, em vez
+         de adivinhar comparando notaBruta com nota. */
+      penalizacao: especie,
       razao: razao,
       /* A nota que esta janela daria a si própria, sem a média das partes —
          já penalizada, para as partes se somarem pelo que MOSTRAM. */
@@ -989,13 +1017,18 @@
     var media = notas.length === PARTES.length
       ? notas.reduce(function (s, n) { return s + n; }, 0) / notas.length
       : null;
-    /* Alguma parte já traz penalização? Então a média já a traz também. */
+    /* Alguma parte já traz penalização? Então a média já a traz também. Vão
+       DUAS contas, não uma: só um veto numa parte dispensa o tecto do veto do
+       dia (ver «espécie com espécie» em classificarDia). */
+    var algumaGrave = partes.some(function (p) {
+      return p.v && p.v.penalizacao === 'grave';
+    });
     var jaPenalizadas = partes.some(function (p) {
-      return p.v && ((p.v.vetos && p.v.vetos.length)
-                     || (p.v.nota != null && p.v.notaBruta != null && p.v.nota < p.v.notaBruta));
+      return p.v && p.v.penalizacao != null;
     });
     return { d: d, v: classificarDia(d, media == null ? null
-                        : { nota: Math.round(media), partesJaPenalizadas: jaPenalizadas }),
+                        : { nota: Math.round(media), partesJaPenalizadas: jaPenalizadas,
+                            algumaParteGrave: algumaGrave }),
              partes: partes,
              /* por arredondar: é com ela que o painel escreve «75,7 → 76» */
              media: media };

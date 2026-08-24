@@ -471,5 +471,76 @@ console.log('\n== a maré ==');
      Modelo._extremosMare({ time: ['2026-08-22T00:00'] }, '2026-08-22'), null);
 })();
 
+/* ============================================================
+   O TECTO DO DIA CONTRA AS PARTES: ESPÉCIE COM ESPÉCIE
+   ============================================================
+   Isto tem de viver AQUI, em dados sintéticos, e não no testar-praias.js:
+   lá a asserção é a mesma mas corre sobre a previsão de hoje, e o caso é raro
+   de mais — 0 em 300 dias-praia reais. Testei as duas mutações contra o
+   testar-praias.js e AS DUAS PASSARAM. Uma guarda que só apanha o defeito
+   quando o tempo colabora não é uma guarda.
+
+   As duas espécies de penalização não são da mesma grandeza:
+     GRAVE  = veto, ou factor limitante abaixo de 0,08 -> tecto ≈ 44 % da soma
+     LEVE   = despromoção (limitante < 0,40, ou céu > 60 %) -> tecto 69
+   O tecto do dia dispensa-se quando as PARTES já carregam o mesmo castigo,
+   porque a média delas já o traz. Mas só da MESMA espécie: uma parte apenas
+   despromovida não chega para dispensar o tecto de um veto do dia. Esteve a
+   chegar durante um dia, e apanhou-se na Praia dos Namorados a 26/08/2026 —
+   veto de «chuva a sério» com 2,88 mm, as duas partes só despromovidas, e o
+   dia saía 69 AMARELO em vez de 33 vermelho. */
+(function () {
+  console.log('\n== o tecto do dia: espécie com espécie ==');
+  var BOM   = { ceu: 10, vento: 10, ar: 26, chuva: 5, agua: 20, mm: 0, ondas: 0.8, mar: true };
+  var GRAVE = Object.assign({}, BOM, { mm: 3 });        /* veto: chuva a sério */
+  var RACIO = Object.assign({}, BOM, { vento: 40 });    /* limitante < 0,08 */
+  var LEVE  = Object.assign({}, BOM, { ceu: 70 });      /* despromoção */
+
+  eq('o dia limpo não tem espécie', Modelo.classificarDia(BOM).penalizacao, null);
+  eq('o veto é grave',              Modelo.classificarDia(GRAVE).penalizacao, 'grave');
+  eq('o limitante baixo é grave',   Modelo.classificarDia(RACIO).penalizacao, 'grave');
+  eq('a despromoção é leve',        Modelo.classificarDia(LEVE).penalizacao, 'leve');
+
+  function nota(d, media, penal, grave) {
+    return Modelo.classificarDia(d, { nota: media, partesJaPenalizadas: penal,
+                                      algumaParteGrave: grave }).nota;
+  }
+  /* tectos deste cenário: GRAVE bruta 93 -> 41 · RACIO bruta 62 -> 27 · LEVE 69 */
+
+  /* 1. o dia grave, com as partes limpas: o tecto morde. É para isto que existe. */
+  eq('grave + partes limpas -> tecto',            nota(GRAVE, 80, false, false), 41);
+  eq('limitante baixo + partes limpas -> tecto',  nota(RACIO, 80, false, false), 27);
+
+  /* 2. O DEFEITO. O dia grave com as partes apenas DESPROMOVIDAS: o castigo
+     leve delas não paga o grave dele, e o tecto tem de morder na mesma. */
+  eq('grave + partes só despromovidas -> tecto',  nota(GRAVE, 80, true, false), 41);
+  eq('limitante baixo + só despromovidas -> tecto', nota(RACIO, 80, true, false), 27);
+
+  /* 3. o dia grave com alguma parte grave: a média dela já traz o castigo,
+     e voltar a aplicá-lo é contá-lo duas vezes. É a média que manda. */
+  eq('grave + alguma parte grave -> a média',     nota(GRAVE, 80, true, true), 80);
+  eq('limitante baixo + parte grave -> a média',  nota(RACIO, 80, true, true), 80);
+
+  /* 4. o dia leve: qualquer penalização nas partes chega para o dispensar,
+     porque não há castigo mais leve do que o dele. */
+  eq('leve + partes limpas -> tecto 69',          nota(LEVE, 74, false, false), 69);
+  eq('leve + alguma parte despromovida -> média', nota(LEVE, 74, true, false), 74);
+  eq('leve + alguma parte grave -> a média',      nota(LEVE, 74, true, true), 74);
+
+  /* 5. o dia sem penalização nenhuma é sempre a média, aconteça o que
+     acontecer às partes — o tecto devolve null e o `min` não morde. */
+  eq('sem penalização -> a média, partes limpas', nota(BOM, 74, false, false), 74);
+  eq('sem penalização -> a média, partes graves', nota(BOM, 74, true, true), 74);
+
+  /* 6. E A COR SAI DA NOTA, SEM EXCEPÇÃO — nem com um veto pendurado. Um dia
+     com veto cuja média das partes dá 80 é VERDE, e a nota di-lo. */
+  eq('a cor segue a nota mesmo com veto',
+     Modelo.classificarDia(GRAVE, { nota: 80, partesJaPenalizadas: true, algumaParteGrave: true }).cor,
+     'verde');
+  eq('e o veto continua lá para quem o queira',
+     Modelo.classificarDia(GRAVE, { nota: 80, partesJaPenalizadas: true, algumaParteGrave: true })
+       .vetos.length > 0, true);
+})();
+
 console.log(`\n${falhas === 0 ? '✓ TODOS OS TESTES PASSARAM' : '✗ ' + falhas + ' FALHAS'}\n`);
 process.exit(falhas ? 1 : 0);

@@ -89,19 +89,25 @@ function ok(cond, texto) {
       ok(a.v.nota <= m,
          onde + ': a nota do dia é ' + a.v.nota + ' e a média das partes é ' + m
          + ' (' + ns.join(', ') + ') — o dia nunca pode valer MAIS do que as suas partes');
-      /* E SÓ SE AFASTA DA MÉDIA POR UMA PENALIZAÇÃO QUE NENHUMA PARTE TEM.
-         Esta é a asserção afiada, e a anterior deixava passar o defeito que a
-         motivou: quando uma parte já está vetada, a média DELA já traz o
-         castigo, e voltar a aplicá-lo ao dia é contá-lo a dobrar. Medido em
-         3896 dias-praia, o dia tem penalização própria e as duas partes sãs em
-         1,1 % dos dias — fora esses, tem de ser a média exacta. */
-      var partesPenalizadas = a.partes.some(function (x) {
-        return (x.v.vetos && x.v.vetos.length)
-            || (x.v.nota != null && x.v.notaBruta != null && x.v.nota < x.v.notaBruta);
-      });
-      ok(a.v.nota === m || !partesPenalizadas,
+      /* E SÓ SE AFASTA DA MÉDIA POR UMA PENALIZAÇÃO DA MESMA ESPÉCIE QUE
+         NENHUMA PARTE TEM. Medido em 3896 dias-praia, o dia tem penalização
+         própria e as partes sãs em 1,1 % dos dias — fora esses, é a média.
+
+         A ESPÉCIE importa, e esta asserção já esteve a fixar o comportamento
+         errado: dizia «se alguma parte estiver penalizada, o dia É a média»,
+         o que deixava uma parte apenas DESPROMOVIDA (leve, tecto 69) dispensar
+         o tecto de um VETO do dia (grave, tecto ≈ 44 %). Passava na Praia dos
+         Namorados a 26/08/2026 — veto de chuva a sério com 2,88 mm, as duas
+         partes só despromovidas, dia a 69 amarelo em vez de 33 vermelho. */
+      var algumaGrave = a.partes.some(function (x) { return x.v.penalizacao === 'grave'; });
+      var algumaPenal = a.partes.some(function (x) { return x.v.penalizacao != null; });
+      var dispensa = a.v.penalizacao === 'grave' ? !algumaGrave
+                   : (a.v.penalizacao === 'leve' ? !algumaPenal : false);
+      ok(a.v.nota === m || dispensa,
          onde + ': a nota do dia (' + a.v.nota + ') não é a média (' + m
-         + ') das partes ' + ns.join('-') + ', e as partes JÁ trazem a penalização'
+         + ') das partes ' + ns.join('-') + '. O dia carrega penalização '
+         + (a.v.penalizacao || 'nenhuma') + ' e as partes carregam '
+         + a.partes.map(function (x) { return x.v.penalizacao || 'nenhuma'; }).join('+')
          + ' — está a ser contada duas vezes');
       ok(a.v.nota <= Math.max(ns[0], ns[1]),
          onde + ': a nota do dia (' + a.v.nota + ') está acima da melhor parte ' + ns.join('-'));

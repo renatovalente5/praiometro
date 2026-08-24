@@ -632,6 +632,25 @@ ele que afastava a nota da média. Agora **só se aplica quando nenhuma parte
 carrega a penalização**. Sobre as 6 previsões × 8 praias: a nota do dia é a
 média exacta em **97,9 %** dos dias, contra **62,5 %** antes.
 
+**E as duas espécies não se trocam uma pela outra.** Isto esteve mal durante um
+dia: `partesJaPenalizadas` era um booleano só, e desligava **qualquer** tecto do
+dia. Mas as penalizações não são da mesma grandeza — a despromoção é leve
+(tecto 69, «isto não é verde») e o veto é grave (tecto ≈ 44 % da soma). Uma
+parte só despromovida deitava fora o tecto do veto inteiro.
+
+Apanhado na revisão geral, na Praia dos Namorados a 26/08/2026: veto de «chuva a
+sério» com 2,88 mm, as duas partes apenas despromovidas, e o dia saía **69
+amarelo** em vez de **33 vermelho**. E o espelho do mesmo defeito no Furadouro a
+25/08: o tecto grave do dia vinha do ramo `pior_racio < 0,08` e não de um veto,
+a manhã já vinha de 56 para 25 pela mesma porta, e o dia descontava-a outra vez —
+27 em vez dos 47 da média.
+
+Agora cada objecto diz que espécie de castigo carrega (`penalizacao`: `'grave'`,
+`'leve'` ou nada), e o tecto do dia só cede a uma parte que carregue a **mesma
+espécie ou pior**. É raro — 0 em 300 dias-praia da previsão real — e é por isso
+que a matriz vive em `testar-modelo.js`, com dados sintéticos: testada contra o
+`testar-praias.js`, que corre sobre o tempo que faz hoje, a mutação **passava**.
+
 **E a cor passou a sair só da nota, sem excepção.** Ficara um `if (vetos.length)
 cor = 'vermelho'` por cima do cálculo, e ele reabria pela porta do lado a
 contradição que a secção anterior fechou: um dia com a manhã a 23 e a tarde a 69

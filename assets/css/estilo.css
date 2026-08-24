@@ -702,7 +702,7 @@ button.bloco__cabeca:active {
   font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
   /* .25rem e não .5rem: a tira abaixo ganhou .25rem de `padding-block` para
      caber o anel do favorito escolhido, e a soma mantém o espaço de antes. */
-  color: var(--tinta-ceu-2); margin-bottom: .25rem;
+  color: var(--tinta-3); margin-bottom: .25rem;
 }
 .favoritos__lista {
   list-style: none; display: flex; gap: .45rem; overflow-x: auto;
@@ -895,8 +895,18 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
 .rodape { max-width: 640px; margin: 2.5rem auto 0; padding: 0 var(--gutter) 3rem; }
 
 .rodape__nav { text-align: center; margin-bottom: .9rem; display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; }
+/* SUBLINHADOS, E COM A TINTA DO CÉU. Estavam a `var(--mar)`, o azul da marca,
+   e isso trazia dois problemas de uma vez:
+     · teal sobre céu ciano é um conflito de fundo. Medido no runner, com o céu
+       azul, os três davam 4,13 a 4,17:1 — a norma pede 4,5 — e nem clarear o
+       céu do dia mau chegava para o salvar: o azul teria de ir a #08404f, que
+       já não é azul nenhum;
+     · e distinguiam-se do texto à volta SÓ PELA COR, que é a WCAG 1.4.1.
+   O sublinhado é o que um link de rodapé usa em qualquer sítio, e a tinta do
+   céu já está medida contra todos os céus. */
 .rodape__nav a {
-  font-size: .88rem; font-weight: 600; color: var(--mar);
+  font-size: .88rem; font-weight: 600; color: var(--tinta-3);
+  text-decoration: underline; text-underline-offset: 3px;
   display: inline-block; padding: .35rem .2rem;
 }
 
@@ -970,9 +980,25 @@ body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--ve
    também sai: era o mesmo 640 px do pai, a repetir a mesma regra em dois
    sítios. Medido a 375, 700 e 1000 px. */
 .mapa { margin-top: 1.1rem; }
+/* FORA DE UM CARTÃO, O QUE ESTÁ POR TRÁS DO TEXTO É O CÉU.
+   Redefinem-se aqui as duas tintas esbatidas, e não se vai pintar elemento a
+   elemento: as variáveis herdam, portanto tudo o que lá dentro use
+   `var(--tinta-2)` ou `var(--tinta-3)` passa a receber a versão que aguenta o
+   céu. Perseguir isto selector a selector era uma corrida sem fim — foi assim
+   que o `--tinta-3` chegou aqui com o comentário «5,35:1 em branco, 4,97:1 no
+   fundo»: as superfícies em que foi medido não incluíam a única que estas
+   secções têm por trás.
+   E o defeito só apareceu quando a bateria correu num runner do GitHub, com o
+   céu azul: aqui nesse dia estava cinzento e dava tudo limpo. Oito textos
+   entre 4,13 e 4,29:1, com a norma a pedir 4,5. */
+.rodape, .procura__estado, .vazio, .mapa__titulo, .favoritos__titulo {
+  --tinta-2: var(--tinta-ceu);
+  --tinta-3: var(--tinta-ceu-2);
+}
+
 .mapa__titulo {
   font-size: .74rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--tinta-ceu-2); margin-bottom: .5rem;
+  letter-spacing: .06em; color: var(--tinta-3); margin-bottom: .5rem;
 }
 .mapa__tela {
   background: var(--carta); border: 1px solid var(--borda);

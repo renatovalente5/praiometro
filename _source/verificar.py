@@ -207,6 +207,36 @@ if not _viva:
     print('=' * 54)
     sys.exit(2)
 
+def escolherPraia(c, i=0, limite=30.0):
+    """Carrega no atalho e ESPERA PELA TIRA, em vez de dormir um número.
+
+    Os `time.sleep(5.0)` espalhados por este ficheiro eram medidos nesta
+    máquina. Num runner do GitHub não chegaram: a secção 1 mediu «dias: 0,
+    resultado: false» a 1280 px, e o que se seguiu foi uma secção inteira a
+    falhar por uma razão que não existe. Uma bateria que depende da velocidade
+    de quem a corre inventa defeitos nas máquinas lentas e esconde-os nas
+    rápidas.
+
+    Espera-se pelo que interessa — os seis dias no ecrã — e devolve-se o tempo
+    que levou, para se ver quando está a ficar apertado.
+    """
+    c.js("var b=document.querySelectorAll('.atalho')[%d]; if(b) b.click()" % i)
+    t0 = time.time()
+    while time.time() - t0 < limite:
+        try:
+            n = int(c.js("document.querySelectorAll('.dia').length") or 0)
+        except Exception:
+            n = 0
+        if n >= 6:
+            time.sleep(.35)          # a última pintura
+            return time.time() - t0
+        time.sleep(.25)
+    # E diz-se UMA vez, aqui, em vez de deixar a secção seguinte queixar-se de
+    # blocos em falta e de painéis vazios — que é o que se via no runner.
+    erro('a previsão não chegou em %.0fs: a tira ficou com %d dias' % (limite, n))
+    return None
+
+
 def novo(w,h,mob):
     c=Chrome(porta=livre())
     c.cmd('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mob)
@@ -219,7 +249,7 @@ print('\n== 1. arranque, procura e escolha ==')
 for w,h,mob,rot in [(375,812,True,'telemóvel 375'),(1280,900,False,'computador 1280')]:
     c=novo(w,h,mob)
     try:
-        c.js("document.querySelector('.atalho').click()"); time.sleep(5.0)
+        escolherPraia(c)
         d=json.loads(c.js("""JSON.stringify({
           resultado:!document.getElementById('resultado').hidden,
           /* a palavra do veredicto vive dentro da caixa das partes (junto) ou
@@ -392,7 +422,7 @@ print('\n== 4. favoritos ==')
 c=novo(375,812,True)
 try:
     # marca a praia de um atalho e confirma que aparece na tira
-    c.js("document.querySelector('.atalho').click()"); time.sleep(5.0)
+    escolherPraia(c)
     nome=c.js("document.getElementById('v-praia').textContent")
     c.js("document.getElementById('v-estrela').click()"); time.sleep(.4)
     d=json.loads(c.js("""JSON.stringify({
@@ -588,7 +618,7 @@ for w,h,mob,rot in [(375,812,True,'telemóvel'),(1280,900,False,'computador')]:
 print('\n== 6b. o mapa «Onde fica» ==')
 c=novo(375,812,True)
 try:
-    c.js("document.querySelector('.atalho').click()"); time.sleep(7.0)
+    escolherPraia(c)
     d=json.loads(c.js('''JSON.stringify({
       visivel: !document.getElementById('mapa').hidden,
       formas: document.querySelectorAll('.m-terra').length,
@@ -647,7 +677,7 @@ finally: c.fechar()
 print('\n== 6c. as duas partes do dia ==')
 c=novo(375,812,True)
 try:
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     modos={'junto':0,'partido':0,'sem':0}
     for dia in range(6):
         c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.4)
@@ -859,7 +889,7 @@ try:
     r = folgas()
     if r: erro('contorno cortado na vertical: %s' % r)
     # O :hover colado depois do toque — o estado real de um telemóvel.
-    c.js("""(function(){
+    c.js(r"""(function(){
       /* O levantar LÊ-SE da folha de estilo, não se escreve aqui à mão: senão,
          quem aumentasse o translateY do :hover passava por esta guarda sem ela
          dar por nada, e o corte voltava. */
@@ -925,7 +955,7 @@ try:
     c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
     c.cmd('Page.addScriptToEvaluateOnNewDocument', source=ENXERTO)
     c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+    escolherPraia(c)
     d=json.loads(c.js(r"""JSON.stringify({
       resposta: document.getElementById('v-resposta').textContent,
       notas: [...document.querySelectorAll('.bloco__nota')].map(x => x.textContent),
@@ -957,7 +987,7 @@ try:
     c.cmd('Emulation.setDeviceMetricsOverride', width=375, height=812, deviceScaleFactor=1, mobile=True)
     c.cmd('Emulation.setEmulatedMedia', features=[{'name':'prefers-color-scheme','value':'dark'}])
     c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     mau=[]
     for dia in range(6):
         c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.3)
@@ -978,7 +1008,7 @@ finally: c.fechar()
 print('\n== 6c-bis. os números, dentro de cada parte ==')
 c=novo(375,812,True)
 try:
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     d=json.loads(c.js(r"""JSON.stringify({
       cabs: [...document.querySelectorAll('.bloco__cabeca')].map(function(x){return {
         tag: x.tagName.toLowerCase(), exp: x.getAttribute('aria-expanded'),
@@ -1301,7 +1331,7 @@ def _chuva(mm):
         c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
         c.cmd('Page.addScriptToEvaluateOnNewDocument', source=E)
         c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
-        c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+        escolherPraia(c)
         c.js("""(function(){var b=document.getElementById('cab-manha');
              if(b && b.getAttribute('aria-expanded')!=='true') b.click();})()"""); time.sleep(.5)
         return json.loads(c.js(r"""JSON.stringify((function(){
@@ -1380,7 +1410,7 @@ def _mm(mm):
         c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
         c.cmd('Page.addScriptToEvaluateOnNewDocument', source=E)
         c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
-        c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+        escolherPraia(c)
         c.js("""(function(){var b=document.getElementById('cab-manha');
              if(b && b.getAttribute('aria-expanded')!=='true') b.click();})()"""); time.sleep(.5)
         return json.loads(c.js(r"""JSON.stringify((function(){
@@ -1412,7 +1442,7 @@ print('\n== 6g. a maré ==')
 # em todas. A hora não — espalha-se 39 min de norte a sul.
 c=novo(390,900,True)
 try:
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     antes=len(falhas)
     vistos, comMare = 0, 0
     for dia in range(6):
@@ -1592,7 +1622,7 @@ try:
     c.cmd('Emulation.setDeviceMetricsOverride',width=375,height=812,deviceScaleFactor=1,mobile=True)
     c.cmd('Page.addScriptToEvaluateOnNewDocument', source=ENXERTO_PERIGO)
     c.abrir('http://127.0.0.1:%d/'%PORTA, espera=2.6)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(5.5)
+    escolherPraia(c)
     d=json.loads(c.js(r"""JSON.stringify((function(){
       var a = document.getElementById('v-aviso');
       return { escondido: a.hidden, classes: a.className,
@@ -1675,20 +1705,34 @@ for tema in ('light', 'dark'):
             c.cmd('Emulation.setEmulatedMedia',
                   features=[{'name': 'prefers-color-scheme', 'value': tema}])
             c.abrir('http://127.0.0.1:%d/' % PORTA, espera=2.6)
-            c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
-            vistos, y, passos = {}, 0, 0
-            total = int(c.js("document.body.scrollHeight"))
-            while y < total and passos < 10:
-                c.js("scrollTo(0,%d)" % y); time.sleep(.45)
-                for m in contraste(c):
-                    k = m.split(' @')[0]
-                    if k not in vistos: vistos[k] = m
-                y += int(alt * .85); passos += 1
-            c.js("scrollTo(0,0)")
-            if vistos:
-                erro('contraste a rolar (%s, %s): %s' % (tema, rot, list(vistos.values())[:4]))
+            escolherPraia(c)
+            # E OS QUATRO CÉUS, FORÇADOS. O fundo muda com o veredicto, portanto
+            # o que está por trás de cada texto depende do TEMPO QUE FAZ no dia
+            # em que isto corre. Medi «limpo» num dia de céu cinzento e o mesmo
+            # ficheiro deu oito falhas num runner do GitHub, onde o céu estava
+            # azul: 4,13 a 4,29:1 nos links do rodapé. Uma guarda que só apanha
+            # o defeito quando o tempo colabora não é uma guarda — é a mesma
+            # lição das outras cegas, aplicada ao contraste.
+            passos = 0
+            for cor in ('', 'verde', 'amarelo', 'vermelho'):
+                c.js("document.body.%s" % (("setAttribute('data-cor','%s')" % cor)
+                                           if cor else "removeAttribute('data-cor')"))
+                time.sleep(1.3)          # a transição do céu é de 1s
+                vistos, y = {}, 0
+                total = int(c.js("document.body.scrollHeight"))
+                for _ in range(8):
+                    if y >= total: break
+                    c.js("scrollTo(0,%d)" % y); time.sleep(.35)
+                    for m in contraste(c):
+                        k = m.split(' @')[0]
+                        if k not in vistos: vistos[k] = m
+                    y += int(alt * .85); passos += 1
+                if vistos:
+                    erro('contraste (%s, %s, céu %s): %s'
+                         % (tema, rot, cor or 'inicial', list(vistos.values())[:4]))
+            c.js("document.body.removeAttribute('data-cor'); scrollTo(0,0)")
             if len(falhas) == antes:
-                print('  %-6s %-11s ✓ limpo em %d ecrãs' % (tema, rot, passos))
+                print('  %-6s %-11s ✓ limpo nos 4 céus, em %d ecrãs' % (tema, rot, passos))
         finally:
             c.fechar()
 
@@ -1706,7 +1750,7 @@ print('\n== 6h. escolher duas praias seguidas ==')
 c = novo(1280, 900, False)
 try:
     antes = len(falhas)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(5.0)
+    escolherPraia(c)
     nomes = json.loads(c.js("JSON.stringify([...document.querySelectorAll('.atalho')]"
                             ".map(function(b){return b.textContent.trim();}))"))
     if len(nomes) < 2:
@@ -1877,7 +1921,7 @@ c=Chrome(porta=livre())
 try:
     c.cmd('Emulation.setDeviceMetricsOverride', width=375, height=812, deviceScaleFactor=1, mobile=True)
     c.abrir('http://127.0.0.1:%d/'%_P, espera=2.6)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     time.sleep(2.0)
     d=json.loads(c.js("""(async function(){
       var r = await navigator.serviceWorker.getRegistration();
@@ -1932,7 +1976,7 @@ try:
     # dois favoritos, offline dava ecrã vazio; sem favoritos, funcionava. O
     # cenário da reserva é justamente quem anda com o site na praia.
     c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
     c.js("document.querySelectorAll('.atalho')[1].click()"); time.sleep(6.0)
     c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
@@ -1940,7 +1984,7 @@ try:
     if int(favs or 0) < 2:
         erro('o teste da reserva precisa de 2 favoritos e só marcou %s' % favs)
     c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
-    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    escolherPraia(c)
     guardadas = int(c.js("Object.keys(localStorage).filter(function(k){"
                          "return k.indexOf('pm:g:')===0;}).length"))
     # E TÊM DE SER DA PRAIA QUE SE ESTÁ A VER, não das dos favoritos.

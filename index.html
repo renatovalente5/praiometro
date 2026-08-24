@@ -76,7 +76,13 @@
   </script>
 </head>
 <body>
-  <a class="salta" href="#resultado">Saltar para o resultado</a>
+  <!-- APONTA PARA O <main>, e não para o resultado. O `#resultado` arranca
+       `hidden`, portanto o atalho não levava a lado nenhum — e pior: o Chrome
+       passa a contar a navegação sequencial a partir do fragmento, e o Tab
+       seguinte saltava por cima da caixa de procura e dos atalhos, indo direito
+       ao primeiro botão de praia. O único mecanismo de saltar blocos da página
+       tirava o acesso por teclado ao controlo principal. -->
+  <a class="salta" href="#principal">Saltar para o conteúdo</a>
 
   <!-- O céu de fundo muda de cor com o veredicto do dia escolhido. -->
   <div class="ceu" id="ceu" aria-hidden="true">
@@ -121,7 +127,7 @@
     </h1>
   </header>
 
-  <main>
+  <main id="principal" tabindex="-1">
     <!-- ============================================ ESCOLHER A PRAIA -->
     <section class="procura" aria-labelledby="procura-t">
       <h2 class="visually-hidden" id="procura-t">Escolher uma praia de Portugal</h2>

@@ -256,8 +256,51 @@ try:
         c.cmd('Input.dispatchKeyEvent', type='rawKeyDown', key='ArrowDown', code='ArrowDown', windowsVirtualKeyCode=40, nativeVirtualKeyCode=40)
         c.cmd('Input.dispatchKeyEvent', type='keyUp', key='ArrowDown', code='ArrowDown', windowsVirtualKeyCode=40, nativeVirtualKeyCode=40)
         time.sleep(.2)
-    marc=c.js("document.querySelectorAll('[aria-selected=\"true\"]').length")
-    print('  marcado com as setas:', marc)
+    # A ASSERÇÃO QUE FALTAVA. Este contador era IMPRESSO e nunca verificado, e é
+    # a única verificação de teclado do projecto: provado por mutação, tirando
+    # os dois `setAttribute` do ramo das setas a bateria escrevia «marcado com
+    # as setas: 0» e terminava com FALHAS: 0. A asserção do Enter logo abaixo
+    # não tapa o buraco, porque o app.js tem um ramo de recurso que escolhe a
+    # primeira sugestão haja ou não navegação por setas.
+    m = json.loads(c.js(r"""JSON.stringify((function(){
+      var sel = document.querySelectorAll('.sugestao[aria-selected="true"]');
+      var ad = document.getElementById('procura').getAttribute('aria-activedescendant');
+      if (sel.length !== 1) return {n: sel.length, ad: ad};
+      var m = sel[0], cs = getComputedStyle(m);
+      var irmao = m.nextElementSibling || m.previousElementSibling;
+      return { n: 1, ad: ad, id: m.id,
+               /* A marca TEM de se ver, e o fundo sozinho não chega: valia
+                  1,058:1 contra o da lista. WCAG 1.4.11 pede 3:1 para um
+                  indicador que não é texto, e num combobox não há anel de foco
+                  do browser a safar isto — o foco fica na caixa. */
+               contorno: cs.outlineStyle === 'none' ? null : cs.outlineColor,
+               largura: parseFloat(cs.outlineWidth) || 0,
+               fundo: cs.backgroundColor,
+               fundoIrmao: irmao ? getComputedStyle(irmao).backgroundColor : null,
+               visivel: (function(){ var r=m.getBoundingClientRect(),
+                 p=m.parentNode.getBoundingClientRect();
+                 return r.top >= p.top-1 && r.bottom <= p.bottom+1; })() };})())"""))
+    print('  marcado com as setas:', json.dumps(m, ensure_ascii=False))
+    if m['n'] != 1:
+        erro('as setas marcaram %d sugestões, e tinha de ser exactamente 1' % m['n'])
+    elif not m['ad'] or m['ad'] != m['id']:
+        erro('o aria-activedescendant (%r) não aponta para a marcada (%r)' % (m['ad'], m['id']))
+    else:
+        if not m['visivel']:
+            erro('a sugestão marcada com as setas ficou fora do painel')
+        f = _rgba(m['contorno']) if m['contorno'] else None
+        g = _rgba(m['fundoIrmao'] or m['fundo'])
+        r = None
+        if f and g and m['largura'] >= 1:
+            la, lb = _lum(f[:3]), _lum(g[:3])
+            r = (max(la, lb) + .05) / (min(la, lb) + .05)
+        if r is None:
+            erro('a sugestão marcada não tem contorno nenhum: só o fundo, que é '
+                 'invisível (%s contra %s)' % (m['fundo'], m['fundoIrmao']))
+        elif r < 3:
+            erro('o contorno da sugestão marcada vale %.2f:1, e a WCAG 1.4.11 pede 3' % r)
+        else:
+            print('  contorno da marcada             ✓ %.2f:1, %.0fpx' % (r, m['largura']))
     c.cmd('Input.dispatchKeyEvent', type='rawKeyDown', key='Enter', code='Enter', windowsVirtualKeyCode=13, nativeVirtualKeyCode=13)
     c.cmd('Input.dispatchKeyEvent', type='keyUp', key='Enter', code='Enter', windowsVirtualKeyCode=13, nativeVirtualKeyCode=13)
     time.sleep(5.0)
@@ -278,6 +321,46 @@ try:
     ok = 'ncontr' in d['estado'] and d['expandido']=='false' and d['listaEscondida'] and not d['ad']
     print('  sem resultados               %s  %s' % ('✓' if ok else '✗', json.dumps(d, ensure_ascii=False)))
     if not ok: erro('procura sem resultados: %s'%d)
+
+    # A GAVETA FECHA QUANDO O FOCO SAI. Sair da caixa com Tab deixava a lista
+    # aberta — um painel opaco com z-index 30 por cima do que vem a seguir, com
+    # o foco a andar por baixo dele, e o combobox a anunciar aria-expanded=true
+    # sem foco lá dentro. WCAG 2.4.11. Vai-se saindo com Tab até o foco deixar
+    # a `.procura`: o alfinete está DENTRO dela, e enquanto lá se está a lista
+    # continua a fazer sentido.
+    antes = len(falhas)
+    c.js("var i=document.getElementById('procura'); i.focus(); i.value='praia';"
+         "i.dispatchEvent(new Event('input',{bubbles:true}))")
+    time.sleep(.7)
+    if not int(c.js("document.querySelectorAll('.sugestao[data-i]').length")):
+        erro('a lista nem sequer abriu para «praia»')
+    passos = []
+    for _ in range(4):
+        c.cmd('Input.dispatchKeyEvent', type='rawKeyDown', key='Tab', code='Tab',
+              windowsVirtualKeyCode=9, nativeVirtualKeyCode=9)
+        c.cmd('Input.dispatchKeyEvent', type='keyUp', key='Tab', code='Tab',
+              windowsVirtualKeyCode=9, nativeVirtualKeyCode=9)
+        time.sleep(.3)
+        passos.append(json.loads(c.js(r"""JSON.stringify({
+          dentro: !!(document.activeElement.closest && document.activeElement.closest('.procura')),
+          onde: document.activeElement.id || document.activeElement.className || document.activeElement.tagName,
+          abertas: document.querySelectorAll('.sugestao[data-i]').length,
+          expandido: document.getElementById('procura').getAttribute('aria-expanded'),
+          tapado: (function(){ var a=document.activeElement, r=a.getBoundingClientRect();
+            if(!r.width||!r.height) return 0;
+            var pts=[[r.left+3,r.top+3],[r.right-3,r.top+3],[r.left+r.width/2,r.top+r.height/2]];
+            return pts.filter(function(p){ var e=document.elementFromPoint(p[0],p[1]);
+              return e && e!==a && !a.contains(e) && !e.contains(a); }).length; })()})""")))
+    fora = [x for x in passos if not x['dentro']]
+    if not fora:
+        erro('quatro Tabs e o foco nunca saiu da procura: %s' % passos)
+    else:
+        mau = [x for x in fora if x['abertas'] or x['expandido'] == 'true' or x['tapado']]
+        if mau:
+            erro('a lista não fechou ao sair com Tab: %s' % mau[0])
+    if len(falhas) == antes:
+        print('  gaveta fecha com Tab            ✓ o foco saiu para %r e a lista fechou'
+              % fora[0]['onde'])
 finally: c.fechar()
 
 print('\n== 3. praia de rio (sem dados de mar) ==')
@@ -368,6 +451,12 @@ try:
     print('  sem sessão                   %s  %s' % ('✓' if ok else '✗', json.dumps(d)))
     if d['pedidos']: erro('sem sessão houve %d pedidos ao Supabase'%d['pedidos'])
     if d['entrar']!=d['disponivel']: erro('botão Entrar visível=%s mas Google pronto=%s'%(d['entrar'],d['disponivel']))
+    # AS DUAS QUE FALTAVAM. Entravam no `ok` que decide o ✓/✗ impresso e não
+    # tinham `erro()` nenhum: o ecrã mostrava ✗ e o processo devolvia 0. À mão
+    # ainda se vê; num script — ou numa Action — passa a verde por cima de uma
+    # sessão fantasma. É o mesmo defeito do código de saída deste ficheiro.
+    if d['sessao']: erro('sem ninguém ter entrado, já há sessão: %r' % d['sessao'])
+    if d['menu']: erro('sem sessão, o menu da conta está à vista')
 
     # com sessão falsa: a interface tem de trocar por completo
     c.js("""localStorage.setItem('pm:sessao', JSON.stringify({
@@ -512,8 +601,16 @@ try:
     if not d['visivel']: erro('o mapa não apareceu')
     if d['formas'] < 3: erro('o mapa tem só %d formas — a vista está vazia' % d['formas'])
     if not d['ponto']: erro('o mapa não marca a praia')
-    if d['fora']: erro('rótulos fora da tela: %s' % d['fora'])
-    else: print('  rótulos      ✓ todos dentro da tela')
+    # ZERO RÓTULOS PASSAVA. O `fora` é um filtro sobre `rotulos`, e um filtro
+    # sobre lista vazia dá lista vazia — logo «todos dentro da tela» era ✓ com
+    # o mapa sem um único nome de concelho. Provado por mutação, trocando o
+    # `postos.map` por `[].map`: «12 formas, 0 rótulos / rótulos ✓ todos dentro
+    # da tela / FALHAS: 0». A ausência tem de ser um erro, não um vazio.
+    if len(d['rotulos']) < 3:
+        erro('o mapa desenhou %d rótulos de concelho — sem nomes ninguém sabe onde '
+             'fica a praia' % len(d['rotulos']))
+    elif d['fora']: erro('rótulos fora da tela: %s' % d['fora'])
+    else: print('  rótulos      ✓ %d, todos dentro da tela' % len(d['rotulos']))
     if d['transbordo'].split('/')[0] != d['transbordo'].split('/')[1]:
         erro('o mapa faz a página transbordar: %s' % d['transbordo'])
 
@@ -1214,7 +1311,19 @@ def _chuva(mm):
             var n=x.querySelector('.nums__nome');
             return [...n.childNodes].filter(function(k){return k.nodeType===3;})
                     .map(function(k){return k.textContent;}).join('').trim()==='Chuva';});
-          return { titulo: document.getElementById('v-resposta').textContent,
+          /* O SINAL DE QUE O ENXERTO PEGOU sai do que o enxerto ESCREVE, e não
+             de uma frase do ecrã. Estava a ler-se `#v-resposta`, que o app.js
+             esvazia sempre desde que a linha por cima dos blocos saiu a pedido:
+             `'chumbado' in ''` é sempre falso, portanto o portão lá em baixo
+             nunca abria e as três asserções desta secção — escritas para um
+             defeito concreto que foi reportado — NUNCA correram. A corrida
+             imprimia «o enxerto não pegou», e ninguém reparou.
+             O enxerto põe a nota do primeiro dia a 20 e a cor a vermelho: é
+             isso que se confirma. */
+          var d0 = document.querySelector('.dia');
+          return { nota: d0 ? (d0.querySelector('.dia__nota')||{}).textContent : '',
+                   cor: d0 ? ([...d0.classList].map(function(k){
+                          return (k.match(/^dia--(\w+)$/)||[])[1];}).filter(Boolean)[0]||'') : '',
                    marcada: !!(l && l.querySelector('.nums__mau')),
                    palavra: l ? (l.querySelector('.nums__palavra')||{}).innerText : '' };})())"""))
     finally: c.fechar()
@@ -1222,8 +1331,10 @@ def _chuva(mm):
 antes = len(falhas)
 com = _chuva('1.8')
 sem = _chuva('0')
-if not com or 'chumbado' not in (com['titulo'] or ''):
-    print('  · o enxerto não pegou — secção sem valor nesta corrida')
+if not com or com.get('nota') != '20' or com.get('cor') != 'vermelho':
+    erro('o enxerto do veto não pegou (nota=%r cor=%r) — as três asserções desta '
+         'secção não chegaram a correr, e é isso que ela existe para medir'
+         % (com and com.get('nota'), com and com.get('cor')))
 else:
     if not com['marcada']:
         erro('o dia está chumbado por chuva, a manhã tem 1,8 mm e a linha da Chuva não leva marca')
@@ -1490,7 +1601,12 @@ try:
                fundo: getComputedStyle(a).backgroundColor,
                cor: getComputedStyle(a).color };})())"""))
     if d['escondido']:
-        print('  · o enxerto não pegou — secção sem valor nesta corrida')
+        # SILÊNCIO NÃO É APROVAÇÃO. Isto imprimia uma nota e seguia em frente,
+        # portanto uma secção inteira podia deixar de medir sem ninguém saber —
+        # foi assim que a 6d-bis esteve morta meses. Se o enxerto não pega, o
+        # que se sabe é que NÃO se mediu, e isso é uma falha da bateria.
+        erro('o enxerto do perigo não pegou: a caixa do aviso ficou escondida, e as '
+             'seis asserções desta secção não chegaram a correr')
     else:
         antes=len(falhas)
         if 'veredicto__aviso--perigo' not in d['classes']:
@@ -1514,8 +1630,30 @@ try:
         if len(falhas)==antes:
             print('  perigo        ✓ %r' % d['texto'][:64])
             print('  com triângulo ✓ e com a caixa vermelha, não a amarela do conforto')
-    # E o contrário: num dia sem perigo a classe NÃO pode ficar colada.
-    c.cmd('Runtime.evaluate', expression="document.getElementById('dia-5').click()")
+    # E O CONTRÁRIO: num dia sem perigo a classe NÃO pode ficar colada. O
+    # comentário prometia isto e o que estava escrito a seguir era um clique e
+    # mais nada — nem uma leitura, nem uma asserção. O enxerto só mexe na
+    # PRIMEIRA chamada ao avaliarDia (`n++ === 0`), portanto os outros cinco
+    # dias vêm limpos e servem de contraprova.
+    antes = len(falhas)
+    limpo = None
+    for i in (5, 4, 3, 2, 1):
+        c.js("var b=document.getElementById('dia-%d'); if(b) b.click()" % i)
+        time.sleep(.5)
+        x = json.loads(c.js(r"""JSON.stringify((function(){
+          var a = document.getElementById('v-aviso');
+          return { dia: %d, escondido: a.hidden, classes: a.className,
+                   texto: a.innerText.replace(/\s+/g,' ').trim() };})())""" % i))
+        if x['escondido'] or not x['texto']:
+            limpo = x; break
+    if limpo is None:
+        print('  · os seis dias trazem aviso — sem dia limpo para a contraprova hoje')
+    elif 'veredicto__aviso--perigo' in limpo['classes']:
+        erro('a classe de PERIGO ficou colada num dia sem aviso nenhum (dia %d): %r'
+             % (limpo['dia'], limpo['classes']))
+    elif len(falhas) == antes:
+        print('  não fica colada ✓ o dia %d não traz perigo e a classe saiu com ele'
+              % limpo['dia'])
 finally: c.fechar()
 
 # --------------------------------------------------------------------- 6i
@@ -1786,10 +1924,34 @@ try:
           downloadThroughput=-1, uploadThroughput=-1)
     c.cmd('Network.setCacheDisabled', cacheDisabled=False)
     time.sleep(.4)
+    # COM FAVORITOS, que é como a maior parte das pessoas anda. Esta secção
+    # corria num perfil VAZIO, e era por isso que passava: o desenho das cores
+    # dos favoritos usa o mesmo `buscar()` e arranca DEPOIS, portanto a poda da
+    # reserva — que ficava com as duas entradas mais recentes do relógio —
+    # deitava sempre fora a previsão da praia que se está a ver. Medido: com
+    # dois favoritos, offline dava ecrã vazio; sem favoritos, funcionava. O
+    # cenário da reserva é justamente quem anda com o site na praia.
+    c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
+    c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
+    c.js("document.querySelectorAll('.atalho')[1].click()"); time.sleep(6.0)
+    c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
+    favs = c.js("(localStorage.getItem('pm:favoritos')||'').split(';').filter(Boolean).length")
+    if int(favs or 0) < 2:
+        erro('o teste da reserva precisa de 2 favoritos e só marcou %s' % favs)
     c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
     c.js("document.querySelector('.atalho').click()"); time.sleep(6.0)
     guardadas = int(c.js("Object.keys(localStorage).filter(function(k){"
                          "return k.indexOf('pm:g:')===0;}).length"))
+    # E TÊM DE SER DA PRAIA QUE SE ESTÁ A VER, não das dos favoritos.
+    coords = json.loads(c.js(r"""JSON.stringify((function(){
+      var c = {}; Object.keys(localStorage).forEach(function(k){
+        if (k.indexOf('pm:g:') !== 0) return;
+        var m = /latitude=([-\d.]+)/.exec(k); if (m) c[m[1]] = 1; });
+      return Object.keys(c);})())"""))
+    if len(coords) > 1:
+        erro('a reserva tem previsão de %d praias diferentes (%s) — devia ter só a '
+             'que está no ecrã' % (len(coords), coords))
     visivelComRede = c.js("document.getElementById('v-antiga').hidden ? 0 : 1")
     if not guardadas: erro('a previsão não ficou guardada na reserva')
     if visivelComRede: erro('COM rede o cartão diz que a previsão é guardada — só pode dizer sem rede')

@@ -247,6 +247,21 @@
     if (!e.target.closest('.procura')) esconderSugestoes();
   });
 
+  /* E FECHA QUANDO O FOCO SAI, não só com Escape ou com um clique fora. Sair da
+     caixa com Tab deixava a lista aberta: um painel opaco, com z-index 30, por
+     cima do que vinha a seguir — nos três Tabs seguintes, o elemento focado
+     estava debaixo dela e não se via. E o combobox continuava a anunciar
+     `aria-expanded="true"` e um `aria-activedescendant` que já não tinha o foco
+     lá dentro. É a WCAG 2.4.11.
+     O `relatedTarget` é para onde o foco VAI: se for ainda dentro da procura —
+     uma sugestão, por exemplo — não se fecha nada. */
+  doc.addEventListener('focusout', function (e) {
+    if (!e.target.closest || !e.target.closest('.procura')) return;
+    var vai = e.relatedTarget;
+    if (vai && vai.closest && vai.closest('.procura')) return;
+    esconderSugestoes();
+  });
+
   /* --------------------------------------------------------- geolocalização */
 
   on('perto', 'click', function () {
@@ -342,31 +357,79 @@
      Guardar todas as praias visitadas enchia-o e partia os favoritos. */
   var previsaoDe = null;      /* hora da mais VELHA das respostas servidas da reserva */
 
+  /* A coordenada que vive dentro do URL do pedido. É por ela que a reserva se
+     poda: por PRAIA e não por relógio. */
+  function coordDoUrl(u) {
+    var m = /latitude=([-\d.]+)&longitude=([-\d.]+)/.exec(u || '');
+    return m ? m[1] + ',' + m[2] : '';
+  }
+
   function reservaGuardar(url, agora, d) {
     try {
       localStorage.setItem('pm:g:' + url, JSON.stringify({ t: agora, d: d }));
-      /* Ficam as duas mais recentes — que são a previsão e o mar da mesma
-         praia. Tudo o que for mais antigo sai. */
-      var meus = [];
+      /* PODA-SE POR PRAIA, e não pelas duas entradas mais recentes.
+         Ficavam as duas mais novas do relógio, na ideia de que eram a previsão
+         e o mar da mesma praia. Mas o desenho das cores dos favoritos usa o
+         mesmo `buscar()` e arranca DEPOIS, portanto ganhava sempre a poda:
+         medido, com dois favoritos a reserva da praia que se está a ver nunca
+         sobrevivia, e offline dava ecrã vazio. Que é exactamente o cenário
+         para que a reserva existe — quem está na areia com uma barra de rede.
+         Agora só sai o que for de OUTRA praia. */
+      var meu = coordDoUrl(url), fora = [];
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
-        if (k && k.indexOf('pm:g:') === 0) {
-          var t = 0;
-          try { t = (JSON.parse(localStorage.getItem(k)) || {}).t || 0; } catch (e) { }
-          meus.push([t, k]);
-        }
+        if (k && k.indexOf('pm:g:') === 0 && coordDoUrl(k) !== meu) fora.push(k);
       }
-      meus.sort(function (a, b) { return b[0] - a[0]; });
-      meus.slice(2).forEach(function (x) { localStorage.removeItem(x[1]); });
+      fora.forEach(function (k) { localStorage.removeItem(k); });
     } catch (e) { }
   }
 
-  function reservaLer(url) {
-    try { return JSON.parse(localStorage.getItem('pm:g:' + url) || 'null'); }
-    catch (e) { return null; }
+  /* CORTA O QUE JÁ PASSOU. Uma reserva de há cinco dias tem o dia 0 em Agosto
+     19, e o cartão chamava-lhe «Hoje» — o nome do dia sai do ÍNDICE, não da
+     data, portanto os seis separadores diziam «Hoje, Amanhã, Sexta» sobre dias
+     todos passados. A linha «Sem rede, buscada às 13h29» cumpre a regra escrita
+     mas está em letra pequena por baixo de seis separadores que afirmam o
+     contrário, e quem está na praia lê os separadores.
+     Não se deita fora a reserva inteira: uma de ontem ainda traz cinco dias
+     bons. Corta-se o que passou e o índice volta a bater certo. */
+  function alinharAHoje(d) {
+    if (!d || !d.hourly || !Array.isArray(d.hourly.time)) return null;
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var t = d.hourly.time, corte = 0;
+    while (corte < t.length && new Date(t[corte]).getTime() < hoje.getTime()) corte++;
+    if (corte >= t.length) return null;          /* está tudo no passado */
+    if (!corte) return d;
+    function cortar(bloco, n) {
+      if (!bloco) return bloco;
+      var saida = {}, ref = bloco.time ? bloco.time.length : 0;
+      Object.keys(bloco).forEach(function (c) {
+        saida[c] = (Array.isArray(bloco[c]) && bloco[c].length === ref)
+          ? bloco[c].slice(n) : bloco[c];
+      });
+      return saida;
+    }
+    var dias = Math.floor(corte / 24);
+    var novo = {};
+    Object.keys(d).forEach(function (c) { novo[c] = d[c]; });
+    novo.hourly = cortar(d.hourly, corte);
+    if (d.daily) novo.daily = cortar(d.daily, dias);
+    return novo;
   }
 
-  function buscar(url) {
+  function reservaLer(url) {
+    try {
+      var g = JSON.parse(localStorage.getItem('pm:g:' + url) || 'null');
+      if (!g || !g.d) return null;
+      var d = alinharAHoje(g.d);
+      if (!d) { localStorage.removeItem('pm:g:' + url); return null; }
+      return { t: g.t, d: d };
+    } catch (e) { return null; }
+  }
+
+  /* O `semReserva` é para os pedidos que não servem de reserva nenhuma: o
+     desenho das cores dos favoritos pede UM dia para várias praias de uma vez,
+     e guardar isso ocupava lugar sem nunca poder alimentar um cartão. */
+  function buscar(url, semReserva) {
     var agora = new Date().getTime();
     try {
       var c = JSON.parse(sessionStorage.getItem('pm:c:' + url) || 'null');
@@ -377,7 +440,7 @@
       return r.json();
     }).then(function (d) {
       try { sessionStorage.setItem('pm:c:' + url, JSON.stringify({ t: agora, d: d })); } catch (e) { }
-      reservaGuardar(url, agora, d);
+      if (!semReserva) reservaGuardar(url, agora, d);
       return d;
     }).catch(function (e) {
       var g = reservaLer(url);
@@ -546,7 +609,22 @@
     var b = e.target.closest('.dia');
     if (!b) return;
     diaEscolhido = +b.dataset.i;
+    /* O `desenhar()` reescreve o innerHTML da tira e destrói o botão que tem o
+       foco — que passa para o <body>. O ouvinte de `keydown` aqui ao lado já
+       repunha o foco de propósito, com o comentário a dizer porquê; este não,
+       e Enter e Espaço num <button> disparam um CLICK nativo, portanto quem
+       anda de teclado caía sempre no caminho descoberto: escolhia um dia e a
+       seta seguinte não fazia nada.
+       Só se repõe se o foco ESTAVA na tira: com o rato não há foco a devolver,
+       e roubá-lo seria pior. E `preventScroll`, senão a página passeia — o
+       `trazerDiaAVista()` já trata do lado horizontal. */
+    var tinhaFoco = doc.activeElement && doc.activeElement.closest
+                    && doc.activeElement.closest('#dias');
     desenhar();
+    if (tinhaFoco) {
+      var novo = el('dias').querySelector('.dia[data-i="' + diaEscolhido + '"]');
+      if (novo) novo.focus({ preventScroll: true });
+    }
   });
 
   on('dias', 'keydown', function (e) {
@@ -1347,8 +1425,8 @@
     var mar = falta.filter(function (p) { return p.m; });
 
     Promise.all([
-      buscar(urlTempo(falta, 1)).catch(function () { return null; }),
-      mar.length ? buscar(urlMar(mar, 1)).catch(function () { return null; }) : Promise.resolve(null)
+      buscar(urlTempo(falta, 1), true).catch(function () { return null; }),
+      mar.length ? buscar(urlMar(mar, 1), true).catch(function () { return null; }) : Promise.resolve(null)
     ]).then(function (r) {
       var tempo = comoArray(r[0]), marinho = comoArray(r[1]);
       if (!tempo.length) return;
@@ -1499,6 +1577,14 @@
      cima da página até se voltar a carregar no avatar. */
   doc.addEventListener('click', function (e) {
     if (!e.target.closest('#conta')) el('conta-menu').open = false;
+  });
+  /* Idem para o menu da conta: sair dele com Tab deixava-o aberto por cima da
+     página, com o foco a andar por baixo. */
+  doc.addEventListener('focusout', function (e) {
+    if (!e.target.closest || !e.target.closest('#conta')) return;
+    var vai = e.relatedTarget;
+    if (vai && vai.closest && vai.closest('#conta')) return;
+    var m = el('conta-menu'); if (m) m.open = false;
   });
   doc.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;

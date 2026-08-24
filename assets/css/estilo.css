@@ -129,6 +129,9 @@ a { color: inherit; }
    de meia página não diz a ninguém onde está o foco; só parecia um erro. O
    destino do foco continua a ser anunciado pelo `aria-labelledby`. */
 .resultado:focus, .resultado:focus-visible { outline: none; }
+/* E o mesmo para o <main>, pela mesma razão: leva `tabindex="-1"` só para o
+   atalho de saltar ter destino, não para se chegar lá com o Tab. */
+#principal:focus, #principal:focus-visible { outline: none; }
 
 /* ===================================================== CÉU DE FUNDO ==== */
 /* O fundo muda de cor com o veredicto — é o primeiro sinal, antes de se ler
@@ -341,7 +344,17 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
   background: none; border-left: 0; border-right: 0; border-top: 0; text-align: left;
 }
 .sugestao:last-child { border-bottom: 0; }
-.sugestao:hover, .sugestao[aria-selected="true"] { background: var(--carta-2); }
+.sugestao:hover { background: var(--carta-2); }
+/* A MARCADA COM AS SETAS TEM DE SE VER. O único sinal era este fundo, que vale
+   1,058:1 contra o da lista — a WCAG 1.4.11 pede 3:1 para um indicador que não
+   é texto. Num combobox não há foco real a percorrer as opções (o foco fica na
+   caixa e o `aria-activedescendant` é que anda), portanto não há anel do
+   browser a salvar isto: quem escreve «praia» abre oito sugestões, três delas
+   chamadas «Praia Nova», e carregava Enter sem saber qual das 995 ia abrir. */
+.sugestao[aria-selected="true"] {
+  background: var(--carta-2);
+  outline: 2px solid var(--mar); outline-offset: -2px;
+}
 .sugestao__nome { font-weight: 600; }
 .sugestao__meta { font-size: .82rem; color: var(--tinta-3); margin-left: auto; white-space: nowrap; }
 .sugestao__rio {

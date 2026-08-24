@@ -1,0 +1,112 @@
+# A bateria de browser.
+# =============================================================
+# Vive SEPARADA do Publicar, e não a cada push, por duas razões:
+#
+#  1. Depende de uma API externa. A Open-Meteo dá 10 000 pedidos por dia POR
+#     IP, e uma corrida completa gasta algumas dezenas. Pendurar cada `git
+#     push` numa quota de terceiros é pedir para que um dia o deploy pare sem
+#     ter havido defeito nenhum — e o que se passa nesse dia é uma coisa que
+#     não se controla nem se corrige.
+#
+#  2. Demora minutos e abre uma dúzia de Chromes. O Publicar tem de ser rápido,
+#     porque é o caminho entre reparar uma coisa e ela estar no ar.
+#
+# O que corre a cada push continua no Publicar: os testes que não precisam de
+# browser, o gerador e as duas fechaduras sobre o `_site/`.
+#
+# O CÓDIGO DE SAÍDA DIZ TRÊS COISAS, e é isso que torna isto automatizável:
+#   0 — mediu e está tudo bem
+#   1 — mediu e encontrou defeitos
+#   2 — NÃO CONSEGUIU MEDIR (a API não respondeu)
+# O 2 não pinta o workflow de vermelho: um alarme que dispara por causa da
+# quota de outra pessoa deixa de ser lido ao fim da terceira vez, e a seguir
+# ninguém repara no que é a sério. Fica um aviso no resumo.
+#
+# ARMADILHA DO GITHUB, e é preciso lembrar: em repositórios públicos os
+# workflows agendados são DESACTIVADOS ao fim de 60 dias sem commits — e um
+# deploy por artefacto não conta como commit. Se isto deixar de correr sem
+# ninguém lhe ter tocado, é aí que se olha primeiro.
+
+name: Bateria de browser
+
+on:
+  schedule:
+    # 06:20 UTC: depois da meia-noite em que a quota da Open-Meteo se repõe, e
+    # cedo de mais para competir com o resto do mundo por ela. O minuto não é
+    # redondo de propósito — à hora certa o GitHub tem fila.
+    - cron: '20 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bateria
+  cancel-in-progress: true
+
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # O Chrome do runner chega: o cdp.py procura-o no PATH e aceita a
+      # CHROME_PATH quando não o encontra. Sem dependências de Python — o
+      # cliente do DevTools Protocol é biblioteca padrão, de propósito.
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Montar o _site/
+        run: node _build/gerar.js
+
+      - name: O modelo contra praias reais
+        id: praias
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set +e
+          node _source/testar-praias.js
+          codigo=$?
+          set -e
+          echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
+          if [ "$codigo" = "2" ]; then
+            echo "::warning::A Open-Meteo não respondeu — não foi possível medir."
+            echo '⚠️ `testar-praias.js`: a API não respondeu, nada medido.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$codigo" != "0" ]; then
+            echo '❌ `testar-praias.js` encontrou defeitos.' >> "$GITHUB_STEP_SUMMARY"
+            exit "$codigo"
+          else
+            echo '✅ `testar-praias.js`' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Corre mesmo que o passo de cima tenha falhado: são medições
+      # independentes, e saber as duas de uma vez poupa uma ida e volta.
+      - name: A bateria de browser
+        if: always() && steps.praias.outcome != 'cancelled'
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set +e
+          python3 _source/verificar.py
+          codigo=$?
+          set -e
+          if [ "$codigo" = "2" ]; then
+            echo "::warning::A Open-Meteo não respondeu — a bateria não mediu nada."
+            echo '⚠️ `verificar.py`: a API não respondeu, nada medido.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$codigo" != "0" ]; then
+            echo '❌ `verificar.py` encontrou defeitos — ver o registo acima.' >> "$GITHUB_STEP_SUMMARY"
+            exit "$codigo"
+          else
+            echo '✅ `verificar.py`' >> "$GITHUB_STEP_SUMMARY"
+          fi

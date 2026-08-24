@@ -95,6 +95,14 @@ function ok(cond, texto) {
          + ') e o dia não tem penalização que o justifique');
       ok(a.v.nota <= Math.max(ns[0], ns[1]),
          onde + ': a nota do dia (' + a.v.nota + ') está acima da melhor parte ' + ns.join('-'));
+      /* E NUNCA ABAIXO DA PIOR, sem um veto que o justifique. Foi assim que a
+         despromoção passou despercebida um dia inteiro: ela mandava um dia de
+         soma 71 para 46, e o cartão mostrava 47 numa sexta com a manhã a 69 e
+         a tarde a 78. Um veto é outra coisa — aí o dia pode mesmo cair abaixo
+         das partes, porque a chuva soma-se ao longo do dia. */
+      ok(a.v.cor === 'vermelho' || a.v.nota >= Math.min(ns[0], ns[1]),
+         onde + ': a nota do dia (' + a.v.nota + ') está ABAIXO da pior parte '
+         + ns.join('-') + ' e o dia nem sequer é vermelho');
 
       /* A água e a ondulação são as do DIA, e são as que cada parte usou. O
          painel escreve «igual de manhã e à tarde», e tem de ser verdade. */

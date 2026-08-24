@@ -593,10 +593,15 @@ mais repetido a levar 10,2 %):
 |---|---|
 | sem penalização | fica igual |
 | veto, ou factor limitante abaixo de 0,08 | `[0,100]` → `[0,44]` |
-| despromovido (limitante < 0,40, ou céu > 60 %) | `[70,100]` → `[45,69]` |
+| despromovido (limitante < 0,40, ou céu > 60 %) | tecto em **69**, logo abaixo do verde |
 
 A despromoção só acontece a quem era verde, portanto a nota está sempre em
-`[70,100]` quando ela se aplica.
+`[70,100]` quando ela se aplica — e o tecto é o degrau imediatamente abaixo do
+verde, não o fundo do amarelo. Esteve mapeada em `[70,100]` → `[45,69]` durante
+um dia e era absurdo: um dia de soma 71, à beira de ser verde, caía para 46, e
+esse 46 tapava depois a média das partes por melhores que elas fossem. Foi
+reportado — a tira dizia **47** numa sexta com a manhã a 69 e a tarde a 78.
+A despromoção diz «isto não é verde»; não diz «isto é quase vermelho».
 
 **E o dia continua a ser a média das suas partes** — e nunca acima do que a sua
 própria penalização deixa. O `min` das duas coisas existe por um caso real: a

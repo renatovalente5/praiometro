@@ -519,9 +519,17 @@
         return Math.round(base * (CORTE_AMARELO - 1) / 100);
       }
       if (base >= CORTE_VERDE && (pior_racio < 0.40 || (d.ceu != null && d.ceu > 60))) {
-        return CORTE_AMARELO
-             + Math.round((base - CORTE_VERDE) * (CORTE_VERDE - 1 - CORTE_AMARELO)
-                          / (100 - CORTE_VERDE));
+        /* JUSTO ABAIXO DO VERDE, e não no fundo do amarelo. Isto esteve
+           mapeado em [70,100] -> [45,69] durante um dia, e era absurdo: um dia
+           com soma 71 — à beira de ser verde — caía para 46, quase vermelho, e
+           depois esse 46 tapava a média das partes por melhores que elas
+           fossem. Foi reportado: a tira dizia 47 numa sexta com a manhã a 69 e
+           a tarde a 78.
+           A despromoção diz «isto não é verde», não diz «isto é quase
+           vermelho». O tecto é o degrau imediatamente abaixo do verde, e quem
+           manda no número que aparece é a média das partes, que fica por baixo
+           dele quase sempre. */
+        return CORTE_VERDE - 1;
       }
       return null;
     }

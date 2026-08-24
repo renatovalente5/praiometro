@@ -903,6 +903,7 @@ try:
     marcados = {'verde': 0, 'amarelo': 0, 'vermelho': 0}
     for dia in range(6):
         c.js("document.getElementById('dia-%d').click()" % dia); time.sleep(.35)
+        doDia = {}
         for parte in ('manha', 'tarde'):
             c.js("""(function(){var b=document.getElementById('cab-%s');
                  if(b && b.getAttribute('aria-expanded')!=='true') b.click();})()""" % parte)
@@ -914,10 +915,22 @@ try:
                 .map(function(k){return (k.match(/^parte--(verde|amarelo|vermelho)$/)||[])[1];})
                 .filter(Boolean)[0] || '';
               return { cor: cor,
-                /* o que o ecrã diz que chumbou: a linha por cima dos blocos
-                   («O dia está chumbado: chuva a sério») e a razão do bloco. */
-                veto: ((document.getElementById('v-resposta')||{}).textContent || '') + ' ' +
-                      ((pn.parentNode.querySelector('.bloco__razao')||{}).textContent || ''),
+                /* OS MILÍMETROS QUE A LINHA MOSTRA. Aqui estava a ler-se a
+                   prosa do veto («O dia está chumbado: chuva a sério») de
+                   #v-resposta e de .bloco__razao — e as duas desapareceram do
+                   ecrã: a frase foi removida a pedido, e a .bloco__razao só se
+                   escreve quando a parte fica SEM nota, o que já não acontece
+                   a nenhuma. A excepção passou a ler string vazia, ou seja
+                   deixou de perdoar seja o que for, e este teste falhou a
+                   apontar para o sítio errado. Lê-se o número, não a frase. */
+                mmChuva: (function(){
+                  var l = [...pn.querySelectorAll('.nums__linha')].filter(function(x){
+                    var n = x.querySelector('.nums__nome');
+                    return n && [...n.childNodes].filter(function(k){return k.nodeType===3;})
+                      .map(function(k){return k.textContent;}).join('').trim() === 'Chuva';})[0];
+                  if (!l) return null;
+                  var m = (l.textContent || '').match(/([\d,.]+)\s*mm/);
+                  return m ? parseFloat(m[1].replace(',', '.')) : 0;})(),
                 marcas: pn.querySelectorAll('.nums__mau').length,
                 quais: [...pn.querySelectorAll('.nums__linha')].filter(function(l){
                   return l.querySelector('.nums__mau');})
@@ -932,6 +945,7 @@ try:
                 foraDaLinha: pn.querySelectorAll('.nums__mau').length
                   - pn.querySelectorAll('.nums__linha .nums__mau').length };})())"""))
             if not d or not d['cor']: continue
+            doDia[parte] = d
             vistos[d['cor']] += 1
             if d['marcas']:
                 marcados[d['cor']] += 1
@@ -944,25 +958,50 @@ try:
                 # excepção, e tem de continuar a ser a única.
                 if d['cor'] == 'verde':
                     # Duas excepções, e só duas. A ÁGUA, porque está fora do
-                    # cálculo que decide o verde. E o que um VETO nomeia: o dia
-                    # pode chumbar por chuva com as partes sãs, porque os
-                    # milímetros somam-se ao longo do dia — e aí a parte verde
-                    # que contribuiu com chuva leva a marca, que era o defeito
-                    # reportado. Tudo o resto continua impossível: se uma das
-                    # outras estivesse abaixo de 0,40, o bloco não era verde.
+                    # cálculo que decide o verde. E a CHUVA COM MILÍMETROS: as
+                    # duas vias que a marcam num bloco verde exigem ambas água
+                    # a cair — a regra dos 0,5 mm (app.js: `mm >= FRACO_MM`) e
+                    # o veto do dia herdado pela parte, que app.js:1113 só deixa
+                    # passar se `p.d.mm > 0`. Logo `mm > 0` é a condição mais
+                    # apertada que se mede SÓ pelo ecrã, e cobre as duas.
+                    #
+                    # O que isto apanha: um triângulo na chuva sem chuva
+                    # nenhuma. O que NÃO apanha: 0,1 mm sem veto — para separar
+                    # esse caso era preciso pôr os vetos no DOM, e não vale um
+                    # atributo novo em produção só para o teste ler.
+                    #
+                    # Tudo o resto continua impossível: se um dos outros
+                    # factores estivesse abaixo de 0,40, o bloco não era verde.
                     perm = {'Água do mar'}
-                    for t, nome in [('chuva', 'Chuva'), ('vento', 'Vento'), ('rajadas', 'Vento'),
-                                    ('frio', 'Calor'), ('mar muito cavado', 'Água do mar')]:
-                        if t in (d['veto'] or '').lower(): perm.add(nome)
+                    if (d.get('mmChuva') or 0) > 0: perm.add('Chuva')
                     fora = [x for x in d['quais'] if x not in perm]
                     if fora:
-                        erro('bloco VERDE com triângulo em %s — só a água, ou o que um veto nomeie (veto: %r)'
-                             % (fora, d['veto']))
+                        erro('bloco VERDE com triângulo em %s — só a água, ou a chuva com '
+                             'milímetros (a linha da chuva mostra %r mm)' % (fora, d.get('mmChuva')))
                 # A LEI DO CARTÃO vale para a marca: um símbolo sozinho não diz
                 # nada a quem ouve. E um triângulo sem SVG é um espaço vazio.
                 if d['semSvg']: erro('%d marcas sem desenho nenhum lá dentro' % d['semSvg'])
                 if d['semTexto']: erro('%d linhas com triângulo e sem texto para quem ouve' % d['semTexto'])
                 if d['foraDaLinha']: erro('%d marcas fora de uma linha de factor' % d['foraDaLinha'])
+
+        # A MESMA CHUVA NÃO SE ACUSA DUAS VEZES. O veto de chuva é do DIA, e o
+        # ecrã fá-lo descer às partes — mas se UMA delas já tem chuva que
+        # chegue para se marcar sozinha (>= 0,5 mm), a outra não tem de o levar
+        # também. Foi assim que uma tarde VERDE, com 0,1 mm ao todo, apareceu
+        # com triângulo na Chuva ao lado de uma manhã vetada: a penalização do
+        # dia contada a dobrar, a mesma que estragava a nota.
+        #
+        # Nos dois blocos abaixo de 0,5 mm a marca desce e fica bem: aí a chuva
+        # só existe somada ao longo do dia, e tem de aparecer algures.
+        if len(doDia) == 2:
+            for q, outro in (('manha', 'tarde'), ('tarde', 'manha')):
+                eu, ele = doDia[q], doDia[outro]
+                if 'Chuva' not in eu['quais']: continue
+                if (eu.get('mmChuva') or 0) >= 0.5: continue        # chuva própria
+                if (ele.get('mmChuva') or 0) >= 0.5:
+                    erro('dia %d: %s tem triângulo na Chuva com %s mm, e %s já tem %s mm '
+                         '— o veto do dia está a ser acusado nas duas partes'
+                         % (dia, q, eu.get('mmChuva'), outro, ele.get('mmChuva')))
     if len(falhas) == antes:
         print('  valor mau     ✓ %d blocos: %d de %d verdes (só água), %d de %d amarelos, %d de %d vermelhos'
               % (sum(vistos.values()), marcados['verde'], vistos['verde'],

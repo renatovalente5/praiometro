@@ -533,19 +533,29 @@
       }
       return null;
     }
-    var tecto = tectoDe(bruta);
+    /* O TECTO DO DIA só se aplica quando as PARTES ainda não o carregam. Se
+       uma delas já está vetada ou despromovida, a média delas já traz a
+       penalização — voltar a aplicá-la é contá-la a dobrar, e foi assim que um
+       cartão mostrou 69 num dia com a manhã a 69 e a tarde a 78.
+       Medido em 3896 dias-praia (8 praias, Jun/2024 a Set/2025): o dia tem
+       penalização que NENHUMA parte tem em 1,1 % dos dias — 0,46 % por veto
+       (a chuva soma-se ao longo do dia e pode chumbá-lo com as duas metades
+       sãs) e 0,67 % por despromoção. Nos outros 99 % o tecto do dia era
+       redundante, e era ele que afastava a nota da média. */
+    var tecto = (op && op.partesJaPenalizadas) ? null : tectoDe(bruta);
     var imposta = op && op.nota != null ? op.nota : null;
     nota = imposta != null
       ? (tecto == null ? imposta : Math.min(imposta, tecto))
       : (tecto == null ? bruta : tecto);
 
-    var cor;
-    if (vetos.length || pior_racio < 0.08) {
-      cor = 'vermelho';
-    } else {
-      cor = nota == null ? 'vermelho'
-          : (nota >= CORTE_VERDE ? 'verde' : (nota >= CORTE_AMARELO ? 'amarelo' : 'vermelho'));
-    }
+    /* A COR SAI DA NOTA, E SÓ DELA. Sem excepções — nem para o veto.
+       Havia aqui um `if (vetos.length) cor = 'vermelho'` por cima, e ele
+       reabria pela porta do lado a contradição que esta secção veio fechar:
+       um dia com a manhã a 23 e a tarde a 69 dava nota 46, que é amarelo, e
+       saía pintado de vermelho. A penalização já vive na nota; o veto do dia,
+       quando as partes não o carregam, entra pelo tecto lá em cima. */
+    var cor = nota == null ? 'vermelho'
+        : (nota >= CORTE_VERDE ? 'verde' : (nota >= CORTE_AMARELO ? 'amarelo' : 'vermelho'));
 
     /* ------- a frase: sai do factor que mais pontos perdeu ------- */
     var pior = null, piorPerda = -1;
@@ -979,7 +989,13 @@
     var media = notas.length === PARTES.length
       ? notas.reduce(function (s, n) { return s + n; }, 0) / notas.length
       : null;
-    return { d: d, v: classificarDia(d, media == null ? null : { nota: Math.round(media) }),
+    /* Alguma parte já traz penalização? Então a média já a traz também. */
+    var jaPenalizadas = partes.some(function (p) {
+      return p.v && ((p.v.vetos && p.v.vetos.length)
+                     || (p.v.nota != null && p.v.notaBruta != null && p.v.nota < p.v.notaBruta));
+    });
+    return { d: d, v: classificarDia(d, media == null ? null
+                        : { nota: Math.round(media), partesJaPenalizadas: jaPenalizadas }),
              partes: partes,
              /* por arredondar: é com ela que o painel escreve «75,7 → 76» */
              media: media };

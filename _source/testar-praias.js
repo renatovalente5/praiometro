@@ -89,10 +89,20 @@ function ok(cond, texto) {
       ok(a.v.nota <= m,
          onde + ': a nota do dia é ' + a.v.nota + ' e a média das partes é ' + m
          + ' (' + ns.join(', ') + ') — o dia nunca pode valer MAIS do que as suas partes');
-      var penalizado = (a.v.vetos && a.v.vetos.length) || a.v.nota < a.v.notaBruta;
-      ok(a.v.nota === m || penalizado,
+      /* E SÓ SE AFASTA DA MÉDIA POR UMA PENALIZAÇÃO QUE NENHUMA PARTE TEM.
+         Esta é a asserção afiada, e a anterior deixava passar o defeito que a
+         motivou: quando uma parte já está vetada, a média DELA já traz o
+         castigo, e voltar a aplicá-lo ao dia é contá-lo a dobrar. Medido em
+         3896 dias-praia, o dia tem penalização própria e as duas partes sãs em
+         1,1 % dos dias — fora esses, tem de ser a média exacta. */
+      var partesPenalizadas = a.partes.some(function (x) {
+        return (x.v.vetos && x.v.vetos.length)
+            || (x.v.nota != null && x.v.notaBruta != null && x.v.nota < x.v.notaBruta);
+      });
+      ok(a.v.nota === m || !partesPenalizadas,
          onde + ': a nota do dia (' + a.v.nota + ') não é a média (' + m
-         + ') e o dia não tem penalização que o justifique');
+         + ') das partes ' + ns.join('-') + ', e as partes JÁ trazem a penalização'
+         + ' — está a ser contada duas vezes');
       ok(a.v.nota <= Math.max(ns[0], ns[1]),
          onde + ': a nota do dia (' + a.v.nota + ') está acima da melhor parte ' + ns.join('-'));
       /* E NUNCA ABAIXO DA PIOR, sem um veto que o justifique. Foi assim que a
@@ -103,6 +113,19 @@ function ok(cond, texto) {
       ok(a.v.cor === 'vermelho' || a.v.nota >= Math.min(ns[0], ns[1]),
          onde + ': a nota do dia (' + a.v.nota + ') está ABAIXO da pior parte '
          + ns.join('-') + ' e o dia nem sequer é vermelho');
+
+      /* A COR SAI DA NOTA, E SÓ DELA — no dia e em cada parte. Um dia a 46
+         pintado de vermelho enquanto outro a 44 saía amarelo é exactamente a
+         conta mal feita que a pessoa vê ao comparar dois cartões lado a lado.
+         Havia um `if (vetos.length) cor = 'vermelho'` que fazia isso. */
+      [{ v: a.v, q: 'dia' }, { v: a.partes[0].v, q: 'manhã' }, { v: a.partes[1].v, q: 'tarde' }]
+        .forEach(function (x) {
+          if (x.v.nota == null) return;
+          var esperada = x.v.nota >= 70 ? 'verde' : (x.v.nota >= 45 ? 'amarelo' : 'vermelho');
+          ok(x.v.cor === esperada,
+             onde + ' (' + x.q + '): nota ' + x.v.nota + ' devia ser ' + esperada
+             + ' e está ' + x.v.cor);
+        });
 
       /* A água e a ondulação são as do DIA, e são as que cada parte usou. O
          painel escreve «igual de manhã e à tarde», e tem de ser verdade. */

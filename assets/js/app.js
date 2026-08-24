@@ -1107,9 +1107,25 @@
     ((p && p.v && p.v.vetos) || []).forEach(function (t) {
       if (VETO_FACTOR[t]) fora[VETO_FACTOR[t]] = 1;
     });
+    /* O VETO DO DIA SÓ DESCE ÀS PARTES SE NENHUMA JÁ O CARREGAR. É a mesma
+       regra da nota, aplicada à marca: a chuva soma-se ao longo do dia, e um
+       dia pode chumbar com as duas metades sãs — nesse caso a marca tem de
+       aparecer algures, e desce. Mas quando UMA das partes já está vetada pela
+       chuva, descer também à outra é acusar duas vezes o mesmo: dava um
+       triângulo na Chuva de uma tarde verde com 0,1 mm ao todo, ao lado de uma
+       manhã já vetada. Abaixo de FRACO_MM a chuva daquela parte não chega para
+       a marcar por si — foi isso que os 16 128 partes-dia mediram. */
+    var jaMarcada = {};
+    ((a && a.partes) || []).forEach(function (q) {
+      ((q.v && q.v.vetos) || []).forEach(function (t) {
+        if (VETO_FACTOR[t]) jaMarcada[VETO_FACTOR[t]] = 1;
+      });
+      if (q.d && q.d.mm >= FRACO_MM) jaMarcada.chuva = 1;
+    });
     ((a && a.v && a.v.vetos) || []).forEach(function (t) {
       var id = VETO_FACTOR[t];
       if (!id) return;
+      if (jaMarcada[id] && !(p && p.v && p.v.vetos && p.v.vetos.length)) return;
       if (id === 'chuva' && !(p && p.d && p.d.mm > 0)) return;   /* esta parte não deu chuva nenhuma */
       fora[id] = 1;
     });

@@ -611,6 +611,41 @@ devolve `null` quando não há penalização nenhuma, e isso não é um detalhe:
 soma do dia é mais severa do que a média das suas partes — é o que a média veio
 corrigir — e um tecto cego desfazia essa correcção.
 
+### A penalização conta-se uma vez só
+
+Entrou a 24 de Agosto de 2026, e veio de outro cartão reportado: **69** numa
+sexta com a manhã a 69 e a tarde a 78 — a média é 74. O tecto do dia estava a
+aplicar-se por cima de partes que **já** o traziam, portanto a mesma chuva era
+descontada duas vezes: uma na parte, outra no dia.
+
+Medido em 3 896 dias-praia (8 praias, Junho de 2024 a Setembro de 2025), o dia
+tem penalização que NENHUMA das suas partes tem em **1,1 %** dos dias:
+
+| | |
+|---|---|
+| veto só no dia, com as duas partes sãs | **0,46 %** |
+| veto no dia **e** em alguma parte (as partes já o carregam) | 35,81 % |
+| despromoção só no dia, partes limpas | **0,67 %** |
+
+Ou seja: em ~99 % das vezes que disparava, o tecto do dia era redundante — e era
+ele que afastava a nota da média. Agora **só se aplica quando nenhuma parte
+carrega a penalização**. Sobre as 6 previsões × 8 praias: a nota do dia é a
+média exacta em **97,9 %** dos dias, contra **62,5 %** antes.
+
+**E a cor passou a sair só da nota, sem excepção.** Ficara um `if (vetos.length)
+cor = 'vermelho'` por cima do cálculo, e ele reabria pela porta do lado a
+contradição que a secção anterior fechou: um dia com a manhã a 23 e a tarde a 69
+dá 46, que é amarelo, e saía pintado de vermelho. Em 198 dias-praia vetados do
+arquivo, a média das partes **nunca** chega ao verde — 76,8 % já são vermelhos
+por si, 23,2 % ficam amarelos, e é isso que a cor passa a dizer.
+
+**A mesma regra vale para o triângulo.** O veto é do dia e o ecrã fá-lo descer
+às partes, para que a marca apareça algures quando a chuva só existe somada. Mas
+se uma parte já tem chuva que chegue para se marcar sozinha (≥ 0,5 mm), a outra
+deixou de a levar também: dava um triângulo na Chuva de uma tarde **verde com
+0,1 mm ao todo**, ao lado de uma manhã vetada. Quando as duas estão abaixo de
+0,5 mm a marca desce às duas, que é o caso para que desceu.
+
 ## Os cortes
 
 | Pontuação | Cor | Veredicto |

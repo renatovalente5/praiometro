@@ -369,9 +369,18 @@ def escolherPraia(c, i=0, limite=60.0):
                   or 'vazios=0' not in api)
     msg = ('a previsão não chegou em %.0fs (a tira ficou com %d dias): %s'
            % (limite, n, json.dumps(d, ensure_ascii=False)))
-    (semMedida if culpaDaApi else erro)(
-        ('não foi possível medir — ' if culpaDaApi else '') + msg)
-    return None
+    if not culpaDaApi:
+        erro(msg)
+        return None
+    # A API FALHOU: PÁRA-SE AQUI, limpo. Continuar sem previsão põe uma dúzia
+    # de secções a ler elementos que não existem, e o que sai são erros com
+    # nomes de defeitos que não há — «a tira partiu-se em 0 linhas», «só 0 dos
+    # 6 dias têm palavra». Cada um desses manda alguém investigar o nada.
+    # O resumo sai à mesma (vive num atexit) e o código é 2: não medido.
+    semMedida('não foi possível medir — ' + msg)
+    semMedida('a corrida parou aqui: sem previsão, as secções seguintes leriam '
+              'um ecrã vazio e chamar-lhe-iam defeitos')
+    sys.exit(2)
 
 
 def novo(w,h,mob):
@@ -2380,13 +2389,32 @@ def verificar_producao():
 
 
 srv.shutdown()
-print('\n'+'='*54)
-print('FALHAS: %d' % len(falhas))
-for f in falhas: print('  - '+f)
-if naoMedido:
-    print('NÃO MEDIDO: %d' % len(naoMedido))
-    for f in naoMedido: print('  · '+f[:150])
-print('='*54)
+_resumido = []
+
+
+def _resumo():
+    """O resumo sai SEMPRE, mesmo quando a corrida pára a meio.
+
+    Vive num `atexit` porque a bateria pode terminar por três caminhos: até ao
+    fim, por `sys.exit(2)` quando a API falha, ou por uma excepção. Nos dois
+    últimos o resumo ficava por escrever, e o que se via no registo era uma
+    pilha de chamadas sem contas nenhumas.
+    """
+    if _resumido:
+        return
+    _resumido.append(1)
+    print('\n'+'='*54)
+    print('FALHAS: %d' % len(falhas))
+    for f in falhas: print('  - '+f)
+    if naoMedido:
+        print('NÃO MEDIDO: %d' % len(naoMedido))
+        for f in naoMedido: print('  · '+f[:200])
+    print('='*54)
+
+
+import atexit
+atexit.register(_resumo)
+_resumo()
 
 # E O CÓDIGO DE SAÍDA DIZ O MESMO QUE O ECRÃ. Faltava, e não era detalhe: este
 # ficheiro terminava SEMPRE em 0, com falhas ou sem elas. Quem o corre à mão lê

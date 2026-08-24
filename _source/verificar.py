@@ -1378,6 +1378,173 @@ try:
     c.cmd('Runtime.evaluate', expression="document.getElementById('dia-5').click()")
 finally: c.fechar()
 
+# --------------------------------------------------------------------- 6h
+print('\n== 6h. escolher duas praias seguidas ==')
+# QUEM CHEGA ATRASADO NÃO ESCREVE. Escolher a praia A e, antes de ela chegar,
+# escolher a B: a resposta de A chega por último e escrevia por cima — título
+# de uma praia, números de outra, e o history.replaceState a gravar o endereço
+# errado, que a visita seguinte abre. O mostrarMapa() já tinha a guarda; o
+# escolher() não tinha nenhuma.
+#
+# Atrasa-se o fetch da PRIMEIRA praia com um embrulho ao window.fetch, e não
+# com condições de rede: é preciso atrasar UM pedido e deixar passar o outro,
+# e a emulação do CDP não distingue pedidos.
+c = novo(1280, 900, False)
+try:
+    antes = len(falhas)
+    c.js("document.querySelector('.atalho').click()"); time.sleep(5.0)
+    nomes = json.loads(c.js("JSON.stringify([...document.querySelectorAll('.atalho')]"
+                            ".map(function(b){return b.textContent.trim();}))"))
+    if len(nomes) < 2:
+        erro('só há %d atalhos — o teste precisa de dois' % len(nomes))
+    else:
+        c.js("""(function(){
+          var of = window.fetch;
+          window.__atrasar = true;
+          window.fetch = function (u, o) {
+            if (window.__atrasar && String(u).indexOf('open-meteo') >= 0) {
+              return new Promise(function (res, rej) {
+                setTimeout(function () { of(u, o).then(res, rej); }, 4000); });
+            }
+            return of(u, o);
+          };})()""")
+        # PELOS NÚMEROS, e não pelo título: o `#v-praia` é escrito a partir de
+        # `praiaActual`, portanto mostra sempre a praia mais recente MESMO
+        # quando os números que estão por baixo são da outra. Um teste ao
+        # título passava com o defeito lá dentro. Guardam-se primeiro as notas
+        # verdadeiras de cada praia, uma de cada vez e sem corrida.
+        tiras = []
+        for i in (0, 1):
+            c.js("document.querySelectorAll('.atalho')[%d].click()" % i); time.sleep(5.0)
+            tiras.append(c.js("[...document.querySelectorAll('.dia__nota')]"
+                              ".map(function(x){return x.textContent.trim();}).join('/')"))
+        if tiras[0] == tiras[1]:
+            print('  fora de ordem — as duas praias dão a mesma tira (%s), sem valor hoje' % tiras[0])
+        else:
+            # A CACHE DE SESSÃO TEM DE SAIR, senão não há corrida nenhuma: o
+            # `buscar()` devolve do sessionStorage sem chegar ao fetch, e o
+            # atraso que embrulhámos nunca corre. Custou uma mutação que
+            # passou: gravar as duas tiras acima meteu as duas praias em cache.
+            c.js("""Object.keys(sessionStorage).filter(function(k){
+                   return k.indexOf('pm:c:')===0;}).forEach(function(k){
+                   sessionStorage.removeItem(k);})""")
+            # E agora a corrida: a primeira fica pendurada, a segunda passa logo.
+            c.js("window.__atrasar = true")
+            c.js("document.querySelectorAll('.atalho')[0].click()")
+            time.sleep(.4)
+            c.js("window.__atrasar = false")
+            c.js("document.querySelectorAll('.atalho')[1].click()")
+            time.sleep(9.0)
+            d = json.loads(c.js(r"""JSON.stringify({
+              titulo: (document.getElementById('v-praia')||{}).textContent || '',
+              notas: [...document.querySelectorAll('.dia__nota')].map(function(x){return x.textContent.trim();}).join('/'),
+              hash: decodeURIComponent(location.hash || ''),
+              guardada: (function(){try{return JSON.parse(localStorage.getItem('pm:praia')||'{}').n||'';}catch(e){return '';}})()})"""))
+            esperada = nomes[1]
+            if d['notas'] == tiras[0]:
+                erro('o cartão diz %r e mostra os NÚMEROS de %r: a resposta atrasada '
+                     'escreveu por cima (tira %s)' % (d['titulo'], nomes[0], d['notas']))
+            elif d['notas'] != tiras[1]:
+                erro('a tira não é de nenhuma das duas praias: %s (esperava %s)'
+                     % (d['notas'], tiras[1]))
+            elif esperada not in (d['hash'] or ''):
+                erro('o endereço ficou na praia errada: %r, com o cartão em %r'
+                     % (d['hash'], d['titulo']))
+            elif esperada not in (d['guardada'] or ''):
+                erro('a praia GRAVADA é a errada (%r) — a próxima visita abre nela'
+                     % d['guardada'])
+
+        # E A OUTRA METADE: a praia NOVA falha. O `catch` limpava as avaliações
+        # mas deixava lá os `dias` e os `veredictos` da anterior, e não voltava
+        # a esconder o resultado — ficava o nome da praia nova por cima dos
+        # números, da maré e do mapa da antiga, sem nada no ecrã a dizê-lo. E a
+        # linha da previsão guardada não serve de aviso aqui: isto não é uma
+        # previsão velha DESTA praia, é a previsão de outra.
+        antes2 = len(falhas)
+        c.js("document.querySelectorAll('.atalho')[0].click()"); time.sleep(5.0)
+        antiga = c.js("[...document.querySelectorAll('.dia__nota')]"
+                      ".map(function(x){return x.textContent.trim();}).join('/')")
+        c.js("""(function(){
+          Object.keys(sessionStorage).filter(function(k){return k.indexOf('pm:c:')===0;})
+            .forEach(function(k){sessionStorage.removeItem(k);});
+          Object.keys(localStorage).filter(function(k){return k.indexOf('pm:g:')===0;})
+            .forEach(function(k){localStorage.removeItem(k);});
+          var of = window.fetch;
+          window.fetch = function (u, o) {
+            if (String(u).indexOf('open-meteo') >= 0) return Promise.reject(new Error('teste'));
+            return of(u, o);
+          };})()""")
+        c.js("document.querySelectorAll('.atalho')[1].click()"); time.sleep(4.0)
+        f = json.loads(c.js(r"""JSON.stringify({
+          escondido: !!document.getElementById('resultado').hidden,
+          dias: document.querySelectorAll('.dia').length,
+          notas: [...document.querySelectorAll('.dia__nota')].map(function(x){return x.textContent.trim();}).join('/'),
+          titulo: (document.getElementById('v-praia')||{}).textContent || '',
+          /* a mensagem vive no #procura-estado, que é o `estado` do app.js */
+          aviso: (document.getElementById('procura-estado')||{}).textContent || '',
+          vazio: !document.getElementById('vazio').hidden})"""))
+        if not f['escondido'] and f['notas'] == antiga:
+            erro('a praia nova falhou e ficou no ecrã o cartão da ANTIGA: diz %r com a '
+                 'tira %s' % (f['titulo'], f['notas']))
+        elif not f['escondido'] and f['dias']:
+            erro('a praia nova falhou e o resultado continuou à vista: %s' % f)
+        elif not f['aviso'] and not f['vazio']:
+            erro('a praia nova falhou sem dizer nada a quem está a olhar: %s' % f)
+        if len(falhas) == antes2:
+            print('  falha na nova ✓ o cartão sai do ecrã e diz %r'
+                  % ((f['aviso'] or '(o painel «vazio» à vista)')[:46]))
+
+        # E O TERCEIRO CASO: a praia ANTIGA falha TARDE, com a nova já no ecrã.
+        # Sem guarda de dono no `catch`, esse erro atrasado apagava o cartão de
+        # quem já lá estava — a pessoa escolhe a praia B, vê a resposta, e
+        # segundos depois o ecrã esvazia-se com uma mensagem de erro sobre um
+        # pedido que ela já abandonou.
+        antes3 = len(falhas)
+        c.abrir('http://127.0.0.1:%d/' % PORTA, espera=2.6)
+        # A CACHE E AS RESERVAS TÊM DE SAIR. O `buscar()` só rejeita se não
+        # houver reserva: com uma, cai para ela e o `catch` do escolher() nunca
+        # corre — o pedido «falhado» resolve-se com números guardados. Custou
+        # uma mutação que passou com a guarda fora.
+        c.js("""(function(){
+          Object.keys(sessionStorage).filter(function(k){return k.indexOf('pm:')===0;})
+            .forEach(function(k){sessionStorage.removeItem(k);});
+          Object.keys(localStorage).filter(function(k){return k.indexOf('pm:g:')===0;})
+            .forEach(function(k){localStorage.removeItem(k);});
+          var of = window.fetch;
+          window.__falharAtrasado = false;
+          window.fetch = function (u, o) {
+            if (window.__falharAtrasado && String(u).indexOf('open-meteo') >= 0) {
+              return new Promise(function (res, rej) {
+                setTimeout(function () { rej(new Error('teste')); }, 4500); });
+            }
+            return of(u, o);
+          };})()""")
+        c.js("window.__falharAtrasado = true")
+        c.js("document.querySelectorAll('.atalho')[0].click()")
+        time.sleep(.4)
+        c.js("window.__falharAtrasado = false")
+        c.js("document.querySelectorAll('.atalho')[1].click()")
+        time.sleep(9.0)
+        g = json.loads(c.js(r"""JSON.stringify({
+          escondido: !!document.getElementById('resultado').hidden,
+          dias: document.querySelectorAll('.dia').length,
+          titulo: (document.getElementById('v-praia')||{}).textContent || '',
+          aviso: (document.getElementById('procura-estado')||{}).textContent || ''})"""))
+        if g['escondido'] or not g['dias']:
+            erro('a falha ATRASADA da praia abandonada apagou o cartão da que estava '
+                 'no ecrã: %s' % g)
+        elif g['aviso']:
+            erro('a falha atrasada de um pedido abandonado escreveu um erro por cima '
+                 'de um cartão bom: %r' % g['aviso'])
+        if len(falhas) == antes3:
+            print('  falha atrasada ✓ o erro do pedido abandonado não toca no cartão de %r'
+                  % g['titulo'])
+        if len(falhas) == antes:
+            print('  fora de ordem ✓ ficou em %r, com o endereço e a memória a condizer'
+                  % esperada)
+finally:
+    c.fechar()
+
 print('\n== 6f. abre sem rede, e não guarda previsão ==')
 # Duas propriedades, e a segunda é mais importante do que a primeira: um site
 # de praia que serve o sol de ontem por baixo de chuva é pior do que um site

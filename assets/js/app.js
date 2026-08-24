@@ -407,6 +407,13 @@
       : Promise.resolve(null));
 
     Promise.all(pedidos).then(function (r) {
+      /* QUEM CHEGA ATRASADO NÃO ESCREVE. É a mesma guarda que o mostrarMapa()
+         já tinha, e faltava aqui — escolher duas praias seguidas com a segunda
+         em cache e a rede lenta deixava a resposta ANTIGA chegar por último e
+         escrever por cima: título de uma praia, números de outra, e o
+         `history.replaceState` a gravar o endereço errado. Isso não se corrige
+         sozinho, porque a visita seguinte abre pelo que ficou gravado. */
+      if (praiaActual !== praia) return;
       var cons = M.consenso(r[0], MODELOS);
       dias = M.agregar(cons, r[1], praia);
       /* O dia e as suas três partes vêm juntos do modelo, e a nota do dia JÁ É
@@ -444,11 +451,19 @@
         history.replaceState(null, '', '#' + endereco(praia));
       } catch (e) { }
     }).catch(function (e) {
+      if (praiaActual !== praia) return;
       estado.textContent = 'Não conseguimos ir buscar a previsão. Tenta outra vez daqui a pouco.';
       el('vazio').hidden = false;
       /* Sem isto, uma praia que falhasse herdava as partes da anterior — e era
-         a silhueta dessa que ficava no ecrã. */
-      avaliacoes = []; parteAberta = null;
+         a silhueta dessa que ficava no ecrã.
+         E O CARTÃO INTEIRO SAI. Limpar só as avaliações deixava lá os `dias` e
+         os `veredictos` da praia anterior: a tira continuava a responder ao
+         clique e o cartão passava a dizer o NOME da praia nova por cima dos
+         números, da maré e do mapa da antiga — sem nada no ecrã a dizê-lo. A
+         linha da previsão guardada também não servia de aviso, porque isto não
+         é uma previsão velha desta praia, é a previsão de outra. */
+      dias = []; avaliacoes = []; veredictos = []; parteAberta = null;
+      el('resultado').hidden = true;
       var f = el('v-sem-mar'); if (f) { f.innerHTML = ''; f.removeAttribute('data-k'); }
     });
   }

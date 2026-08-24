@@ -9,6 +9,7 @@ dependências para poder correr tal e qual na GitHub Action.
 import base64
 import json
 import os
+import zlib
 import platform
 import shutil
 import socket
@@ -103,6 +104,74 @@ class WS:
             self.sock.close()
         except Exception:
             pass
+
+
+def descodificar_png(dados):
+    """Devolve (largura, altura, ler(x, y)) a partir dos bytes de um PNG.
+
+    Existe porque medir contraste a sério obriga a olhar para os PÍXEIS. O
+    medidor do verificar.py subia pelos antepassados do DOM à procura de
+    `backgroundColor`, e por isso era cego a três coisas de uma vez: a camadas
+    que não são antepassadas (a `.ceu` do Praiómetro é `position: fixed;
+    z-index: -1`, portanto está POR TRÁS do texto sem nunca ser sua mãe), a
+    gradientes e imagens (lia `backgroundColor`, que num `linear-gradient` vem
+    transparente) e a qualquer coisa sobreposta. Media o texto do topo do site
+    contra um fundo que ninguém tem à frente, e dava «FALHAS: 0» por cima de
+    1,21:1 medidos no tema escuro.
+
+    Sem Pillow: este projecto não tem dependências, e a Action que o corre não
+    as vai ter por causa de um teste. São ~40 linhas de filtros PNG.
+    """
+    if dados[:8] != b'\x89PNG\r\n\x1a\n':
+        raise ValueError('não é um PNG')
+    pos, largura, altura, cor, prof, idat = 8, 0, 0, 0, 8, b''
+    while pos < len(dados):
+        n = struct.unpack('>I', dados[pos:pos + 4])[0]
+        tipo = dados[pos + 4:pos + 8]
+        corpo = dados[pos + 8:pos + 8 + n]
+        if tipo == b'IHDR':
+            largura, altura, prof, cor = struct.unpack('>IIBB', corpo[:10])
+        elif tipo == b'IDAT':
+            idat += corpo
+        elif tipo == b'IEND':
+            break
+        pos += 12 + n
+    if prof != 8 or cor not in (2, 6):
+        raise ValueError('PNG inesperado: profundidade %d, cor %d' % (prof, cor))
+    canais = 4 if cor == 6 else 3
+    cru = zlib.decompress(idat)
+    passo = largura * canais
+    linhas, i, anterior = [], 0, bytearray(passo)
+    for _ in range(altura):
+        filtro = cru[i]; i += 1
+        linha = bytearray(cru[i:i + passo]); i += passo
+        if filtro:
+            for j in range(passo):
+                a_ = linha[j - canais] if j >= canais else 0
+                b_ = anterior[j]
+                c_ = anterior[j - canais] if j >= canais else 0
+                if filtro == 1:
+                    linha[j] = (linha[j] + a_) & 255
+                elif filtro == 2:
+                    linha[j] = (linha[j] + b_) & 255
+                elif filtro == 3:
+                    linha[j] = (linha[j] + (a_ + b_) // 2) & 255
+                elif filtro == 4:
+                    pp = a_ + b_ - c_
+                    pa, pb, pc = abs(pp - a_), abs(pp - b_), abs(pp - c_)
+                    linha[j] = (linha[j] + (a_ if pa <= pb and pa <= pc
+                                            else (b_ if pb <= pc else c_))) & 255
+        linhas.append(bytes(linha))
+        anterior = linha
+
+    def ler(x, y):
+        if 0 <= x < largura and 0 <= y < altura:
+            o = x * canais
+            L = linhas[y]
+            return (L[o], L[o + 1], L[o + 2])
+        return None
+
+    return largura, altura, ler
 
 
 class Chrome:

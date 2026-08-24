@@ -504,12 +504,21 @@ try:
             erro('o contorno da sugestão marcada vale %.2f:1, e a WCAG 1.4.11 pede 3' % r)
         else:
             print('  contorno da marcada             ✓ %.2f:1, %.0fpx' % (r, m['largura']))
+    # ESPERA-SE PELO NOME, não por cinco segundos. Num runner a previsão
+    # demora, e o que saía era «Enter não escolheu praia nenhuma» — uma
+    # acusação a uma tecla que tinha feito o seu trabalho.
     c.cmd('Input.dispatchKeyEvent', type='rawKeyDown', key='Enter', code='Enter', windowsVirtualKeyCode=13, nativeVirtualKeyCode=13)
     c.cmd('Input.dispatchKeyEvent', type='keyUp', key='Enter', code='Enter', windowsVirtualKeyCode=13, nativeVirtualKeyCode=13)
-    time.sleep(5.0)
-    esc=c.js("document.getElementById('v-praia').textContent")
-    print('  Enter escolheu:', esc)
-    if not esc: erro('Enter não escolheu praia nenhuma')
+    esc, t0 = '', time.time()
+    while time.time() - t0 < 40:
+        esc = c.js("document.getElementById('v-praia').textContent") or ''
+        if esc: break
+        time.sleep(.3)
+    print('  Enter escolheu:', esc or '(nada em 40s)')
+    if not esc:
+        estado = c.js("(document.getElementById('procura-estado')||{}).textContent") or ''
+        (semMedida if 'conseguimos' in estado else erro)(
+            'Enter não escolheu praia nenhuma (o ecrã diz %r)' % estado)
 
     # sem resultados: a mensagem tem de ir para a região live, e o aria-expanded
     # não pode dizer «expandido» sobre uma lista sem opções nenhumas
@@ -572,7 +581,15 @@ try:
     c.js("""(function(){var i=document.getElementById('procura');
       i.value='fluvial'; i.dispatchEvent(new Event('input',{bubbles:true}));})()""")
     time.sleep(.8)
-    c.js("document.querySelector('.sugestao[data-i]').click()"); time.sleep(5.0)
+    # A praia de rio escolhe-se pela sugestão, não por um atalho — mas a espera
+    # é a mesma história: quarenta segundos a olhar para o nome, e não cinco a
+    # dormir. Sem isto o runner dizia que a praia de rio não abria.
+    c.js("document.querySelector('.sugestao[data-i]').click()")
+    _t0 = time.time()
+    while time.time() - _t0 < 40:
+        if c.js("document.getElementById('v-praia').textContent"): break
+        time.sleep(.3)
+    time.sleep(.4)
     d=json.loads(c.js("""JSON.stringify({praia:document.getElementById('v-praia').textContent,
       palavra:(document.querySelector('.partes__palavra')||{}).textContent
               || document.getElementById('v-resposta').textContent,
@@ -1950,7 +1967,7 @@ try:
         # verdadeiras de cada praia, uma de cada vez e sem corrida.
         tiras = []
         for i in (0, 1):
-            c.js("document.querySelectorAll('.atalho')[%d].click()" % i); time.sleep(5.0)
+            escolherPraia(c, i)
             tiras.append(c.js("[...document.querySelectorAll('.dia__nota')]"
                               ".map(function(x){return x.textContent.trim();}).join('/')"))
         if tiras[0] == tiras[1]:
@@ -1996,7 +2013,7 @@ try:
         # linha da previsão guardada não serve de aviso aqui: isto não é uma
         # previsão velha DESTA praia, é a previsão de outra.
         antes2 = len(falhas)
-        c.js("document.querySelectorAll('.atalho')[0].click()"); time.sleep(5.0)
+        escolherPraia(c, 0)
         antiga = c.js("[...document.querySelectorAll('.dia__nota')]"
                       ".map(function(x){return x.textContent.trim();}).join('/')")
         c.js("""(function(){
@@ -2159,7 +2176,7 @@ try:
     c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
     escolherPraia(c)
     c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
-    c.js("document.querySelectorAll('.atalho')[1].click()"); time.sleep(6.0)
+    escolherPraia(c, 1)          # e não um clique com uma espera fixa
     c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
     favs = c.js("(localStorage.getItem('pm:favoritos')||'').split(';').filter(Boolean).length")
     if int(favs or 0) < 2:

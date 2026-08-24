@@ -3,9 +3,16 @@
 import base64, json, os, re, socket, socketserver, sys, threading, http.server, time
 RAIZ=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(RAIZ,'_source'))
-from cdp import Chrome, descodificar_png
+from cdp import Chrome, descodificar_png, porta_livre
 def livre():
-    s=socket.socket(); s.bind(('127.0.0.1',0)); p=s.getsockname()[1]; s.close(); return p
+    """Uma porta livre que este processo ainda não deu a ninguém.
+
+    O `bind(0)` sozinho reutiliza portas recém-libertadas, e este ficheiro abre
+    e fecha mais de vinte Chromes: dois seguidos apanhavam a mesma porta e o
+    segundo ligava-se ao alvo do primeiro, que estava a morrer. Reaproveita-se
+    a mesma contabilidade do cdp.py, para os servidores HTTP daqui e os Chromes
+    de lá não se atropelarem."""
+    return porta_livre()
 class Q(http.server.SimpleHTTPRequestHandler):
     def log_message(self,*a): pass
 PORTA=livre()

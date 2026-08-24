@@ -175,9 +175,39 @@ def descodificar_png(dados):
     return largura, altura, ler
 
 
+_PORTAS_DADAS = set()
+
+
+def porta_livre():
+    """Uma porta que este processo ainda não usou.
+
+    O `bind(0)` sozinho não chega: o SO reutiliza portas recém-libertadas, e
+    dois Chromes seguidos apanhavam a mesma. O segundo ligava-se ao
+    `/json/list` da porta certa mas ao ALVO do primeiro, que estava a morrer —
+    a ligação abria, e depois nada respondia. O que se via era `Page.navigate`
+    a esgotar os 90s do socket, sempre no segundo Chrome de uma secção, e
+    sempre num runner (aqui o primeiro morre depressa de mais para chocarem).
+    """
+    for _ in range(50):
+        s = socket.socket()
+        s.bind(('127.0.0.1', 0))
+        n = s.getsockname()[1]
+        s.close()
+        if n not in _PORTAS_DADAS:
+            _PORTAS_DADAS.add(n)
+            return n
+    raise RuntimeError('sem portas livres')
+
+
 class Chrome:
-    def __init__(self, porta=9422, perfil=None, locale='pt-PT'):
-        self.perfil = perfil or '/tmp/cdp-%d' % porta
+    def __init__(self, porta=None, perfil=None, locale='pt-PT'):
+        if porta is None:
+            porta = porta_livre()
+        _PORTAS_DADAS.add(porta)
+        self.porta = porta
+        # Pasta ÚNICA e não `cdp-<porta>`: com a porta a repetir-se, dois
+        # Chromes partilhavam perfil e o segundo apanhava-o a ser apagado.
+        self.perfil = perfil or ('/tmp/cdp-%d-%s' % (porta, os.urandom(4).hex()))
         shutil.rmtree(self.perfil, ignore_errors=True)
         self.proc = subprocess.Popen(
             [encontrar_chrome(), '--headless=new', '--disable-gpu', '--no-sandbox',
@@ -207,9 +237,27 @@ class Chrome:
             except Exception:
                 continue
         if not alvo:
+            self.fechar()
             raise RuntimeError('o Chrome não abriu a porta de depuração')
         self.ws = WS(alvo['webSocketDebuggerUrl'])
         self.id = 0
+        # E CONFIRMA-SE QUE O ALVO RESPONDE, antes de alguém contar com ele.
+        # Uma ligação aberta não prova nada: era exactamente esse o sintoma —
+        # o handshake passava e o primeiro comando a sério ficava 90s à espera.
+        # Vale mais falhar aqui, com nome, do que a meio de uma secção.
+        antigo = self.ws.sock.gettimeout()
+        try:
+            self.ws.sock.settimeout(20)
+            self.cmd('Runtime.evaluate', expression='1+1', returnByValue=True)
+        except Exception as e:
+            self.fechar()
+            raise RuntimeError('o Chrome abriu mas não responde (porta %d): %s'
+                               % (porta, e))
+        finally:
+            try:
+                self.ws.sock.settimeout(antigo)
+            except Exception:
+                pass
 
     def cmd(self, metodo, **params):
         self.id += 1

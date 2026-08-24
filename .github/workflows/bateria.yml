@@ -70,8 +70,42 @@ jobs:
       - name: Montar o _site/
         run: node _build/gerar.js
 
+      # A BATERIA VAI PRIMEIRO, e a ordem não é arbitrária. A Open-Meteo
+      # limita por MINUTO, e pesa cada pedido pelo número de localizações, de
+      # variáveis e de dias: o `testar-praias.js` pede 40 praias com dez
+      # variáveis e quatro modelos, o que gasta a janela toda de uma vez. A
+      # seguir, o Chrome pedia e levava com um 429 — que chega ao browser como
+      # «Failed to fetch», porque a resposta de recusa não traz cabeçalhos CORS
+      # e o browser nem consegue ler o código. O Node, esse, vê o 429 e
+      # continua a vida: mesma máquina, mesma rede, dois relatos diferentes.
+      # Foi isso que me mandou atrás de DNS e de IPv6 durante três corridas.
+      - name: A bateria de browser
+        id: bateria
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set +e
+          python3 _source/verificar.py
+          codigo=$?
+          set -e
+          if [ "$codigo" = "2" ]; then
+            echo "::warning::A Open-Meteo não respondeu — a bateria não mediu nada."
+            echo '⚠️ `verificar.py`: a API não respondeu, nada medido.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$codigo" != "0" ]; then
+            echo '❌ `verificar.py` encontrou defeitos — ver o registo acima.' >> "$GITHUB_STEP_SUMMARY"
+            exit "$codigo"
+          else
+            echo '✅ `verificar.py`' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # E SÓ DEPOIS DE A JANELA DO MINUTO REPOR. Sem esta pausa, o passo de
+      # cima e este disputam a mesma quota e um deles perde.
+      - name: Esperar pela janela da Open-Meteo
+        if: always()
+        run: sleep 75
+
       - name: O modelo contra praias reais
-        id: praias
+        if: always()
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: |
@@ -88,27 +122,6 @@ jobs:
             exit "$codigo"
           else
             echo '✅ `testar-praias.js`' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      # Corre mesmo que o passo de cima tenha falhado: são medições
-      # independentes, e saber as duas de uma vez poupa uma ida e volta.
-      - name: A bateria de browser
-        if: always() && steps.praias.outcome != 'cancelled'
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        run: |
-          set +e
-          python3 _source/verificar.py
-          codigo=$?
-          set -e
-          if [ "$codigo" = "2" ]; then
-            echo "::warning::A Open-Meteo não respondeu — a bateria não mediu nada."
-            echo '⚠️ `verificar.py`: a API não respondeu, nada medido.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "$codigo" != "0" ]; then
-            echo '❌ `verificar.py` encontrou defeitos — ver o registo acima.' >> "$GITHUB_STEP_SUMMARY"
-            exit "$codigo"
-          else
-            echo '✅ `verificar.py`' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # As fotografias SEM TEXTO que o medidor de contraste usou. Um número

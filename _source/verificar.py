@@ -923,14 +923,27 @@ try:
                    a nenhuma. A excepção passou a ler string vazia, ou seja
                    deixou de perdoar seja o que for, e este teste falhou a
                    apontar para o sítio errado. Lê-se o número, não a frase. */
-                mmChuva: (function(){
+                chuva: (function(){
                   var l = [...pn.querySelectorAll('.nums__linha')].filter(function(x){
                     var n = x.querySelector('.nums__nome');
                     return n && [...n.childNodes].filter(function(k){return k.nodeType===3;})
                       .map(function(k){return k.textContent;}).join('').trim() === 'Chuva';})[0];
                   if (!l) return null;
-                  var m = (l.textContent || '').match(/([\d,.]+)\s*mm/);
-                  return m ? parseFloat(m[1].replace(',', '.')) : 0;})(),
+                  var t = l.textContent || '';
+                  var mm = t.match(/([\d,.]+)\s*mm/);
+                  var pc = ((l.querySelector('.nums__valor')||{}).textContent||'').match(/([\d,.]+)\s*%/);
+                  var prob = pc ? parseFloat(pc[1].replace(',', '.')) : null;
+                  /* A PERGUNTA AO PRÓPRIO MODELO, em vez de repetir aqui a
+                     tabela dele. A chuva pontua-se pela PROBABILIDADE, e uma
+                     tarde com 0,1 mm e 35 % tem rácio 0,375 — abaixo do corte
+                     de 0,40, portanto marca-se sozinha e a marca é legítima.
+                     Adivinhar isso pelos milímetros deu falso positivo. */
+                  var racio = (prob != null && window.Modelo)
+                    ? Modelo._pontos.chuva(prob) / Modelo.PESOS.chuva : null;
+                  return { mm: mm ? parseFloat(mm[1].replace(',', '.')) : 0,
+                           prob: prob, racio: racio,
+                           propria: (mm && parseFloat(mm[1].replace(',', '.')) >= 0.5)
+                                    || (racio != null && racio < 0.40) };})(),
                 marcas: pn.querySelectorAll('.nums__mau').length,
                 quais: [...pn.querySelectorAll('.nums__linha')].filter(function(l){
                   return l.querySelector('.nums__mau');})
@@ -973,11 +986,12 @@ try:
                     # Tudo o resto continua impossível: se um dos outros
                     # factores estivesse abaixo de 0,40, o bloco não era verde.
                     perm = {'Água do mar'}
-                    if (d.get('mmChuva') or 0) > 0: perm.add('Chuva')
+                    ch = d.get('chuva') or {}
+                    if (ch.get('mm') or 0) > 0 or ch.get('propria'): perm.add('Chuva')
                     fora = [x for x in d['quais'] if x not in perm]
                     if fora:
                         erro('bloco VERDE com triângulo em %s — só a água, ou a chuva com '
-                             'milímetros (a linha da chuva mostra %r mm)' % (fora, d.get('mmChuva')))
+                             'milímetros ou rácio mau (a linha mostra %s)' % (fora, ch))
                 # A LEI DO CARTÃO vale para a marca: um símbolo sozinho não diz
                 # nada a quem ouve. E um triângulo sem SVG é um espaço vazio.
                 if d['semSvg']: erro('%d marcas sem desenho nenhum lá dentro' % d['semSvg'])
@@ -997,11 +1011,16 @@ try:
             for q, outro in (('manha', 'tarde'), ('tarde', 'manha')):
                 eu, ele = doDia[q], doDia[outro]
                 if 'Chuva' not in eu['quais']: continue
-                if (eu.get('mmChuva') or 0) >= 0.5: continue        # chuva própria
-                if (ele.get('mmChuva') or 0) >= 0.5:
-                    erro('dia %d: %s tem triângulo na Chuva com %s mm, e %s já tem %s mm '
-                         '— o veto do dia está a ser acusado nas duas partes'
-                         % (dia, q, eu.get('mmChuva'), outro, ele.get('mmChuva')))
+                meu, dele = eu.get('chuva') or {}, ele.get('chuva') or {}
+                # Marca por MÉRITO PRÓPRIO — milímetros que cheguem, ou rácio
+                # abaixo do corte — não é herança e não se questiona. Esta
+                # linha faltava e a guarda acusou uma tarde com 35 % de
+                # probabilidade, cujo rácio é 0,375 e se marca sozinha.
+                if meu.get('propria'): continue
+                if dele.get('propria'):
+                    erro('dia %d: %s tem triângulo na Chuva sem o merecer (%s), e %s já '
+                         'carrega a marca (%s) — o veto do dia está a ser acusado nas duas partes'
+                         % (dia, q, meu, outro, dele))
     if len(falhas) == antes:
         print('  valor mau     ✓ %d blocos: %d de %d verdes (só água), %d de %d amarelos, %d de %d vermelhos'
               % (sum(vistos.values()), marcados['verde'], vistos['verde'],
@@ -1372,6 +1391,7 @@ class _Q(_hs.SimpleHTTPRequestHandler):
 _P = livre()
 _srv = _ss.TCPServer(('127.0.0.1', _P), lambda *a, **k: _Q(*a, directory=RAIZ + '/_site', **k))
 _th.Thread(target=_srv.serve_forever, daemon=True).start()
+_vivo = True
 c=Chrome(porta=livre())
 try:
     c.cmd('Emulation.setDeviceMetricsOverride', width=375, height=812, deviceScaleFactor=1, mobile=True)
@@ -1455,8 +1475,48 @@ try:
         erro('o aviso não diz a HORA a que a previsão foi buscada: %r' % a2['antiga'])
     if len(falhas) == antes:
         print('  na areia      ✓ %r' % a2['antiga'])
+
+    # A ENTRADA NÃO SE ENVENENA. Esta secção só navegava para `/`, e por isso
+    # nunca podia ver o defeito: o ramo da navegação do sw.js gravava QUALQUER
+    # página debaixo da chave `/`, e sem olhar ao `r.ok`. Visitar um hub pelo
+    # rodapé passava a ser a página de entrada da aplicação instalada, que
+    # arranca em `start_url: "/"`.
+    #
+    # E o servidor tem de morrer A SÉRIO. Com `emulateNetworkConditions` o
+    # fetch do PRÓPRIO service worker continua a chegar ao localhost — ele
+    # corre noutro alvo, que este comando não apanha — e a cache repara-se
+    # sozinha a meio do teste. Já mediu offline com o servidor vivo e passou.
+    antes = len(falhas)
+    c.cmd('Network.emulateNetworkConditions', offline=False, latency=0,
+          downloadThroughput=-1, uploadThroughput=-1)
+    c.cmd('Network.setCacheDisabled', cacheDisabled=False)
+    time.sleep(.4)
+    c.abrir('http://127.0.0.1:%d/praias/norte/' % _P, espera=3.0)
+    hub = c.js("document.title")
+    c.abrir('http://127.0.0.1:%d/nao-existe-de-todo' % _P, espera=2.0)
+    # `shutdown()` pára de servir mas NÃO fecha o socket: a porta continua
+    # aberta, o SO aceita a ligação e ninguém responde — o pedido fica
+    # pendurado em vez de falhar, e a navegação nunca volta. Tem de fechar.
+    _srv.shutdown(); _srv.server_close(); _vivo = False
+    time.sleep(.8)
+    c.cmd('Network.setCacheDisabled', cacheDisabled=True)
+    c.abrir('http://127.0.0.1:%d/' % _P, espera=4.0)
+    ent = json.loads(c.js(r"""JSON.stringify({
+      titulo: document.title,
+      procura: !!document.getElementById('procura'),
+      atalhos: document.querySelectorAll('.atalho').length,
+      h1: (document.querySelector('h1')||{}).textContent || ''})"""))
+    if not ent['procura'] or not ent['atalhos']:
+        erro('a entrada offline foi envenenada: `/` abriu %r (procura=%s, %s atalhos) '
+             'depois de se visitar %r' % (ent['titulo'], ent['procura'], ent['atalhos'], hub))
+    elif ent['titulo'] == hub:
+        erro('a entrada offline é a página do hub: %r' % ent['titulo'])
+    if len(falhas) == antes:
+        print('  entrada       ✓ `/` continua a entrada depois de visitar %r e um 404'
+              % (hub[:34] + ('…' if len(hub) > 34 else '')))
 finally:
-    c.fechar(); _srv.shutdown()
+    c.fechar()
+    if _vivo: _srv.shutdown(); _srv.server_close()
 
 print('\n== 7. sem JavaScript ==')
 c=Chrome(porta=livre())
@@ -1630,3 +1690,13 @@ print('\n'+'='*54)
 print('FALHAS: %d' % len(falhas))
 for f in falhas: print('  - '+f)
 print('='*54)
+
+# E O CÓDIGO DE SAÍDA DIZ O MESMO QUE O ECRÃ. Faltava, e não era detalhe: este
+# ficheiro terminava SEMPRE em 0, com falhas ou sem elas. Quem o corre à mão lê
+# a linha de cima e não dá por nada; quem o correr num script — ou numa Action,
+# que é para onde isto há-de ir — vê verde por cima de defeitos. Apanhou-se ao
+# testar por mutação a guarda da entrada envenenada: o defeito era mesmo
+# apanhado, o ✗ aparecia no ecrã, e o arnês declarava a guarda cega porque
+# perguntava ao `$?`. Uma bateria que não sabe dizer que falhou é uma bateria
+# que ninguém pode automatizar.
+sys.exit(1 if falhas else 0)

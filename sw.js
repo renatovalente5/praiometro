@@ -82,17 +82,37 @@ self.addEventListener('fetch', function (e) {
   if (url.origin !== self.location.origin) return;
 
   /* A NAVEGAÇÃO vai primeiro à rede: quem tem rede recebe sempre a versão
-     nova. A cache é a rede de segurança, não o caminho normal. */
+     nova. A cache é a rede de segurança, não o caminho normal.
+
+     SÓ A RAIZ SE GUARDA, E SÓ SE A RESPOSTA PRESTAR. Estas duas condições
+     faltavam as duas, e o resultado estava no ar: `c.put('/', copia)` corria
+     para QUALQUER navegação e sem olhar ao `r.ok`, portanto clicar em «Praias
+     do Norte» no rodapé gravava o hub como página de entrada, e abrir um URL
+     que não existe gravava o 404 — o Pages devolve o 404.html com código 404,
+     que passava por aqui como se fosse bom. Como o manifest declara
+     `start_url: "/"`, a aplicação instalada arrancava pela entrada envenenada:
+     abria offline com o título «Praias do Norte» e sem caixa de procura.
+
+     Guardar cada página debaixo do seu próprio URL resolvia a troca, mas ia
+     contra o que o ESQUELETO diz lá em cima — a metodologia e os hubs ficam de
+     fora de propósito, são ficheiros grandes que ninguém precisa na areia.
+     Portanto guarda-se a raiz, e mais nada. */
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
         .then(function (r) {
-          const copia = r.clone();
-          caches.open(CACHE).then(function (c) { c.put('/', copia); });
+          if (r && r.ok && url.pathname === '/') {
+            const copia = r.clone();
+            caches.open(CACHE).then(function (c) { c.put('/', copia); });
+          }
           return r;
         })
         .catch(function () {
-          return caches.match('/').then(function (r) { return r || Response.error(); });
+          /* Offline: primeiro a própria página, se por acaso lá estiver, e
+             depois a raiz — que é o esqueleto e deixa o site funcionar. */
+          return caches.match(req)
+            .then(function (r) { return r || caches.match('/'); })
+            .then(function (r) { return r || Response.error(); });
         })
     );
     return;

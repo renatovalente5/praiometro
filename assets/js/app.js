@@ -1114,7 +1114,14 @@
        chuva, descer também à outra é acusar duas vezes o mesmo: dava um
        triângulo na Chuva de uma tarde verde com 0,1 mm ao todo, ao lado de uma
        manhã já vetada. Abaixo de FRACO_MM a chuva daquela parte não chega para
-       a marcar por si — foi isso que os 16 128 partes-dia mediram. */
+       a marcar por si — foi isso que os 16 128 partes-dia mediram.
+
+       A CONDIÇÃO É SÓ `jaMarcada[id]`, e esteve mais complicada do que devia:
+       tinha pendurado um `&& !(p.v.vetos.length)`, na ideia de não roubar as
+       marcas a uma parte vetada. Mas isso deixava uma parte com um veto de
+       VENTO herdar também o de CHUVA do dia — e a guarda apanhou-o, numa tarde
+       com 0,1 mm ao lado de uma manhã com 0,5 mm. As marcas próprias da parte
+       já entraram no `forEach` de cima; esta passagem só trata das do dia. */
     var jaMarcada = {};
     ((a && a.partes) || []).forEach(function (q) {
       ((q.v && q.v.vetos) || []).forEach(function (t) {
@@ -1125,7 +1132,7 @@
     ((a && a.v && a.v.vetos) || []).forEach(function (t) {
       var id = VETO_FACTOR[t];
       if (!id) return;
-      if (jaMarcada[id] && !(p && p.v && p.v.vetos && p.v.vetos.length)) return;
+      if (jaMarcada[id]) return;
       if (id === 'chuva' && !(p && p.d && p.d.mm > 0)) return;   /* esta parte não deu chuva nenhuma */
       fora[id] = 1;
     });

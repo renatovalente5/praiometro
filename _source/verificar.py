@@ -293,7 +293,7 @@ if not _viva:
     print('=' * 54)
     sys.exit(2)
 
-def escolherPraia(c, i=0, limite=60.0):
+def escolherPraia(c, i=0, limite=60.0, tentativas=3):
     """Carrega no atalho e ESPERA PELA TIRA, em vez de dormir um número.
 
     Os `time.sleep(5.0)` espalhados por este ficheiro eram medidos nesta
@@ -306,6 +306,24 @@ def escolherPraia(c, i=0, limite=60.0):
     Espera-se pelo que interessa — os seis dias no ecrã — e devolve-se o tempo
     que levou, para se ver quando está a ficar apertado.
     """
+    # E TENTA-SE MAIS DE UMA VEZ. A rede de um runner até à Open-Meteo falha a
+    # espaços — «Failed to fetch» num Chrome e resposta boa no seguinte, na
+    # mesma máquina e no mesmo minuto —, e uma medição que morre à primeira
+    # contrariedade não mede coisa nenhuma. É o que uma pessoa faria: carregar
+    # outra vez. Recarrega-se a página entre tentativas para limpar o estado.
+    for volta in range(tentativas):
+        if volta:
+            try:
+                c.abrir(c.js("location.href"), espera=2.2)
+            except Exception:
+                break
+        r = _tentarPraia(c, i, limite / tentativas + 4)
+        if r is not None:
+            return r
+    return _semPrevisao(c, limite)
+
+
+def _tentarPraia(c, i, limite):
     c.js("var b=document.querySelectorAll('.atalho')[%d]; if(b) b.click()" % i)
     t0 = time.time()
     while time.time() - t0 < limite:
@@ -317,6 +335,15 @@ def escolherPraia(c, i=0, limite=60.0):
             time.sleep(.35)          # a última pintura
             return time.time() - t0
         time.sleep(.25)
+    return None
+
+
+def _semPrevisao(c, limite):
+    n = 0
+    try:
+        n = int(c.js("document.querySelectorAll('.dia').length") or 0)
+    except Exception:
+        pass
     # E DIZ-SE O QUE O ECRÃ MOSTRAVA, não só que não chegou. «A tira ficou com
     # 0 dias» manda-nos adivinhar; a mensagem de estado e o que a rede devolveu
     # dizem se foi a API, se foi o clique, ou se foi a página que nem carregou.

@@ -12,6 +12,7 @@ import os
 import zlib
 import platform
 import shutil
+import signal
 import socket
 import struct
 import subprocess
@@ -184,7 +185,16 @@ class Chrome:
              '--disable-dev-shm-usage', '--lang=' + locale,
              '--remote-debugging-port=%d' % porta,
              '--user-data-dir=' + self.perfil, 'about:blank'],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            # SESSÃO PRÓPRIA, para se poder matar o GRUPO. Um Chrome não é um
+            # processo, são vários — o lançador, o zygote, a GPU e um renderer
+            # por separador — e o `terminate()` só apanhava o primeiro. Numa
+            # máquina com memória a rodos ninguém dá por isso; num runner do
+            # GitHub, ao fim de vinte Chromes abertos e fechados, os filhos que
+            # ficaram comem a RAM toda e o seguinte fica pendurado sem
+            # responder ao DevTools. Foi o que se viu: `Page.navigate` a
+            # esgotar 90 s de socket na secção 6, depois de cinco secções boas.
+            start_new_session=True)
         alvo = None
         for _ in range(120):
             time.sleep(0.25)
@@ -222,12 +232,23 @@ class Chrome:
         time.sleep(espera)
 
     def fechar(self):
+        """Fecha o Chrome INTEIRO — o grupo, e não só o processo que lançámos."""
         try:
             self.ws.fechar()
-            self.proc.terminate(); self.proc.wait(timeout=10)
         except Exception:
+            pass
+        for sinal, espera in ((signal.SIGTERM, 8), (signal.SIGKILL, 4)):
+            if self.proc.poll() is not None:
+                break
             try:
-                self.proc.kill()
+                os.killpg(os.getpgid(self.proc.pid), sinal)
+            except Exception:
+                try:
+                    self.proc.terminate() if sinal == signal.SIGTERM else self.proc.kill()
+                except Exception:
+                    pass
+            try:
+                self.proc.wait(timeout=espera)
             except Exception:
                 pass
         shutil.rmtree(self.perfil, ignore_errors=True)

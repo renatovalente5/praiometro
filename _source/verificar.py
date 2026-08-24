@@ -241,7 +241,14 @@ M_HORAS = json.loads(_sp.run(['node','-e',
   capture_output=True, text=True).stdout)
 
 falhas=[]
+# O QUE NÃO SE CONSEGUIU MEDIR, que é coisa diferente do que se mediu e está
+# mal. Um site que não abre é uma falha; uma Open-Meteo que não responde é uma
+# medição que não houve, e chamar-lhe falha é ensinar quem lê a ignorar o
+# vermelho. Medido no runner do GitHub: «excepção: Failed to fetch» numas
+# secções e «HTTP 200, vazios=4» noutras, na mesma corrida.
+naoMedido=[]
 def erro(m): falhas.append(m); print('   ✗ '+m)
+def semMedida(m): naoMedido.append(m); print('   · '+m)
 
 
 def _apiViva():
@@ -355,8 +362,15 @@ def escolherPraia(c, i=0, limite=60.0):
             api: api, praiasJson: lista});})()"""))
     except Exception as e:
         d = {'erro ao ler o ecrã': str(e)}
-    erro('a previsão não chegou em %.0fs (a tira ficou com %d dias): %s'
-         % (limite, n, json.dumps(d, ensure_ascii=False)))
+    # A CULPA É DA API OU DO SITE? Pergunta-se, e a resposta decide se isto
+    # conta como falha ou como «não medido».
+    api = str(d.get('api', ''))
+    culpaDaApi = ('excepção' in api or 'HTTP 200' not in api
+                  or 'vazios=0' not in api)
+    msg = ('a previsão não chegou em %.0fs (a tira ficou com %d dias): %s'
+           % (limite, n, json.dumps(d, ensure_ascii=False)))
+    (semMedida if culpaDaApi else erro)(
+        ('não foi possível medir — ' if culpaDaApi else '') + msg)
     return None
 
 
@@ -1485,9 +1499,12 @@ antes = len(falhas)
 com = _chuva('1.8')
 sem = _chuva('0')
 if not com or com.get('nota') != '20' or com.get('cor') != 'vermelho':
-    erro('o enxerto do veto não pegou (nota=%r cor=%r) — as três asserções desta '
-         'secção não chegaram a correr, e é isso que ela existe para medir'
-         % (com and com.get('nota'), com and com.get('cor')))
+    # Sem cartão nenhum no ecrã não houve enxerto para pegar: isso é a previsão
+    # que não chegou, e já foi contado como «não medido» pelo escolherPraia.
+    (semMedida if not com or not com.get('cor') else erro)(
+        'o enxerto do veto não pegou (nota=%r cor=%r) — as três asserções desta '
+        'secção não chegaram a correr, e é isso que ela existe para medir'
+        % (com and com.get('nota'), com and com.get('cor')))
 else:
     if not com['marcada']:
         erro('o dia está chumbado por chuva, a manhã tem 1,8 mm e a linha da Chuva não leva marca')
@@ -1758,8 +1775,9 @@ try:
         # portanto uma secção inteira podia deixar de medir sem ninguém saber —
         # foi assim que a 6d-bis esteve morta meses. Se o enxerto não pega, o
         # que se sabe é que NÃO se mediu, e isso é uma falha da bateria.
-        erro('o enxerto do perigo não pegou: a caixa do aviso ficou escondida, e as '
-             'seis asserções desta secção não chegaram a correr')
+        (semMedida if not int(c.js("document.querySelectorAll('.dia').length") or 0)
+         else erro)('o enxerto do perigo não pegou: a caixa do aviso ficou '
+                    'escondida, e as seis asserções desta secção não correram')
     else:
         antes=len(falhas)
         if 'veredicto__aviso--perigo' not in d['classes']:
@@ -2365,6 +2383,9 @@ srv.shutdown()
 print('\n'+'='*54)
 print('FALHAS: %d' % len(falhas))
 for f in falhas: print('  - '+f)
+if naoMedido:
+    print('NÃO MEDIDO: %d' % len(naoMedido))
+    for f in naoMedido: print('  · '+f[:150])
 print('='*54)
 
 # E O CÓDIGO DE SAÍDA DIZ O MESMO QUE O ECRÃ. Faltava, e não era detalhe: este
@@ -2375,4 +2396,7 @@ print('='*54)
 # apanhado, o ✗ aparecia no ecrã, e o arnês declarava a guarda cega porque
 # perguntava ao `$?`. Uma bateria que não sabe dizer que falhou é uma bateria
 # que ninguém pode automatizar.
-sys.exit(1 if falhas else 0)
+# 1 = mediu e encontrou defeitos · 2 = não conseguiu medir · 0 = está tudo bem.
+# O 2 é o que impede um alarme que dispara pela rede de outra pessoa de ensinar
+# quem lê a ignorar o vermelho.
+sys.exit(1 if falhas else (2 if naoMedido else 0))

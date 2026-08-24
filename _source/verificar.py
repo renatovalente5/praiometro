@@ -118,11 +118,39 @@ def _rgba(txt):
     return (n[0], n[1], n[2], n[3] if len(n) > 3 else 1.0)
 
 
-def contraste(c):
-    """Devolve a lista de textos abaixo do mínimo da WCAG, medidos no píxel."""
+_ASSINATURA = r"""(function(){
+  var d = document;
+  var n = d.querySelectorAll('body *').length;
+  var r = d.body.getBoundingClientRect();
+  var t = d.querySelector('.dias'), v = d.querySelector('#v-partes');
+  function cx(e){ if(!e) return '-'; var b=e.getBoundingClientRect();
+    return Math.round(b.top)+','+Math.round(b.height); }
+  return n+'|'+Math.round(r.height)+'|'+cx(t)+'|'+cx(v)+'|'+scrollY;})()"""
+
+
+def contraste(c, tentativa=0):
+    """Devolve a lista de textos abaixo do mínimo da WCAG, medidos no píxel.
+
+    A PÁGINA TEM DE ESTAR QUIETA entre as medidas e a captura, e não estava:
+    lêem-se os rectângulos, tira-se a fotografia, e amostra-se a fotografia nas
+    coordenadas dos rectângulos. Se o ecrã reflui pelo meio — no runner do
+    GitHub a previsão chegava tarde e a tira aparecia a meio disto — as
+    coordenadas passam a apontar para outro sítio, e o que sai é uma falha
+    inventada: media-se a palavra de um cartão contra o céu que ficou onde ela
+    estava. Aconteceu, e deu 3,23:1 numa palavra que se lê bem.
+    """
+    antes = c.js(_ASSINATURA)
     d = json.loads(c.js(_MARCAR))
     png = base64.b64decode(c.cmd('Page.captureScreenshot', format='png')['data'])
     c.js(_DESMARCAR)
+    if c.js(_ASSINATURA) != antes:
+        if tentativa < 2:
+            time.sleep(1.0)
+            return contraste(c, tentativa + 1)
+        # Três vezes seguidas a mexer: não se mede, e diz-se. Silêncio aqui
+        # seria pior — passaria por «limpo».
+        erro('a página não parou quieta o tempo suficiente para medir o contraste')
+        return []
     larguraPx, alturaPx, ler = descodificar_png(png)
     escala = larguraPx / float(d['larg']) if d['larg'] else 1.0
     maus = []
@@ -207,7 +235,7 @@ if not _viva:
     print('=' * 54)
     sys.exit(2)
 
-def escolherPraia(c, i=0, limite=30.0):
+def escolherPraia(c, i=0, limite=60.0):
     """Carrega no atalho e ESPERA PELA TIRA, em vez de dormir um número.
 
     Os `time.sleep(5.0)` espalhados por este ficheiro eram medidos nesta

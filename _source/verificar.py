@@ -1642,7 +1642,20 @@ def _mm(mm):
             var n=x.querySelector('.nums__nome');
             return [...n.childNodes].filter(function(k){return k.nodeType===3;})
                     .map(function(k){return k.textContent;}).join('').trim()==='Chuva';});
+          /* A PROBABILIDADE E O RÁCIO, para se saber POR QUE VIA a linha foi
+             marcada. O enxerto baixa a probabilidade e põe os pontos no
+             máximo, mas se a parte vier sem `factores` — acontece quando o
+             modelo não pontuou aquela metade do dia — a baixa não pega e a
+             linha marca-se pelo rácio verdadeiro. O teste chumbava a acusar
+             o limiar dos milímetros de um defeito que não era dele: aqui
+             passa, no runner (que apanhou um dia de mais chuva) não.
+             Pergunta-se ao próprio modelo, como nas outras guardas. */
+          var pc = ((l&&l.querySelector('.nums__valor')||{}).textContent||'').match(/([\d,.]+)\s*%/);
+          var prob = pc ? parseFloat(pc[1].replace(',', '.')) : null;
           return { marcada: !!(l&&l.querySelector('.nums__mau')),
+                   prob: prob,
+                   racio: (prob != null && window.Modelo)
+                     ? Modelo._pontos.chuva(prob) / Modelo.PESOS.chuva : null,
                    vetado: (document.getElementById('v-resposta').textContent||'').indexOf('chumbado')>=0 };})())"""))
     finally: c.fechar()
 
@@ -1651,7 +1664,14 @@ baixo, alto = _mm('0.3'), _mm('0.8')
 if baixo is None or alto is None or baixo.get('vetado') or alto.get('vetado'):
     print('  · o enxerto não pegou — o limiar dos milímetros fica por medir')
 else:
-    if baixo['marcada']: erro('0,3 mm previstos e a chuva já leva marca — o limiar medido é 0,5')
+    if baixo['marcada'] and (baixo.get('racio') is None or baixo['racio'] < 0.40):
+        semMedida('a 0,3 mm a linha da chuva marca-se pelo RÁCIO (%s %% de '
+                  'probabilidade, rácio %.2f) — o limiar dos milímetros fica por '
+                  'medir hoje' % (baixo.get('prob'), baixo.get('racio') or 0))
+    elif baixo['marcada']:
+        erro('0,3 mm previstos e a chuva já leva marca — o limiar medido é 0,5 '
+             '(probabilidade %s %%, rácio %.2f, portanto não foi por aí)'
+             % (baixo.get('prob'), baixo.get('racio') or 0))
     if not alto['marcada']: erro('0,8 mm previstos e a chuva não leva marca — chove mesmo em 64%% dos casos')
     if len(falhas) == antes:
         print('  0,5 mm        ✓ 0,3 mm não marca, 0,8 mm marca, sem veto nenhum')

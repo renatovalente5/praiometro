@@ -433,7 +433,20 @@
     var agora = new Date().getTime();
     try {
       var c = JSON.parse(sessionStorage.getItem('pm:c:' + url) || 'null');
-      if (c && agora - c.t < TTL) return Promise.resolve(c.d);
+      if (c && agora - c.t < TTL) {
+        /* A RESERVA ACOMPANHA O QUE SE ESTÁ A VER, e não o último pedido que
+           foi à rede. Sem esta linha ela só se actualizava quando havia
+           `fetch`, portanto rever uma praia que já estava na cache de sessão
+           deixava lá a reserva da ANTERIOR: escolhia-se A, escolhia-se B, e ao
+           voltar a A a reserva continuava com B. Depois, sem rede, o cartão de
+           A abria vazio. E é o cenário para que a reserva existe — quem está na
+           areia volta às mesmas duas ou três praias.
+           Guarda-se com o `c.t` e não com o `agora`: a linha «Sem rede, esta
+           previsão foi buscada às 09h35» tem de dizer quando FOI BUSCADA, e
+           não quando alguém voltou a olhar para ela. */
+        if (!semReserva) reservaGuardar(url, c.t, c.d);
+        return Promise.resolve(c.d);
+      }
     } catch (e) { }
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error(r.status);

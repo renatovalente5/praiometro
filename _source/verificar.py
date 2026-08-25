@@ -327,14 +327,33 @@ def escolherPraia(c, i=0, limite=60.0, tentativas=3):
 
 
 def _tentarPraia(c, i, limite):
-    c.js("var b=document.querySelectorAll('.atalho')[%d]; if(b) b.click()" % i)
+    """Carrega no atalho e espera pela praia CERTA.
+
+    Esperar por «seis dias na tira» não chega, e isto passou despercebido até
+    hoje: ao mudar de praia a tira JÁ tem seis dias — os do anterior. A espera
+    voltava logo, e o que se media a seguir era a praia antiga com o nome da
+    nova. Na secção 6h, as duas praias apareciam com a mesma tira e a prova da
+    resposta fora de ordem era saltada com um «sem valor hoje» que não era
+    verdade.
+
+    O sinal certo é o `pm:praia`, que o `escolher()` só escreve quando a
+    previsão chega e o cartão está desenhado — e traz a coordenada, portanto
+    diz QUAL das praias.
+    """
+    quem = c.js("var b=document.querySelectorAll('.atalho')[%d];"
+                "b ? b.click() : 0; b ? b.dataset.id : ''" % i)
     t0 = time.time()
     while time.time() - t0 < limite:
         try:
-            n = int(c.js("document.querySelectorAll('.dia').length") or 0)
+            pronto = c.js(
+                "(function(){ try{"
+                "  var p = JSON.parse(localStorage.getItem('pm:praia')||'null');"
+                "  return !!(p && p.id === %s"
+                "         && document.querySelectorAll('.dia').length >= 6);"
+                "}catch(e){return false;} })()" % json.dumps(quem))
         except Exception:
-            n = 0
-        if n >= 6:
+            pronto = False
+        if pronto:
             time.sleep(.35)          # a última pintura
             return time.time() - t0
         time.sleep(.25)

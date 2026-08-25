@@ -54,8 +54,8 @@
   "di": "Ilha da Madeira (Madeira)"
  },
  "32.7184,-16.7622": {
-  "slug": "praia-de-machico",
-  "n": "Praia de Machico",
+  "slug": "praia-da-banda-d-alem",
+  "n": "Praia da Banda d’Além",
   "co": "Machico",
   "di": "Ilha da Madeira (Madeira)"
  },
@@ -2310,8 +2310,8 @@
   "di": "Setúbal"
  },
  "38.4749,-8.8943": {
-  "slug": "praia-de-troia-gale",
-  "n": "Praia de Troia (Galé)",
+  "slug": "praia-troia-gale",
+  "n": "Praia Tróia-Galé",
   "co": "Grândola",
   "di": "Setúbal"
  },
@@ -3366,8 +3366,8 @@
   "di": "Lisboa"
  },
  "39.1723,-9.3582": {
-  "slug": "praia-de-santa-rita",
-  "n": "Praia de Santa Rita",
+  "slug": "praia-de-santa-rita-norte",
+  "n": "Praia de Santa Rita Norte",
   "co": "Torres Vedras",
   "di": "Lisboa"
  },
@@ -5740,6 +5740,12 @@
   "n": "Praia Gerês Albufeira",
   "co": "Terras de Bouro",
   "di": "Braga"
+ },
+ "41.7017,-8.0355": {
+  "slug": "praia-da-barca",
+  "n": "Praia da Barca",
+  "co": "Montalegre",
+  "di": "Vila Real"
  },
  "41.7208,-8.3116": {
   "slug": "praia-fluvial-do-rio-homem",

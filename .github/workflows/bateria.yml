@@ -79,6 +79,27 @@ jobs:
       # e o browser nem consegue ler o código. O Node, esse, vê o 429 e
       # continua a vida: mesma máquina, mesma rede, dois relatos diferentes.
       # Foi isso que me mandou atrás de DNS e de IPv6 durante três corridas.
+      # A LISTA DE PRAIAS CONTRA O OSM DE HOJE. Vive aqui e não no Publicar
+      # porque vai à rede de terceiros — o Overpass — e porque a resposta certa
+      # a um desvio não é travar o deploy: é alguém olhar. A cópia local
+      # envelhece em silêncio, e sem isto ninguém dá por ela: em 23 dias já
+      # tinha 3 renomeações e uma praia nova por apanhar.
+      - name: A lista de praias ainda bate certo com o OpenStreetMap
+        continue-on-error: true
+        run: |
+          set +e
+          node _source/actualizar-praias.js --recolher --verificar
+          codigo=$?
+          set -e
+          if [ "$codigo" != "0" ]; then
+            echo "::warning::A lista de praias e o OpenStreetMap divergem — ver o registo."
+            echo '⚠️ A lista de praias divergiu do OpenStreetMap.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '✅ A lista de praias bate certo com o OpenStreetMap.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # A recolha altera o _source/osm-praias.json; não se commita daqui.
+          git checkout -- _source/osm-praias.json || true
+
       - name: A bateria de browser
         id: bateria
         env:

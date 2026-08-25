@@ -78,6 +78,9 @@ jobs:
           node _source/testar-metodologia.js
           node _source/gerar-nortada.js --verificar
           node _source/gerar-praias.js --verificar
+          # A região de cada praia é derivada do concelho, e não escrita à mão:
+          # havia 15 praias num hub que discordava do seu próprio concelho.
+          node _source/gerar-regioes.js --verificar
 
       - name: Montar o _site/
         run: node _build/gerar.js

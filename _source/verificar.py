@@ -311,12 +311,15 @@ def escolherPraia(c, i=0, limite=60.0, tentativas=3):
     # mesma máquina e no mesmo minuto —, e uma medição que morre à primeira
     # contrariedade não mede coisa nenhuma. É o que uma pessoa faria: carregar
     # outra vez. Recarrega-se a página entre tentativas para limpar o estado.
+    # NÃO SE RECARREGA A PÁGINA ENTRE TENTATIVAS, e isto custou uma corrida:
+    # metade das secções substitui o `window.fetch` para forçar falhas de rede,
+    # e um `location.reload()` pelo meio apaga esse enxerto sem dizer nada. O
+    # que se via a seguir eram acusações ao site — «a praia nova falhou e o
+    # resultado continuou à vista» — quando o que tinha falhado era o teste a
+    # apagar-se a si próprio. Carrega-se outra vez no atalho, e mais nada.
     for volta in range(tentativas):
         if volta:
-            try:
-                c.abrir(c.js("location.href"), espera=2.2)
-            except Exception:
-                break
+            time.sleep(1.2)
         r = _tentarPraia(c, i, limite / tentativas + 4)
         if r is not None:
             return r
@@ -2175,10 +2178,26 @@ try:
     # cenário da reserva é justamente quem anda com o site na praia.
     c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)
     escolherPraia(c)
-    c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
+    def marcarFavorito():
+        """Carrega na estrela e CONFIRMA que ficou marcada.
+
+        O clique cego dava «só marcou 1»: num runner a estrela pode ainda não
+        estar desenhada quando se lhe toca, e o teste acusava a reserva de um
+        defeito que era dele."""
+        for _ in range(12):
+            try:
+                if c.js("document.getElementById('v-estrela').getAttribute('aria-pressed')") == 'true':
+                    return True
+                c.js("var e=document.getElementById('v-estrela'); if(e) e.click()")
+            except Exception:
+                pass
+            time.sleep(.4)
+        return False
+
+    marcarFavorito()
     escolherPraia(c, 1)          # e não um clique com uma espera fixa
-    c.js("document.getElementById('v-estrela').click()"); time.sleep(.5)
-    favs = c.js("(localStorage.getItem('pm:favoritos')||'').split(';').filter(Boolean).length")
+    marcarFavorito()
+    favs = c.js("JSON.parse(localStorage.getItem('pm:favoritos')||'[]').length")
     if int(favs or 0) < 2:
         erro('o teste da reserva precisa de 2 favoritos e só marcou %s' % favs)
     c.abrir('http://127.0.0.1:%d/'%_P, espera=3.0)

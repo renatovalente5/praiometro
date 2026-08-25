@@ -70,6 +70,7 @@
         <li><a href="#vetos">Os vetos, e a trovoada</a></li>
         <li><a href="#cortes">Verde, amarelo, vermelho</a></li>
         <li><a href="#rio">Praias de rio</a></li>
+        <li><a href="#aguas-fechadas">Rias e lagoas costeiras</a></li>
         <li><a href="#limitacoes">O que este modelo não sabe</a></li>
         <li><a href="#fontes">De onde vêm os dados</a></li>
       </ol>
@@ -569,6 +570,13 @@
     <!-- ============================================================= RIO -->
     <h2 id="rio"><a class="lig" href="#rio" aria-label="Ligação para esta secção">#</a>Praias de rio</h2>
 
+    <p><strong>«Rio» aqui quer dizer «a grelha marinha não descreve esta água»</strong>, e
+    não «não tem água salgada». Sete praias de ria e de lagoa costeira contam como praias
+    de rio, e a razão é simples: a Open-Meteo não tem célula marinha dentro de uma ria.
+    Quando se lhe pergunta pela Praia da Armona-Ria, ela responde com a célula do oceano
+    aberto — a mesma que serve a Armona-Mar, a 1,3&nbsp;km, virada ao Atlântico.
+    <a href="#aguas-fechadas">O que isso fazia à nota está medido mais abaixo</a>.</p>
+
     <p>Numa praia de rio não há dados de mar nenhuns. A nota passa a ser a proporção dos
     pontos obtidos sobre os <strong>86 pontos</strong> que restam, o que equivale a
     redistribuir os 14 da água pelos outros factores.</p>
@@ -598,7 +606,40 @@
     lado a lado.</p>
 
     <!-- ====================================================== LIMITAÇÕES -->
-    <h2 id="limitacoes"><a class="lig" href="#limitacoes" aria-label="Ligação para esta secção">#</a>O que este modelo não sabe</h2>
+        <h2 id="aguas-fechadas"><a class="lig" href="#aguas-fechadas" aria-label="Ligação para esta secção">#</a>Rias e lagoas costeiras</h2>
+
+    <p>Uma ria, uma lagoa costeira e uma barrinha têm água do mar — e a previsão marinha
+    descreve-as mal. A grelha da Open-Meteo não tem célula lá dentro: quando se lhe
+    pergunta por um ponto dentro da ria, ela encaixa no oceano aberto mais próximo e
+    responde com os números de lá. Não avisa que o fez.</p>
+
+    <p>O resultado estava no ecrã. Medido no arquivo de Junho a Setembro de 2025, na
+    janela das 9h às 19h:</p>
+
+    <div class="rolo">
+      <table>
+        <thead><tr><th>Praia</th><th>Dias com «mar muito cavado»</th><th>Nota média</th></tr></thead>
+        <tbody>
+          <tr><td>Foz do Arelho-Lagoa, como estava</td><td>19 de 122 (15,6&nbsp;%)</td><td>58,7</td></tr>
+          <tr><td>Foz do Arelho-Lagoa, corrigida</td><td>0</td><td>68,0</td></tr>
+          <tr><td>Carcavelos, mar aberto</td><td>4 de 122 (3,3&nbsp;%)</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A lagoa levava quase cinco vezes mais avisos de mar cavado do que uma praia
+    oceânica, por ondulação que ela não tem — e perdia nove pontos de nota média por
+    causa disso. No sentido inverso, a temperatura do Atlântico servida a uma lagoa
+    fechada tira-lhe pontos de água que ela tem de sobra no Verão.</p>
+
+    <p>As sete passaram a contar como praias sem dados de mar: a Armona-Ria, a
+    Fuseta-Ria, o Farol (ria), a Tavira-Ria, a Foz do Arelho-Lagoa, a Lagoa de Albufeira
+    e a Barrinha de Esmoriz. Não há regra automática que as encontre — o nome não chega
+    (a «Praia da Lagoa» é no concelho de Lagoa e é mar aberto) e a API marinha responde
+    em toda a costa, portanto nunca diz «esta água não é minha». São escolhidas à mão,
+    uma a uma, e a razão de cada uma está escrita no código.</p>
+
+<h2 id="limitacoes"><a class="lig" href="#limitacoes" aria-label="Ligação para esta secção">#</a>O que este modelo não sabe</h2>
 
     <p>Escrito aqui para não se fingir que sabe:</p>
 

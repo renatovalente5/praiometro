@@ -55,6 +55,27 @@ obtidos sobre os 86 pontos que restam, o que equivale a redistribuir os 14 da
 **Consequência que é preciso conhecer.** A escala da água é absoluta e o
 Atlântico raramente chega ao topo dela: em Agosto uma praia do noroeste anda nos
 18 °C, que valem 8 dos 14 pontos. Uma praia de rio não carrega esse arrasto.
+
+### O `m` não quer dizer «mar»
+
+Quer dizer **«a grelha marinha da Open-Meteo descreve esta água»**. Uma ria e uma
+lagoa costeira têm água salgada e contam como `m=0`, porque a grelha não tem
+célula lá dentro: encaixa no oceano aberto mais próximo e responde com os
+números de lá, sem avisar. A Armona-Ria e a Armona-Mar, a 1,3 km uma da outra,
+recebiam exactamente a mesma resposta.
+
+Medido em Junho a Setembro de 2025, 9h-19h:
+
+| | com `m=1` | com `m=0` |
+|---|---|---|
+| Foz do Arelho-Lagoa: dias com veto de mar cavado | 19 de 122 (15,6 %) | 0 |
+| Foz do Arelho-Lagoa: nota média | 58,7 | 68,0 |
+| Carcavelos, mar aberto: dias com veto | 4 de 122 (3,3 %) | — |
+
+Sete registos, escolhidos à mão em `_source/actualizar-praias.js` com a razão à
+frente de cada um. Não há regra automática: o nome não chega — a «Praia da
+Lagoa» é no concelho de Lagoa e é mar aberto — e a API marinha responde em toda
+a costa, portanto nunca diz «esta água não é minha».
 Medido com tempo exactamente igual (céu 15 %, vento 12 km/h, 27 °C, sem chuva):
 
 | | Nota |

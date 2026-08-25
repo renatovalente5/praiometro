@@ -38,6 +38,49 @@ const PRAIAS = path.join(RAIZ, 'data', 'praias.json');
 const OSM = path.join(RAIZ, '_source', 'osm-praias.json');
 const CONSULTA = path.join(RAIZ, '_source', 'overpass.txt');
 
+/* AS ÁGUAS FECHADAS DA COSTA, uma a uma e com a razão à frente.
+   =============================================================
+   O `m` significa «a grelha marinha da Open-Meteo descreve esta água», e não
+   «tem água salgada». Uma ria, uma lagoa costeira ou uma barrinha é água do
+   mar — e a grelha marinha descreve-a MAL, porque não tem célula lá dentro:
+   encaixa no oceano aberto mais próximo e responde com números de lá.
+
+   Medido no arquivo de Junho a Setembro de 2025, janela das 9h às 19h:
+
+     Praia da Foz do Arelho-Lagoa   19 dos 122 dias com veto de «mar muito
+                                    cavado», 15,6 %, ondas até 4,88 m
+     Carcavelos (mar aberto)         4 dos 122 dias, 3,3 %, ondas até 4,52 m
+
+   A lagoa leva quase cinco vezes mais vetos de mar cavado do que uma praia
+   oceânica — por ondulação que ela não tem. E a Armona-Ria recebe EXACTAMENTE
+   os mesmos números que a Armona-Mar, a 1,3 km: a mesma célula serve as duas,
+   uma dentro da ria e outra virada ao Atlântico.
+
+   No outro sentido é igualmente errado: a temperatura do oceano servida a uma
+   lagoa fechada tira-lhe pontos de água que ela tem de sobra no Verão.
+
+   Marcadas `m=0`, ficam sem factor de água — o modelo reparte esses pontos
+   pelos outros, como já faz nas praias de rio. É menos errado do que descrever
+   água parada com a ondulação do Atlântico.
+
+   ISTO É CURADORIA, e é assim de propósito: o nome não chega (a «Praia da
+   Lagoa» é no concelho de Lagoa e é mar aberto, a «Praia de Lagoa I» é na
+   costa de Vila do Conde), e a API marinha também não — ela responde em toda a
+   costa, portanto nunca diz «esta água não é minha». Verificadas as seis
+   candidatas por nome que NÃO entram: todas apanham célula a menos de 3 km. */
+const AGUA_FECHADA = {
+  /* Ria Formosa: as quatro «-Ria» estão do lado de dentro das ilhas-barreira,
+     e três delas têm a irmã «-Mar» no ficheiro, a menos de 1,5 km. */
+  '37.0234,-7.8047': 'Armona: lado da ria, com a Armona-Mar a 1,3 km',
+  '37.0500,-7.7443': 'Fuseta: lado da ria, com a Fuseta-Mar a 0,6 km',
+  '36.9811,-7.8615': 'Farol: lado da ria, com a Praia do Farol a 0,5 km',
+  '37.1151,-7.6234': 'Tavira: lado da ria',
+  /* Lagoas costeiras fechadas por cordão de areia. */
+  '39.4290,-9.2245': 'Lagoa de Óbidos, com a Foz do Arelho de mar a 0,6 km',
+  '38.5048,-9.1793': 'Lagoa de Albufeira, fechada por cordão dunar',
+  '40.9661,-8.6521': 'Barrinha de Esmoriz',
+};
+
 const KM_IGUAL = 3.0;          /* o mesmo nome a menos disto é a mesma praia */
 const M_MESMO_SITIO = 60;      /* coordenadas a menos disto são o mesmo ponto */
 const KM_MESMA_PRAIA = 2.5;    /* o mesmo núcleo de nome a menos disto é a mesma praia */
@@ -173,6 +216,23 @@ async function saoDeMar(pontos) {
   }
   const sumidas = praias.filter((p) => !usadas.has(p));
 
+  /* As águas fechadas impõem-se em TODAS as corridas, e não só quando entra
+     uma praia nova: sem isto, uma reimportação devolvia-lhes o `m=1` e o veto
+     de mar cavado voltava sem ninguém dar por ele. */
+  const fechadas = [];
+  for (const p of praias) {
+    const k = `${p.la.toFixed(4)},${p.lo.toFixed(4)}`;
+    if (AGUA_FECHADA[k] && p.m !== 0) fechadas.push({ p, porque: AGUA_FECHADA[k] });
+  }
+  const orfas = Object.keys(AGUA_FECHADA).filter((k) =>
+    !praias.some((p) => `${p.la.toFixed(4)},${p.lo.toFixed(4)}` === k));
+  if (orfas.length) {
+    console.log(`  ⚠ ${orfas.length} coordenada(s) de água fechada já não existem na lista:`);
+    for (const o of orfas) console.log(`     ${o} — ${AGUA_FECHADA[o]}`);
+  }
+  console.log(`  águas fechadas marcadas como mar: ${fechadas.length}`);
+  for (const f of fechadas) console.log(`     ${f.p.n} — ${f.porque}`);
+
   console.log(`  renomeadas no OSM: ${renomeadas.length}`);
   for (const r of renomeadas) console.log(`     «${r.de}» -> «${r.para}»`);
   console.log(`  novas no OSM: ${novas.length}`);
@@ -180,7 +240,7 @@ async function saoDeMar(pontos) {
   console.log(`  no site e já não no OSM: ${sumidas.length}`);
   for (const s of sumidas) console.log(`     ${s.n} ${s.la},${s.lo}`);
 
-  const nada = !renomeadas.length && !novas.length && !sumidas.length;
+  const nada = !renomeadas.length && !novas.length && !sumidas.length && !fechadas.length;
 
   if (process.argv.includes('--verificar')) {
     if (nada) { console.log('✓ a lista bate certo com a cópia do OSM'); process.exit(0); }
@@ -194,6 +254,7 @@ async function saoDeMar(pontos) {
     r.p.n = r.para;
     r.p.b = normalizar(r.para);
   }
+  for (const f of fechadas) f.p.m = 0;
   if (novas.length) {
     const mar = await saoDeMar(novas.map((n) => [n.la, n.lo]));
     novas.forEach((n, i) => {

@@ -2094,7 +2094,11 @@ try:
         if len(falhas) == antes3:
             print('  falha atrasada ✓ o erro do pedido abandonado não toca no cartão de %r'
                   % g['titulo'])
-        if len(falhas) == antes:
+        # O `esperada` só existe se a corrida chegou a fazer a prova, e há dias
+        # em que as duas praias dão a mesma tira e ela não se faz. Sem esta
+        # guarda a secção rebentava com um NameError e levava consigo o 6f, o
+        # 7 e o 8 — e o resumo, que é o que se lê no fim.
+        if nomes and len(nomes) > 1 and len(falhas) == antes and 'esperada' in dir():
             print('  fora de ordem ✓ ficou em %r, com o endereço e a memória a condizer'
                   % esperada)
 finally:

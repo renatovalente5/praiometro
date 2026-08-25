@@ -1521,9 +1521,16 @@ print('\n== 6d-bis. o veto marca a sua própria linha ==')
 def _chuva(mm):
     E = """
     (function(){var t=setInterval(function(){ if(!window.Modelo||!window.Modelo.avaliarDia) return;
-      clearInterval(t); var o=window.Modelo.avaliarDia,n=0;
+      clearInterval(t); var o=window.Modelo.avaliarDia, primeiro=null;
+      /* PELO DIA, e não pela primeira chamada de sempre. Estava `n++===0`, e
+         a bateria passou a tentar outra vez quando a previsão falha: a
+         primeira tentativa gastava o enxerto numa renderização que nunca
+         chegou ao ecrã, e a segunda vinha limpa. O runner dizia «o enxerto do
+         veto não pegou (nota='46' cor='amarelo')» — uma secção inteira sem
+         medir, por causa de um contador. O dia é estável entre tentativas. */
       window.Modelo.avaliarDia=function(){var r=o.apply(this,arguments);
-        if(n++===0&&r&&r.v){ r.v.nota=20; r.v.cor='vermelho'; r.v.vetos=['chuva a sério'];
+        if(primeiro===null) primeiro=arguments[3];
+        if(arguments[3]===primeiro&&r&&r.v){ r.v.nota=20; r.v.cor='vermelho'; r.v.vetos=['chuva a sério'];
           if(r.partes&&r.partes[0]&&r.partes[0].d){
             r.partes[0].d.mm = %s;
             /* a PROBABILIDADE baixa: num dia de chuva o rácio do factor já é
@@ -1815,13 +1822,16 @@ ENXERTO_PERIGO = r"""
   var t = setInterval(function () {
     if (!window.Modelo || !window.Modelo.avaliarDia) return;
     clearInterval(t);
-    var orig = window.Modelo.avaliarDia, n = 0;
+    var orig = window.Modelo.avaliarDia, primeiro = null;
     window.Modelo.avaliarDia = function () {
       var r = orig.apply(this, arguments);
       /* Trovoada (perigo) E chuva a sério (conforto) ao mesmo tempo, com a
          chuva PRIMEIRO na lista dos vetos — que é a ordem real do modelo. É
-         este o caso em que a caixa vermelha nomeava a chuva. */
-      if (n++ === 0 && r && r.v) {
+         este o caso em que a caixa vermelha nomeava a chuva.
+         Marca-se pelo DIA e não pela primeira chamada: com o retry da bateria,
+         um contador gasta-se numa renderização que nunca chega ao ecrã. */
+      if (primeiro === null) primeiro = arguments[3];
+      if (arguments[3] === primeiro && r && r.v) {
         r.v.perigo = true;
         r.v.vetos = ['chuva quase certa', 'chuva a sério'];
         r.v.avisos = ['pode haver trovoada'];

@@ -36,11 +36,22 @@ console.log('\n== 1. a normalizar() é a mesma do app.js ==');
     const dif = praias.filter(p => doApp(p.n) !== S.normalizar(p.n));
     if (dif.length) erro(`${dif.length} nomes normalizam diferente (ex.: ${dif[0].n})`);
     else ok(`igual à do app.js nas ${praias.length} praias`);
-    /* O campo `b` foi produzido com ela. Se deixar de bater certo, a procura
-       do site deixou de encontrar as praias — e isso não dá erro nenhum. */
-    const difB = praias.filter(p => S.normalizar(p.n) !== p.b);
-    if (difB.length) erro(`${difB.length} não batem com o campo b (ex.: ${difB[0].n})`);
-    else ok('igual ao campo b guardado no praias.json');
+    /* O CAMPO `b` SAIU DO FICHEIRO a 25 de Agosto de 2026 e passou a ser
+       derivado no carregamento — era exactamente `normalizar(n)` nos 996
+       registos, portanto viajava em cada visita para dizer o que uma linha de
+       JavaScript calcula em menos de um milissegundo. Poupou 6,1 KB
+       comprimidos, 24 % do ficheiro.
+       O que se verifica agora é que ele NÃO voltou: se alguém o reintroduzir
+       à mão e ele divergir da função, a procura deixa de encontrar essas
+       praias — e isso não dá erro nenhum a ninguém. */
+    const comB = praias.filter(p => p.b != null);
+    if (comB.length) {
+      const difB = comB.filter(p => S.normalizar(p.n) !== p.b);
+      if (difB.length) erro(`${difB.length} registos trazem um campo b que não bate com a normalizar() (ex.: ${difB[0].n})`);
+      else ok(`${comB.length} registos trazem campo b, e batem certo (mas ele é derivável — pode sair)`);
+    } else {
+      ok('o campo b não está no ficheiro: é derivado no carregamento');
+    }
   }
 }
 

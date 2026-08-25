@@ -1998,6 +1998,42 @@ for tema in ('light', 'dark'):
             c.fechar()
 
 # --------------------------------------------------------------------- 6h
+# --------------------------------------------------------------------- 6j
+print('\n== 6j. «perto de mim» no interior ==')
+# O botão do alfinete tinha um `.filter(function (p) { return p.m; })` que
+# deitava fora as 236 praias de rio. O resultado, medido: quem carrega nele em
+# Bragança recebia praias de mar a 152 km, com uma praia fluvial a 13. Em Vila
+# Real, 69 km com uma a 3. «Mais perto de ti» a mostrar o que está longe é a
+# única coisa que este botão não pode fazer.
+c = novo(390, 844, True)
+try:
+    antes = len(falhas)
+    # Bragança, que é o ponto de Portugal continental mais longe do mar.
+    c.cmd('Browser.grantPermissions', origin='http://127.0.0.1:%d' % PORTA,
+          permissions=['geolocation'])
+    c.cmd('Emulation.setGeolocationOverride', latitude=41.8061, longitude=-6.7567,
+          accuracy=20)
+    c.js("document.getElementById('perto').click()")
+    time.sleep(3.0)
+    d = json.loads(c.js(r"""JSON.stringify((function(){
+      var s = [...document.querySelectorAll('.sugestao[data-i]')];
+      return { quantas: s.length,
+               textos: s.slice(0,3).map(function(x){return x.textContent.replace(/\s+/g,' ').trim();}),
+               kms: s.map(function(x){ var m=(x.textContent||'').match(/(\d+)\s*km/); return m?+m[1]:null; })
+                     .filter(function(v){return v!=null;}) };})())"""))
+    if not d['quantas']:
+        erro('o alfinete em Bragança não devolveu praia nenhuma')
+    elif not d['kms']:
+        erro('as sugestões do alfinete não dizem a distância: %s' % d['textos'])
+    elif d['kms'][0] > 60:
+        erro('o alfinete em Bragança devolve a praia mais perto a %d km — há uma '
+             'fluvial a 13. Voltou o filtro de praias de mar? (%s)'
+             % (d['kms'][0], d['textos'][0][:60]))
+    if len(falhas) == antes:
+        print('  interior      ✓ a mais perto de Bragança está a %d km' % d['kms'][0])
+finally:
+    c.fechar()
+
 print('\n== 6h. escolher duas praias seguidas ==')
 # QUEM CHEGA ATRASADO NÃO ESCREVE. Escolher a praia A e, antes de ela chegar,
 # escolher a B: a resposta de A chega por último e escrevia por cima — título

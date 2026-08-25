@@ -275,7 +275,12 @@
     navigator.geolocation.getCurrentPosition(function (pos) {
       b.removeAttribute('aria-busy');
       var la = pos.coords.latitude, lo = pos.coords.longitude;
-      var perto = PRAIAS.filter(function (p) { return p.m; })
+      /* SEM FILTRO DE MAR. Estava aqui um `.filter(p.m)` que deitava fora as
+         236 praias de rio, e o resultado era este: quem carrega no alfinete em
+         Bragança recebe praias de mar a mais de 50 km, com uma praia fluvial a
+         três. «Mais perto de ti» a mostrar o que está longe é a única coisa
+         que este botão não pode fazer. */
+      var perto = PRAIAS
         .map(function (p) { p.d = distancia(la, lo, p.la, p.lo); return p; })
         .sort(function (x, y) { return x.d - y.d; })
         .slice(0, 6);
@@ -1877,6 +1882,18 @@
   fetch('/data/praias.json')
     .then(function (r) { return r.json(); })
     .then(function (d) {
+      /* O CAMPO DE PROCURA DERIVA-SE AQUI, e não vem no ficheiro. Era
+         exactamente `normalizar(n)` nos 996 registos — zero divergências,
+         verificado — portanto viajava em cada visita para dizer o que esta
+         linha calcula em menos de um milissegundo. Tirá-lo do ficheiro poupa
+         6,1 KB comprimidos, 28 % do total, e é isso que paga acrescentar
+         sítios interiores sem o ficheiro engordar.
+         Tem de ser a MESMA `normalizar()` que a procura usa — é ela, está
+         umas linhas acima — senão o que se escreve e o que se procura deixam
+         de bater certo. E não se pode «corrigir» essa função sem regenerar
+         isto: o SEO.md avisa que ela produz espaços a dobrar e que arranjá-la
+         parte a procura. */
+      for (var i = 0; i < d.length; i++) if (d[i].b == null) d[i].b = normalizar(d[i].n);
       PRAIAS = d;
       desenharFavoritos();
       /* A troca do código já foi feita no arranque, fora desta cadeia. Aqui só

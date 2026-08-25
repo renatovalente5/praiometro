@@ -250,15 +250,15 @@ async function saoDeMar(pontos) {
   if (nada) { console.log('nada a fazer'); return; }
 
   /* --- aplicar o que se decide sozinho ---------------------------------- */
-  for (const r of renomeadas) {
-    r.p.n = r.para;
-    r.p.b = normalizar(r.para);
-  }
+  /* Sem tocar no `b`: ele saiu do ficheiro e é derivado no carregamento, com
+     esta mesma `normalizar()`. Escrevê-lo aqui era repor 6 KB por visita para
+     dizer o que o browser calcula sozinho. */
+  for (const r of renomeadas) r.p.n = r.para;
   for (const f of fechadas) f.p.m = 0;
   if (novas.length) {
     const mar = await saoDeMar(novas.map((n) => [n.la, n.lo]));
     novas.forEach((n, i) => {
-      praias.push({ n: n.n, b: normalizar(n.n), la: n.la, lo: n.lo, r: '', m: mar[i] });
+      praias.push({ n: n.n, la: n.la, lo: n.lo, r: '', m: mar[i] });
       console.log(`  ${n.n}: a API marinha diz ${mar[i] ? 'MAR' : 'INTERIOR'}`);
     });
   }

@@ -17,6 +17,16 @@
   <meta property="og:title" content="Praias do Alentejo: as 95 do mapa" />
   <meta property="og:description" content="As 95 praias do Alentejo em 10 concelhos, 84 de mar e 11 de rio. Vê numa nota de 0 a 100 se hoje vale a pena ir a cada uma." />
   <meta property="og:image" content="https://praiometro.pt/assets/img/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Praiómetro — semáforo verde, amarelo e vermelho para saber se vale a pena ir à praia." />
+  <!-- O twitter:card estava só na entrada, e sem ele o X e o LinkedIn caem
+       para um cartão pequeno, com a imagem ao lado em vez da imagem inteira.
+       As páginas de região existem justamente para serem partilhadas.
+       (Sem plicas invertidas neste comentário: ele vive dentro de um template
+       literal, e uma plica invertida fecha-o a meio.) -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://praiometro.pt/assets/img/og.png" />
 
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/assets/css/estilo.css" />
@@ -52,6 +62,8 @@
              das tardes de Julho e Agosto; a mais abrigada é a Praia de Melides, com <strong>2,3 %</strong>.
         <a href="/nortada/#abrigadas">A tabela completa e o que ela quer dizer</a>.</p>
       </div>
+    <h2 id="concelhos">Concelho a concelho</h2>
+
     <p>As praias estão agrupadas pelo concelho a que pertencem, do que tem mais
     para o que tem menos. O concelho vem da Carta Administrativa Oficial de Portugal,
     da Direcção-Geral do Território.</p>
@@ -209,6 +221,14 @@
     com a de uma praia de mar.</p>
 
     <p class="texto__voltar"><a href="/praias/">← Todas as regiões</a></p>
+
+    <!-- A LIGAÇÃO PARA A PRIVACIDADE VIVE AQUI, no molde, e não em cada página.
+         Dez das treze páginas do site não ligavam para ela — e eram justamente
+         as que existem para receber tráfego directo do Google, ou seja aquelas
+         em que alguém chega sem nunca ter passado pela entrada. Uma política de
+         privacidade que só se alcança a partir da página inicial é uma política
+         que metade das visitas nunca vê. -->
+    <p class="texto__data"><a href="/privacidade.html">Privacidade</a></p>
   </main>
 </body>
 </html>

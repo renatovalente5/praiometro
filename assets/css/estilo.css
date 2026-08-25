@@ -371,10 +371,6 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
   padding: clamp(1.2rem, 4vw, 1.8rem); box-shadow: var(--sombra); text-align: center;
   position: relative; overflow: hidden;
 }
-.veredicto::before {
-  content: ''; position: absolute; inset: 0 0 auto 0; height: 5px;
-  background: var(--cor-actual, var(--tinta-3));
-}
 .veredicto__topo { display: flex; flex-direction: column; gap: .1rem; margin-bottom: 1rem; }
 /* A estrela vive no canto e não entra na coluna: reservar-lhe largura ao lado
    do nome partia a data em duas linhas num telemóvel de 375 px. Só o nome se
@@ -414,12 +410,14 @@ body[data-cor="vermelho"] .ceu__sol { opacity: .12; }
 /* O cartão deixa de ser centrado: tudo lá dentro é lista, e uma lista com
    números lê-se da esquerda. */
 .veredicto { text-align: left; }
-/* Sai a barra de cor do topo: num dia partido teria de ter a cor da média,
-   que pode discordar das duas partes que estão logo por baixo. */
-.veredicto::before { content: none; }
+/* A BARRA DE COR DO TOPO SAIU — e saiu do ficheiro, não só do ecrã. Estava
+   definida com 5px de altura e desligada vinte linhas abaixo com
+   `content: none`, sem media query pelo meio: duas regras a anularem-se, e uma
+   terceira (a posição da estrela) ainda a descontar a altura de uma barra que
+   não existe. A razão de ter saído mantém-se: num dia partido teria de ter a
+   cor da MÉDIA, que pode discordar das duas partes logo por baixo. */
 .veredicto__praia { padding: 0 3rem 0 0; }
 .veredicto__topo { margin-bottom: .2rem; }
-.estrela { top: .7rem; right: .6rem; }
 
 /* --------------------------------- a resposta (só no estado partido) --- */
 /* A maior coisa do cartão num dia partido. Vai a var(--tinta) e NUNCA a uma
@@ -673,7 +671,12 @@ button.bloco__cabeca:active {
 
 /* ---------------------------------------------------------- a estrela */
 .estrela {
-  position: absolute; top: calc(5px + .5rem); right: .5rem; z-index: 1;
+  /* `.7rem` e não `calc(5px + .5rem)`: os 5px eram a altura da barra de cor do
+     topo, que saiu. Este valor já estava escrito vinte linhas acima, num bloco
+     com a mesma especificidade e MAIS ACIMA no ficheiro — portanto perdia para
+     esta regra e nunca chegou a aplicar-se. Alguém corrigiu isto e a correcção
+     ficou pelo caminho; agora está no sítio onde manda. */
+  position: absolute; top: .7rem; right: .6rem; z-index: 1;
   width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
   background: none; border: 0; border-radius: 50%;
   color: var(--tinta-3); transition: color var(--t), transform var(--t);
@@ -765,9 +768,11 @@ button.bloco__cabeca:active {
 .fav--amarelo  { --fav-cor: var(--amarelo);  --fav-fundo: var(--amarelo-luz); }
 .fav--vermelho { --fav-cor: var(--vermelho); --fav-fundo: var(--vermelho-luz); }
 
-body[data-cor="verde"]    { --cor-actual: var(--verde);    --cor-fundo: var(--verde-luz); }
-body[data-cor="amarelo"]  { --cor-actual: var(--amarelo);  --cor-fundo: var(--amarelo-luz); }
-body[data-cor="vermelho"] { --cor-actual: var(--vermelho); --cor-fundo: var(--vermelho-luz); }
+/* Aqui viviam `--cor-actual` e `--cor-fundo`, definidas por veredicto no
+   <body>. Saíram porque NINGUÉM AS LIA: a `--cor-fundo` já não tinha leitor
+   nenhum, e a `--cor-actual` ficou sem o dela quando a barra de cor do topo do
+   cartão saiu do ficheiro. O `data-cor` continua no <body> — é ele que muda o
+   céu — e as variáveis do céu são outras. */
 
 /* ============================================================= DIAS ====
    Três por linha e duas linhas, sem rolo horizontal. Seis células em linha a

@@ -117,6 +117,56 @@ for (const d of ALLOW_PASTAS) copiarPasta(d, conta);
   console.log('service worker: versão ' + versao + ' (carimbada em ' + carimbadas + ' páginas)');
 }
 
+/* ------------------------------------------------- o lastmod do sitemap ----
+   A DATA DE ALTERAÇÃO SAI DO GIT, e não da cabeça de quem editou o XML.
+   As três datas estavam escritas à mão e ficaram para trás: a /metodologia/
+   declarava 6 de Agosto e tinha sete commits desde então, o último com +211
+   linhas de conteúdo. Um `lastmod` que mente é pior do que `lastmod` nenhum —
+   o plano de SEO usa a indexação dessa página como porta de decisão, e estava
+   a medi-la contra um sinal que o próprio site suprimia.
+
+   E NÃO se põe a data de hoje: é isso mesmo que o comentário dentro do
+   sitemap.xml proíbe, e com razão — um gerador que carimba hoje em centenas de
+   URLs todos os dias ensina o Google, em duas semanas, que o lastmod deste
+   site não quer dizer nada, e esse sinal não se recupera. O que se põe é a
+   data do último commit QUE TOCOU NAQUELE FICHEIRO.
+
+   Quando o git não sabe responder — clone raso, que é o que o
+   actions/checkout faz por omissão — deixa-se a data que lá está e diz-se.
+   Melhor uma data velha e estável do que uma inventada. */
+{
+  const alvo = path.join(SAIDA, 'sitemap.xml');
+  const doUrl = (loc) => {
+    const caminho = loc.replace(/^https?:\/\/[^/]+/, '');
+    if (caminho === '/') return 'index.html';
+    if (caminho.endsWith('/')) return caminho.slice(1) + 'index.html';
+    return caminho.slice(1);
+  };
+  let xml = fs.readFileSync(alvo, 'utf8');
+  let mudadas = 0, semGit = 0;
+  xml = xml.replace(/<loc>([^<]+)<\/loc>(\s*)<lastmod>([^<]+)<\/lastmod>/g,
+    (todo, loc, espaco, antiga) => {
+      const rel = doUrl(loc);
+      if (!fs.existsSync(path.join(RAIZ, rel))) { semGit++; return todo; }
+      let data = '';
+      try {
+        data = require('child_process')
+          .execFileSync('git', ['log', '-1', '--format=%cs', '--', rel],
+                        { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+          .trim();
+      } catch (e) { data = ''; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) { semGit++; return todo; }
+      if (data !== antiga) mudadas++;
+      return `<loc>${loc}</loc>${espaco}<lastmod>${data}</lastmod>`;
+    });
+  fs.writeFileSync(alvo, xml);
+  if (semGit) {
+    console.log(`sitemap: ${semGit} lastmod ficaram como estavam — o git não respondeu`);
+    console.log('   (clone raso? o workflow precisa de fetch-depth: 0)');
+  }
+  console.log(`sitemap: ${mudadas} lastmod actualizados a partir do git`);
+}
+
 /* Aqui escrevia-se um .nojekyll. Foi tirado por não servir para nada, das
    duas maneiras: publicado por Action o Jekyll não chega a correr, e mesmo
    que corresse o ficheiro nunca lá chegava — o upload-pages-artifact exclui

@@ -2495,6 +2495,87 @@ elif _re.search(r'<h[23]', h[:h.index('<h1')]):
 else:
     print('  index.html         ✓ um <h1>, e nada de <h2>/<h3> antes dele')
 
+# E NENHUMA PÁGINA SALTA UM NÍVEL DE CABEÇALHO. Os sete hubs de região iam de
+# <h1> para <h3> sem <h2> pelo meio — 188 <h3> órfãos, e a única <h3> do
+# gerador era essa. Todas as outras páginas do site estavam certas, portanto
+# era excepção de um gerador e não convenção: exactamente o tipo de coisa que
+# ninguém vê a olho e que um leitor de ecrã anuncia como estrutura partida.
+# Vale para o site inteiro, e não só para a entrada.
+antes = len(falhas)
+_vistas = 0
+for _dir, _subs, _fich in os.walk(RAIZ):
+    if any(x in _dir for x in ('/_site', '/_source', '/_build', '/.git', '/node_modules')):
+        continue
+    for _f in sorted(_fich):
+        if not _f.endswith('.html'):
+            continue
+        _rel = os.path.relpath(os.path.join(_dir, _f), RAIZ)
+        _h = _sem_comentarios(_rel)
+        _niveis = [int(m.group(1)) for m in _re.finditer(r'<h([1-6])[\s>]', _h)]
+        if not _niveis:
+            continue
+        _vistas += 1
+        _saltos = [(a_, b_) for a_, b_ in zip(_niveis, _niveis[1:]) if b_ > a_ + 1]
+        if _saltos:
+            erro('%s salta de <h%d> para <h%d> — sem o nível do meio, a estrutura '
+                 'que um leitor de ecrã anuncia fica partida' % (_rel, _saltos[0][0], _saltos[0][1]))
+        elif _niveis[0] != 1:
+            erro('%s começa em <h%d> e não em <h1>' % (_rel, _niveis[0]))
+if len(falhas) == antes:
+    print('  cabeçalhos         ✓ %d páginas sem saltar níveis' % _vistas)
+
+# E TODAS AS PÁGINAS LIGAM PARA A PRIVACIDADE. Dez das treze não ligavam, e
+# eram justamente as que existem para receber tráfego directo do Google — ou
+# seja, aquelas em que alguém chega sem nunca ter passado pela entrada. Uma
+# política que só se alcança a partir da página inicial é uma política que
+# metade das visitas nunca vê.
+antes = len(falhas)
+_sem, _com = [], 0
+for _dir, _subs, _fich in os.walk(RAIZ):
+    if any(x in _dir for x in ('/_site', '/_source', '/_build', '/.git', '/node_modules')):
+        continue
+    for _f in sorted(_fich):
+        if not _f.endswith('.html'):
+            continue
+        _rel = os.path.relpath(os.path.join(_dir, _f), RAIZ)
+        if _rel == 'privacidade.html':
+            continue          # não tem de ligar para si própria
+        if 'href="/privacidade.html"' in _sem_comentarios(_rel):
+            _com += 1
+        else:
+            _sem.append(_rel)
+if _sem:
+    erro('%d páginas não ligam para a política de privacidade: %s' % (len(_sem), _sem[:4]))
+if len(falhas) == antes:
+    print('  privacidade        ✓ alcançável das %d páginas' % _com)
+
+# O CARTÃO DE PARTILHA É O MESMO EM TODAS. Só a entrada tinha `twitter:card`;
+# sem ele o X e o LinkedIn caem para um cartão pequeno, com a imagem ao lado em
+# vez da imagem inteira — e as páginas de região existem justamente para serem
+# partilhadas. Verifica-se junto porque `og:image` sem `twitter:card` é meio
+# trabalho, e `twitter:card` sem imagem é pior do que nada.
+antes = len(falhas)
+_ok = 0
+for _dir, _subs, _fich in os.walk(RAIZ):
+    if any(x in _dir for x in ('/_site', '/_source', '/_build', '/.git', '/node_modules')):
+        continue
+    for _f in sorted(_fich):
+        if not _f.endswith('.html'):
+            continue
+        _rel = os.path.relpath(os.path.join(_dir, _f), RAIZ)
+        _h = _sem_comentarios(_rel)
+        _img = 'property="og:image"' in _h
+        _cartao = 'name="twitter:card"' in _h
+        if _img and not _cartao:
+            erro('%s tem og:image e não tem twitter:card — parte pequeno no X e no '
+                 'LinkedIn' % _rel)
+        elif _cartao and not _img:
+            erro('%s promete um cartão grande e não tem imagem nenhuma' % _rel)
+        elif _img:
+            _ok += 1
+if len(falhas) == antes:
+    print('  partilha           ✓ %d páginas com imagem e cartão grande' % _ok)
+
 
 def verificar_producao():
     """As três que só se podem medir em https://praiometro.pt.

@@ -57,7 +57,28 @@ function grafico() {
     const pts = [];
     for (let h = H0; h <= H1; h++) if (v[h] != null) pts.push(`${x(h).toFixed(1)},${y(v[h]).toFixed(1)}`);
     p.push(`<polyline points="${pts.join(' ')}" fill="none" stroke="${CORES[i]}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`);
-    p.push(`<text x="${ML + gw + 6}" y="${(y(v[H1]) + 4).toFixed(1)}" class="g-nome" fill="${CORES[i]}">${esc(r)}</text>`);
+  });
+
+  /* OS NOMES AFASTAM-SE UNS DOS OUTROS. Cada nome era escrito à altura onde a
+     sua linha acaba, e as linhas que acabam à mesma altura punham dois nomes um
+     por cima do outro: medidos três pares exactamente sobrepostos — «Oeste e
+     Lisboa» com «Algarve poente» no mesmo píxel, e mais dois a um de distância.
+     A legenda por baixo salva a identificação, mas o gráfico ficava com uma
+     mancha ilegível onde devia ter um nome.
+
+     Empurra-se para baixo, de cima para baixo, mantendo ALTURA mínima entre
+     eles; se o último sair do gráfico, empurra-se o conjunto para cima. É a
+     resolução de colisões mais simples que existe e chega para sete nomes. */
+  const ALTURA = 13;
+  const nomes = REGIOES.map((r, i) => ({ r, i, y: y(hora(r)[H1]) + 4 }))
+    .sort((a, b) => a.y - b.y);
+  for (let k = 1; k < nomes.length; k++) {
+    if (nomes[k].y - nomes[k - 1].y < ALTURA) nomes[k].y = nomes[k - 1].y + ALTURA;
+  }
+  const excesso = nomes[nomes.length - 1].y - (HT - MB);
+  if (excesso > 0) nomes.forEach(n => { n.y -= excesso; });
+  nomes.forEach(n => {
+    p.push(`<text x="${ML + gw + 6}" y="${n.y.toFixed(1)}" class="g-nome" fill="${CORES[n.i]}">${esc(n.r)}</text>`);
   });
   p.push(`<text x="${ML - 30}" y="${MT - 2}" class="g-eixo">km/h</text>`);
   p.push('</svg></div>');
@@ -165,6 +186,33 @@ for (const [nome, f] of Object.entries(BLOCOS)) {
     return novo;
   });
 }
+
+/* NENHUM NOME POR CIMA DE OUTRO. Cada nome de região é escrito à altura onde a
+   sua linha acaba, e as linhas que acabam à mesma altura punham dois nomes no
+   mesmo sítio: mediram-se três pares sobrepostos, um deles no mesmo píxel
+   exacto. Há uma legenda por baixo do gráfico, portanto a identificação não se
+   perdia de todo — mas o gráfico ficava com uma mancha ilegível onde devia ter
+   um nome, e isso é coisa que ninguém vê num diff.
+   Corre SEMPRE, e não só no --verificar: o afastamento é calculado aqui ao
+   lado, e uma conta que se verifica a si própria não é grande verificação —
+   mas esta lê o HTML que saiu, que é a única coisa que chega a alguém. */
+(function conferirNomes() {
+  const rot = [];
+  const re = /<text[^>]*\bx="([\d.]+)"[^>]*\by="([\d.]+)"[^>]*class="g-nome"[^>]*>([^<]*)</g;
+  let m;
+  while ((m = re.exec(html))) rot.push({ x: +m[1], y: +m[2], t: m[3] });
+  const maus = [];
+  for (let i = 0; i < rot.length; i++)
+    for (let j = i + 1; j < rot.length; j++)
+      if (Math.abs(rot[i].x - rot[j].x) < 60 && Math.abs(rot[i].y - rot[j].y) < 11)
+        maus.push(`«${rot[i].t}» e «${rot[j].t}» a ${Math.abs(rot[i].y - rot[j].y).toFixed(1)} px`);
+  if (maus.length) {
+    console.error(`✗ ${maus.length} par(es) de nomes sobrepostos no gráfico:`);
+    for (const x of maus.slice(0, 4)) console.error('   ' + x);
+    process.exit(1);
+  }
+  console.log(`✓ os ${rot.length} nomes do gráfico não se sobrepõem`);
+})();
 
 if (process.argv.includes('--verificar')) {
   if (mudou) {

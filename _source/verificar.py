@@ -611,6 +611,13 @@ try:
     while time.time() - _t0 < 40:
         if c.js("document.getElementById('v-praia').textContent"): break
         time.sleep(.3)
+    else:
+        # E SE NÃO ABRIU, é a mesma pergunta de sempre: a culpa é do site ou da
+        # API? Sem isto a secção seguia em frente e queixava-se do RODAPÉ —
+        # «não explica que é praia de rio», com o rodapé vazio porque não havia
+        # cartão nenhum. Acusar o rodapé de uma falha de rede é mandar alguém
+        # procurar um defeito que não existe.
+        _semPrevisao(c, 40)
     time.sleep(.4)
     d=json.loads(c.js("""JSON.stringify({praia:document.getElementById('v-praia').textContent,
       palavra:(document.querySelector('.partes__palavra')||{}).textContent

@@ -34,24 +34,76 @@ const PRAIAS = path.join(RAIZ, 'data', 'praias.json');
 const CONCELHOS = path.join(RAIZ, '_build', 'dados', 'concelhos.json');
 const DESTINO = path.join(RAIZ, '_build', 'dados', 'regioes.json');
 
-/* AS DECISÕES À MÃO, e são de dois tipos: empates, e concelhos que ainda não
-   tinham praia nenhuma no site — nesses não há maioria de que herdar. A chave é
-   o código `dico` da CAOP, e não o nome: há dois «Lagoa». */
-const DESEMPATE = {
-  /* Espinho é do distrito de Aveiro, mas da Área Metropolitana do Porto, e
-     todos os concelhos à volta dele — Vila Nova de Gaia, Santa Maria da Feira,
-     Ovar — estão no Norte neste site. Quatro praias de Espinho estavam no
-     Norte e quatro no Centro, o que dava um 4-4. */
-  '0107': 'Norte',
-  /* Mourão é do distrito de Évora e fica na albufeira do Alqueva: Alentejo sem
-     margem para dúvida. Estava 1-1 porque só tem duas praias no ficheiro, uma
-     delas marcada «Lisboa e Setúbal» — que é a 150 km. */
-  '0708': 'Alentejo',
-  /* Montalegre entrou com a primeira praia em 25/08/2026 — a Praia da Barca,
-     no Cávado, dentro do Parque Nacional da Peneda-Gerês. Distrito de Vila
-     Real, região Norte, como todos os concelhos à volta. Não é empate: é um
-     concelho sem histórico de onde herdar. */
-  '1706': 'Norte',
+/* A TABELA. O DISTRITO é a base, e o concelho é a excepção.
+   =============================================================
+   Começou por ser decidido por MAIORIA do que já estava no ficheiro, e a
+   maioria é um andaime que se caiu sozinho: em concelhos com uma ou duas
+   praias ela elege o que lá estiver, certo ou errado. Deixou passar sete
+   registos em distritos que são Alentejo inteiro — a Praia Fluvial de
+   Monsaraz em «Lisboa e Setúbal», o Alamal em «Centro» — porque em cada um
+   desses concelhos TODAS as praias estavam erradas, e a maioria de um conjunto
+   errado é o erro.
+
+   Agora a região sai do DISTRITO, e os concelhos que legitimamente divergem
+   estão escritos um a um. É a divisão NUTS II, com uma excepção que é do
+   autor deste site e não da estatística: o OESTE fica com Lisboa e não com o
+   Centro, como na página da nortada. */
+const DISTRITO = {
+  'Aveiro': 'Centro',
+  'Beja': 'Alentejo',
+  'Braga': 'Norte',
+  'Bragança': 'Norte',
+  'Castelo Branco': 'Centro',
+  'Coimbra': 'Centro',
+  'Faro': 'Algarve',
+  'Guarda': 'Centro',
+  'Leiria': 'Centro',
+  'Lisboa': 'Lisboa e Setúbal',
+  'Portalegre': 'Alentejo',
+  'Porto': 'Norte',
+  'Santarém': 'Centro',
+  'Setúbal': 'Lisboa e Setúbal',
+  'Viana do Castelo': 'Norte',
+  'Vila Real': 'Norte',
+  'Viseu': 'Centro',
+  'Évora': 'Alentejo',
+  /* As ilhas trazem o arquipélago no nome do «distrito» da CAOP. */
+  'Ilha Corvo (Açores)': 'Açores',
+  'Ilha Terceira (Açores)': 'Açores',
+  'Ilha das Flores (Açores)': 'Açores',
+  'Ilha de São Miguel (Açores)': 'Açores',
+  'Ilha do Faial (Açores)': 'Açores',
+  'Ilha do Pico (Açores)': 'Açores',
+  'Ilha de São Jorge (Açores)': 'Açores',
+  'Ilha da Graciosa (Açores)': 'Açores',
+  'Ilha de Santa Maria (Açores)': 'Açores',
+  'Ilha da Madeira (Madeira)': 'Madeira',
+  'Ilha de Porto Santo (Madeira)': 'Madeira',
+};
+
+/* Os concelhos que não seguem o distrito, pela chave `dico` da CAOP — e não
+   pelo nome, porque há dois «Lagoa», um no Algarve e outro em São Miguel. */
+const EXCEPCAO = {
+  /* Área Metropolitana do Porto, em distrito de Aveiro. */
+  '0106': 'Norte',   /* Castelo de Paiva */
+  '0107': 'Norte',   /* Espinho */
+  /* Douro, em distritos do Centro. */
+  '0914': 'Norte',   /* Vila Nova de Foz Côa, distrito da Guarda */
+  '1804': 'Norte',   /* Cinfães, distrito de Viseu */
+  '1813': 'Norte',   /* Resende, distrito de Viseu */
+  '1819': 'Norte',   /* Tabuaço, distrito de Viseu */
+  /* Oeste e Lezíria do Tejo, que este site põe com Lisboa. */
+  '1014': 'Lisboa e Setúbal',   /* Peniche, distrito de Leiria */
+  '1404': 'Lisboa e Setúbal',   /* Alpiarça */
+  '1406': 'Lisboa e Setúbal',   /* Cartaxo */
+  '1407': 'Lisboa e Setúbal',   /* Chamusca */
+  '1409': 'Lisboa e Setúbal',   /* Coruche */
+  '1415': 'Lisboa e Setúbal',   /* Salvaterra de Magos */
+  '1416': 'Lisboa e Setúbal',   /* Santarém */
+  /* Alentejo Litoral, em distrito de Setúbal. */
+  '1505': 'Alentejo',   /* Grândola */
+  '1509': 'Alentejo',   /* Santiago do Cacém */
+  '1513': 'Alentejo',   /* Sines */
 };
 
 const praias = JSON.parse(fs.readFileSync(PRAIAS, 'utf8'));
@@ -59,70 +111,55 @@ const concelhos = JSON.parse(fs.readFileSync(CONCELHOS, 'utf8'));
 const chave = (p) => `${p.la.toFixed(4)},${p.lo.toFixed(4)}`;
 
 /* ------------------------------------------------------------ a tabela --- */
-const votos = new Map();
+const tabela = {};
+const semDistrito = new Set();
 let semConcelho = 0;
 for (const p of praias) {
   const c = concelhos[chave(p)];
   if (!c) { semConcelho++; continue; }
-  if (!votos.has(c.dico)) votos.set(c.dico, { nome: c.co, contas: new Map() });
-  /* UMA REGIÃO VAZIA NÃO VOTA. As praias que chegam do OSM entram sem `r` — é
-     este programa que lha dá — e deixá-las votar fazia com que uma praia nova
-     sozinha no seu concelho elegesse «» como região desse concelho, e ficasse
-     assim para sempre. O gerador dos hubs rebentava a seguir, com «região
-     desconhecida: «»», o que pelo menos é uma falha barulhenta. */
-  if (!p.r) continue;
-  const contas = votos.get(c.dico).contas;
-  contas.set(p.r, (contas.get(p.r) || 0) + 1);
+  const r = EXCEPCAO[c.dico] || DISTRITO[c.di];
+  if (!r) { semDistrito.add(`${c.di} (${c.co})`); continue; }
+  tabela[c.dico] = r;
 }
 if (semConcelho) {
   console.error(`✗ ${semConcelho} praias sem concelho conhecido.`);
   console.error('  Correr primeiro: python3 _source/gerar-concelhos.py');
   process.exit(1);
 }
-
-const tabela = {};
-const empates = [];
-const semVoto = [];
-for (const [dico, { nome, contas }] of votos) {
-  /* A decisão à mão vem PRIMEIRO: é ela que resolve tanto os empates como os
-     concelhos sem histórico, e consultá-la depois deixava a queixa sair mesmo
-     com a resposta escrita ao lado. */
-  if (DESEMPATE[dico]) { tabela[dico] = DESEMPATE[dico]; continue; }
-  if (!contas.size) { semVoto.push(`${dico} ${nome}`); continue; }
-  const ordem = [...contas].sort((a, b) => b[1] - a[1]);
-  if (ordem.length > 1 && ordem[0][1] === ordem[1][1]) {
-    empates.push(`${dico} ${nome}: ${ordem.map(([r, n]) => `${r} ${n}`).join(' vs ')}`);
-    continue;
-  }
-  tabela[dico] = ordem[0][0];
-}
-/* UM CONCELHO SEM UMA ÚNICA PRAIA COM REGIÃO não se pode resolver por maioria:
-   não há maioria de nada. Acontece quando o OSM traz a primeira praia de um
-   concelho que ainda não estava no site — e aí a decisão é de quem sabe onde
-   fica, não de um programa. */
-if (semVoto.length) {
-  console.error(`✗ ${semVoto.length} concelho(s) só com praias novas, sem região para herdar:`);
-  for (const c of semVoto) console.error('   ' + c);
-  console.error('  Escrever a decisão no DESEMPATE, em _source/gerar-regioes.js, com a razão.');
-  process.exit(1);
-}
-if (empates.length) {
-  console.error(`✗ ${empates.length} concelho(s) empatados, e um empate não se resolve por maioria:`);
-  for (const e of empates) console.error('   ' + e);
-  console.error('  Escrever a decisão no DESEMPATE, em _source/gerar-regioes.js, com a razão.');
+/* UM DISTRITO QUE NÃO ESTÁ NA TABELA não se adivinha. Acontece quando a CAOP
+   escreve o nome de outra maneira, ou quando entra a primeira praia de uma
+   ilha que ainda não estava cá. */
+if (semDistrito.size) {
+  console.error(`✗ ${semDistrito.size} distrito(s) que a tabela não conhece:`);
+  for (const d of semDistrito) console.error('   ' + d);
+  console.error('  Escrever a região no DISTRITO, em _source/gerar-regioes.js.');
   process.exit(1);
 }
 
 /* ------------------------------------------------------------ aplicar ---- */
+/* E O CONCELHO VAI PARA TODOS OS REGISTOS. Existia em 48 dos 996, curado à mão
+   num ficheiro à parte — e há 50 nomes repetidos. A lista de sugestões mostra
+   «concelho · região» quando o campo existe e só a região quando não existe,
+   portanto quem escrevia «fluvial» via cinco linhas «Praia Fluvial — Norte»
+   sem maneira de as distinguir. O concelho já está calculado para os 996, sai
+   da mesma CAOP, e custa 2,1 KB comprimidos — que o campo de procura derivado
+   já tinha pago três vezes. */
 const mudam = [];
+let comConcelho = 0;
 for (const p of praias) {
   const c = concelhos[chave(p)];
   const certa = tabela[c.dico];
   if (p.r !== certa) { mudam.push({ n: p.n, co: c.co, de: p.r, para: certa }); p.r = certa; }
+  if (p.c !== c.co) { p.c = c.co; comConcelho++; }
 }
 
 const verificar = process.argv.includes('--verificar');
 if (verificar) {
+  if (comConcelho) {
+    console.error(`✗ ${comConcelho} praias sem o concelho certo no ficheiro.`);
+    console.error('  Correr: node _source/gerar-regioes.js');
+    process.exit(1);
+  }
   if (mudam.length) {
     console.error(`✗ ${mudam.length} praias estão numa região que discorda do seu concelho:`);
     for (const m of mudam.slice(0, 8)) {
@@ -135,13 +172,14 @@ if (verificar) {
   process.exit(0);
 }
 
-if (mudam.length) {
+if (mudam.length || comConcelho) {
   /* O ficheiro escreve-se com a mesma forma que tinha: uma linha por praia.
      Um JSON.stringify com indentação triplicava o tamanho de um ficheiro que é
      pedido a cada visita. */
   const corpo = praias.map((p) => JSON.stringify(p)).join(',\n');
   fs.writeFileSync(PRAIAS, '[\n' + corpo + '\n]\n');
-  console.log(`${mudam.length} praias mudaram de região:`);
+  if (comConcelho) console.log(`${comConcelho} praias ganharam ou corrigiram o concelho`);
+  if (mudam.length) console.log(`${mudam.length} praias mudaram de região:`);
   for (const m of mudam) console.log(`   ${m.n} (${m.co}): ${m.de} -> ${m.para}`);
 } else {
   console.log('nenhuma praia mudou de região');

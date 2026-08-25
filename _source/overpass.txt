@@ -1,8 +1,48 @@
-[out:json][timeout:180];
+// AS CONSULTAS AO OVERPASS, e são DUAS, separadas pela linha de ---.
+// ==============================================================
+// Correr:  node _source/actualizar-praias.js --recolher
+//
+// PORQUÊ DUAS. A segunda procura por NOME em todos os objectos do país, e isso
+// é caro: junta com as outras esgota os 180 s do servidor e devolve zero
+// elementos com um `remark` que passa despercebido a quem só olhe para a
+// contagem. Separadas, ambas respondem — e o programa junta os resultados.
+//
+// O QUE A PRIMEIRA APANHA. `natural=beach` era o único ramo até 25/08/2026, e
+// deixava de fora tudo o que em Portugal se chama praia sem ser areal de mar:
+// as piscinas naturais dos Açores e da Madeira estão em `amenity=public_bath` e
+// `leisure=swimming_area`, as zonas de banho de rio em `leisure=bathing_place`,
+// e os calhaus em `natural=shingle`.
+//
+// O QUE NÃO ESTÁ AQUI, e é de propósito:
+//   · `natural=beach` SEM nome — são ~400, e nenhuma traz `alt_name`,
+//     `name:pt`, `loc_name` ou `ref` donde tirar um. Um sítio sem nome não se
+//     procura, e entrava como uma linha «—» numa lista que só se procura por
+//     nome;
+//   · `sport=swimming` — 2678 elementos, quase todos piscinas municipais;
+//   · `leisure=swimming_pool` + `swimming_pool=natural` — zero em Portugal;
+//   · `leisure=river_beach` — dois elementos no país inteiro.
+[out:json][timeout:240];
 area["ISO3166-1"="PT"][admin_level=2]->.pt;
 (
-  node["natural"="beach"]["name"](area.pt);
-  way["natural"="beach"]["name"](area.pt);
-  relation["natural"="beach"]["name"](area.pt);
+  nwr["natural"="beach"]["name"](area.pt);
+  nwr["natural"="shingle"]["name"](area.pt);
+  nwr["leisure"="swimming_area"]["name"](area.pt);
+  nwr["leisure"="beach_resort"]["name"](area.pt);
+  nwr["leisure"="bathing_place"]["name"](area.pt);
+  nwr["amenity"="public_bath"]["name"](area.pt);
+);
+out center tags;
+---
+// A SEGUNDA, por nome. Apanha o que está mapeado com uma etiqueta que não diz
+// «sítio de banho» mas cujo NOME o diz — «Praia Fluvial de X» num
+// `natural=water`, por exemplo. O lixo que isto traz (paragens de autocarro,
+// painéis informativos, parques de merendas com esse nome) é filtrado depois
+// POR ETIQUETA, no actualizar-praias.js, e nunca por nome.
+[out:json][timeout:240];
+area["ISO3166-1"="PT"][admin_level=2]->.pt;
+(
+  nwr["name"~"[Pp]raia [Ff]luvial"](area.pt);
+  nwr["name"~"[Zz]ona [Bb]alnear|[Cc]omplexo [Bb]alnear"](area.pt);
+  nwr["name"~"[Pp]iscinas? [Nn]atura|[Pp]iscina [Ff]luvial"](area.pt);
 );
 out center tags;

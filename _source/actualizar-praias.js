@@ -79,6 +79,10 @@ const AGUA_FECHADA = {
   '39.4290,-9.2245': 'Lagoa de Óbidos, com a Foz do Arelho de mar a 0,6 km',
   '38.5048,-9.1793': 'Lagoa de Albufeira, fechada por cordão dunar',
   '40.9661,-8.6521': 'Barrinha de Esmoriz',
+  /* Estuário. O Minho em Vila Nova de Cerveira está a 10 km da foz, e a grelha
+     marinha responde-lhe com o Atlântico — a única praia com «fluvial» no nome
+     que ficou marcada como mar. */
+  '41.9566,-8.7461': 'Praia Fluvial da Lenta: estuário do Minho, a 10 km da foz',
 };
 
 const KM_IGUAL = 3.0;          /* o mesmo nome a menos disto é a mesma praia */
@@ -127,25 +131,143 @@ const coord = (e) => (e.center ? [e.center.lat, e.center.lon] : [e.lat, e.lon]);
 const metros = (a, b) => Math.hypot((a[0] - b[0]) * 111320, (a[1] - b[1]) * 88000);
 
 /* ------------------------------------------------------------ recolher --- */
-async function recolher() {
-  const q = fs.readFileSync(CONSULTA, 'utf8');
+/* Os servidores do Overpass. O de.de é o principal; o kumi é espelho. Nenhum
+   deles é de confiança sozinho: numa tarde apanhei 400, 406, 502 e 504, e uma
+   consulta que esgota o tempo devolve HTTP 200 com uma lista vazia. */
+const ESPELHOS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+];
+
+async function umaConsulta(q, n) {
+  let ultimo = null;
+  for (let volta = 0; volta < 4; volta++) {
+    const url = ESPELHOS[volta % ESPELHOS.length];
+    try {
+      return await pedir(url, q, n);
+    } catch (e) {
+      ultimo = e;
+      const transitorio = /respost(a|as) (429|50[0-4])|fetch failed|aviso|zero elementos/.test(e.message);
+      if (!transitorio) throw e;
+      const espera = 15 * (volta + 1);
+      console.log(`   consulta ${n}: ${e.message.slice(0, 70)} — outra vez em ${espera}s`);
+      await new Promise((r) => setTimeout(r, espera * 1000));
+    }
+  }
+  throw ultimo;
+}
+
+async function pedir(url, q, n) {
   /* O `User-Agent` não é cortesia, é requisito: sem ele o Overpass responde
      406 ao agente por omissão do Node. E o corpo vai como formulário, com o
      Content-Type explícito — é o que a API espera. */
-  const r = await fetch('https://overpass-api.de/api/interpreter', {
+  const r = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': 'praiometro.pt (actualizar-praias.js; renato.l.valente+praiometro@gmail.com)',
     },
-    body: 'data=' + encodeURIComponent(q),
+    /* SEM OS COMENTÁRIOS. O ficheiro está cheio deles — é onde vive a razão de
+       cada ramo — mas nem todos os espelhos os digerem, e são bytes a viajar
+       para nada. Tira-se aqui e o ficheiro fica legível para quem o lê. */
+    body: 'data=' + encodeURIComponent(
+      q.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n').trim()),
   });
-  if (!r.ok) throw new Error('o Overpass respondeu ' + r.status);
+  if (!r.ok) throw new Error(`a consulta ${n} teve resposta ${r.status}`);
   const d = await r.json();
-  if (!d.elements || !d.elements.length) throw new Error('o Overpass devolveu zero elementos');
-  fs.writeFileSync(OSM, JSON.stringify(d));
-  console.log(`_source/osm-praias.json — ${d.elements.length} elementos, base ${d.osm3s.timestamp_osm_base}`);
+  /* O `remark` É UM ERRO, e vem com HTTP 200 e uma lista vazia. Uma consulta
+     que esgota o tempo devolve exactamente isto, e quem só olhe para a
+     contagem lê «zero elementos» e conclui que não há nada em Portugal. */
+  if (d.remark) throw new Error(`a consulta ${n} devolveu um aviso: ${d.remark.slice(0, 120)}`);
+  if (!d.elements || !d.elements.length) throw new Error(`a consulta ${n} devolveu zero elementos`);
+  console.log(`   consulta ${n}: ${d.elements.length} elementos`);
   return d;
+}
+
+async function recolher() {
+  /* O ficheiro traz DUAS consultas, separadas por uma linha de ---: a segunda
+     procura por nome em todo o país e esgota o tempo se for junta com a
+     primeira. Juntam-se aqui os resultados, sem repetir elementos. */
+  const partes = fs.readFileSync(CONSULTA, 'utf8').split(/^---$/m)
+    .map((x) => x.trim()).filter(Boolean);
+  const vistos = new Set(), elements = [];
+  let base = null;
+  for (let i = 0; i < partes.length; i++) {
+    if (i) await new Promise((r) => setTimeout(r, 8000));   /* educação com o servidor */
+    const d = await umaConsulta(partes[i], i + 1);
+    base = base || (d.osm3s || {}).timestamp_osm_base;
+    for (const e of d.elements) {
+      const k = e.type + e.id;
+      if (vistos.has(k)) continue;
+      vistos.add(k);
+      elements.push(e);
+    }
+  }
+  const d = { osm3s: { timestamp_osm_base: base }, elements };
+  fs.writeFileSync(OSM, JSON.stringify(d));
+  console.log(`_source/osm-praias.json — ${elements.length} elementos únicos, base ${base}`);
+  return d;
+}
+
+/* ---------------------------------------------------------------- lixo --- */
+/* O QUE NÃO É SÍTIO DE BANHO SAI POR ETIQUETA, NUNCA POR NOME.
+   A consulta por nome traz paragens de autocarro chamadas «Praia Fluvial de
+   X», painéis informativos, parques de merendas e cafés. Filtrar por nome
+   parece mais simples e é pior: deixa passar piscinas municipais chamadas
+   «Piscina Natural» e classifica uma poça geotérmica dos Açores como praia de
+   mar, a receber ondulação do Atlântico a 362 m de altitude.
+
+   O que FICA: areal e calhau (`natural=beach|shingle`), zonas de banho
+   designadas (`leisure=swimming_area|beach_resort|bathing_place`), banhos
+   públicos (`amenity=public_bath`, que é como as piscinas naturais dos Açores
+   e da Madeira estão mapeadas) e massas de água nomeadas. */
+const MANTER_NATURAL = new Set(['beach', 'shingle', 'water']);
+const MANTER_LEISURE = new Set(['swimming_area', 'beach_resort', 'bathing_place']);
+const FORA_BATH = new Set(['pool', 'thermal', 'hot_spring', 'onsen']);
+const FORA_LEISURE = new Set(['water_park', 'swimming_pool', 'park', 'pitch', 'playground',
+  'sports_centre', 'fitness_centre', 'garden', 'marina', 'slipway', 'picnic_table']);
+const FORA_TOURISM = new Set(['camp_site', 'caravan_site', 'information', 'picnic_site',
+  'hotel', 'guest_house', 'apartment', 'viewpoint', 'artwork', 'museum']);
+const FORA_AMENITY = new Set(['cafe', 'restaurant', 'bar', 'parking', 'toilets', 'fuel',
+  'pub', 'shelter', 'bench', 'drinking_water', 'waste_basket', 'fast_food', 'ice_cream']);
+
+/* Devolve a RAZAO por que se descarta, ou null para ficar. */
+function lixo(t) {
+  /* O AREAL MANDA, e vem PRIMEIRO. Cinco praias fluviais estão mapeadas como
+     `leisure=park` E `natural=beach` ao mesmo tempo — o parque de merendas e o
+     areal são o mesmo polígono. Com as exclusões a correr primeiro, o
+     `leisure=park` ganhava e o areal era descartado: cinco praias que já
+     estavam no site desapareciam dele. Uma praia continua a ser uma praia
+     ainda que também seja outra coisa. */
+  if (t.natural && MANTER_NATURAL.has(t.natural)) return null;
+  if (t.public_transport || t.highway || t.railway || t.aeroway) return 'transporte ou via';
+  if (t.man_made) return 'construcao (' + t.man_made + ')';
+  if (['spring', 'hot_spring', 'geyser'].includes(t.natural)) return 'nascente ou termal';
+  if (t['bath:type'] && FORA_BATH.has(t['bath:type'])) return 'termas ou piscina (' + t['bath:type'] + ')';
+  if (t.leisure && FORA_LEISURE.has(t.leisure)) return 'lazer=' + t.leisure;
+  if (t.tourism && FORA_TOURISM.has(t.tourism)) return 'turismo=' + t.tourism;
+  if (t.amenity && FORA_AMENITY.has(t.amenity)) return 'amenity=' + t.amenity;
+  /* UM EDIFÍCIO NÃO É UMA PRAIA. Apanha as termas: o «Balneário das Termas de
+     Caldelas» está mapeado como `amenity=public_bath` + `building=yes` com dois
+     pisos. E um `barrier` é um recinto murado. */
+  if (t.building) return 'edificio';
+  if (t.barrier) return 'recinto murado (' + t.barrier + ')';
+  /* PAGA-SE À ENTRADA: é um equipamento, não uma água balnear. */
+  if (t.fee === 'yes') return 'entrada paga';
+  /* `amenity=public_bath` NU, sem nada que corrobore que ali há água em que se
+     entra — nem `sport`, nem `natural`, nem `leisure`, nem `water`. É como
+     estão mapeadas as termas, os balneários municipais e a Caldeira Velha, que
+     é um parque geotérmico pago com horário de abertura. As piscinas naturais
+     dos Açores e da Madeira, que são o que se quer, trazem `sport=swimming` ou
+     `natural=water` ao lado. */
+  if (t.amenity === 'public_bath'
+      && !(t.sport || t.natural || t.leisure || t.water)) {
+    return 'banho publico sem agua corroborada';
+  }
+  if (t.leisure && MANTER_LEISURE.has(t.leisure)) return null;
+  if (t.amenity === 'public_bath') return null;
+  if (t.water) return null;
+  return 'sem etiqueta que o classifique como sitio de banho';
 }
 
 /* --------------------------------------------------------------- mar? ---- */
@@ -188,11 +310,14 @@ async function saoDeMar(pontos) {
     porNome.get(k).push(p);
   }
   const usadas = new Set();
-  const novas = [], renomeadas = [];
+  const novas = [], renomeadas = [], outroNome = [];
 
+  const descartados = new Map();
   for (const e of dados.elements) {
     const nome = (e.tags || {}).name;
     if (!nome) continue;
+    const porque = lixo(e.tags || {});
+    if (porque) { descartados.set(porque, (descartados.get(porque) || 0) + 1); continue; }
     const c = coord(e);
     const iguais = (porNome.get(semAcentos(nome)) || [])
       .filter((p) => metros([p.la, p.lo], c) < KM_IGUAL * 1000);
@@ -206,15 +331,48 @@ async function saoDeMar(pontos) {
     /* Sem o nome: é o MESMO PONTO com outro nome, ou é ponto novo? */
     const noSitio = praias.filter((p) => metros([p.la, p.lo], c) < M_MESMO_SITIO);
     if (noSitio.length === 1 && !usadas.has(noSitio[0])) {
-      renomeadas.push({ p: noSitio[0], de: noSitio[0].n, para: nome });
+      /* SÓ O `natural=beach` RENOMEIA. A lista foi montada a partir dessa
+         etiqueta, e é dela que um nome novo é mesmo um nome novo. Os ramos
+         acrescentados a 25/08/2026 trazem OUTROS objectos no mesmo sítio: uma
+         `leisure=swimming_area` a dois metros de uma praia, com o nome escrito
+         de outra maneira. Tratá-los como renomeação estragava dados — uma
+         delas ia trocar «Praia Fluvial dos Olhos d'Água do Alviela» por
+         «Praia Fluvial Dos Olhos De Água», com maiúsculas a meio e um
+         topónimo a menos. Reportam-se, e decide-se à mão. */
+      const eBeach = (e.tags || {}).natural === 'beach';
+      if (eBeach) {
+        renomeadas.push({ p: noSitio[0], de: noSitio[0].n, para: nome });
+      } else {
+        outroNome.push({ p: noSitio[0], osm: nome, etiqueta:
+          Object.entries(e.tags).filter(([k]) => ['natural','leisure','amenity'].includes(k))
+            .map(([k, v]) => k + '=' + v).join(' ') });
+      }
       usadas.add(noSitio[0]);
     } else if (!noSitio.length) {
-      novas.push({ n: nome, la: +c[0].toFixed(5), lo: +c[1].toFixed(5), tipo: e.type });
+      /* E ENTRE OS PROPRIOS NOVOS: o OSM tem a mesma poca mapeada como
+         `amenity=public_bath` e como `leisure=swimming_area`, com nomes
+         parecidos e a poucos metros. Sem isto entravam as duas. */
+      /* A MESMA MEDIDA que se usa contra os que já lá estão — 60 m —, e não
+         uma mais larga. Tinha aqui 300 m e era inconsistente: na primeira
+         corrida engolia onze sítios com nomes próprios, e na corrida seguinte
+         eles reapareciam como novos porque contra o ficheiro a medida é
+         outra. Nos Açores e na Madeira duas poças com nome diferente a 80 m
+         são duas poças, não uma mapeada duas vezes. */
+      const jaNovo = novas.some((x) => metros([x.la, x.lo], c) < M_MESMO_SITIO
+        || (nucleo(x.n) === nucleo(nome) && metros([x.la, x.lo], c) < KM_MESMA_PRAIA * 1000));
+      if (!jaNovo) novas.push({ n: nome, la: +c[0].toFixed(5), lo: +c[1].toFixed(5), tipo: e.type });
     }
     /* noSitio.length > 1 ou já usada: é uma segunda representação da mesma
        praia (o OSM tem a mesma praia como way E como relation). Ignora-se. */
   }
   const sumidas = praias.filter((p) => !usadas.has(p));
+  if (descartados.size) {
+    const total = [...descartados.values()].reduce((a, b) => a + b, 0);
+    console.log(`  descartados por nao serem sitio de banho: ${total}`);
+    for (const [k, v] of [...descartados].sort((a, b) => b[1] - a[1]).slice(0, 6)) {
+      console.log(`     ${v.toString().padStart(4)} - ${k}`);
+    }
+  }
 
   /* As águas fechadas impõem-se em TODAS as corridas, e não só quando entra
      uma praia nova: sem isto, uma reimportação devolvia-lhes o `m=1` e o veto
@@ -233,6 +391,13 @@ async function saoDeMar(pontos) {
   console.log(`  águas fechadas marcadas como mar: ${fechadas.length}`);
   for (const f of fechadas) console.log(`     ${f.p.n} — ${f.porque}`);
 
+  if (outroNome.length) {
+    console.log(`  mesmo sítio, outro objecto do OSM com outro nome: ${outroNome.length}`);
+    console.log('     (não se aplicam: só o natural=beach renomeia — ver o comentário)');
+    for (const o of outroNome.slice(0, 6)) {
+      console.log(`     «${o.p.n}» tem lá um ${o.etiqueta} chamado «${o.osm}»`);
+    }
+  }
   console.log(`  renomeadas no OSM: ${renomeadas.length}`);
   for (const r of renomeadas) console.log(`     «${r.de}» -> «${r.para}»`);
   console.log(`  novas no OSM: ${novas.length}`);

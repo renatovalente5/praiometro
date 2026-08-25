@@ -1290,10 +1290,18 @@ try:
         # do peso na nota. Se alguém a trocar por outra, isto apanha; e se
         # renomear um factor, a linha vai para o fim em vez de desaparecer,
         # o que faz esta asserção falhar em vez de o ecrã ficar mudo.
+        # A ÁGUA PODE FALTAR, e faltar é legítimo: numa praia de rio não existe,
+        # e quando a API marinha não responde o modelo reparte os pontos dela
+        # pelos outros de propósito. O que NÃO pode mudar é a ORDEM dos que
+        # estão lá. Isto exigia os cinco e chumbava no runner num dia em que a
+        # marinha falhou — «a ordem dos factores mudou», com a ordem intacta.
         nomes = [l['nome'] for l in a['linhas']]
         ESPERADA = ['Sol', 'Calor', 'Vento', 'Água do mar', 'Chuva']
-        if nomes != ESPERADA:
+        if nomes != [x for x in ESPERADA if x in nomes]:
             erro('a ordem dos factores mudou: %s (esperada %s)' % (nomes, ESPERADA))
+        elif 'Água do mar' not in nomes:
+            print('  · sem dados de mar hoje — a água não entra no painel, e a ordem'
+                  ' dos outros quatro está certa')
         # E o painel não pode voltar a afirmar que a ordem é a do peso.
         if 'mais pesa' in c.js("document.querySelector('.nums__ordem').textContent"):
             erro('o painel diz que a ordem é a do peso, e já não é')

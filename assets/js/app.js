@@ -237,6 +237,18 @@
     }
   });
 
+  /* O RATO NÃO PODE TIRAR O FOCO DA CAIXA, e isto tem de ficar ANTES do
+     `click`. Uma `<li role="option">` não é focável: ao carregar nela o foco
+     sai da caixa para lado nenhum, e o `focusout` aqui em baixo — que existe
+     para fechar a lista com Tab — fechava-a entre o carregar e o soltar do
+     rato. O `click` chegava a seguir e já não encontrava sugestão nenhuma:
+     carregar com o rato não fazia rigorosamente nada, e sem erro.
+     `preventDefault` no `mousedown` é o que impede o foco de se mexer. O
+     teclado não passa por aqui — chega ao mesmo sítio pelo Enter. */
+  lista.addEventListener('mousedown', function (e) {
+    if (e.target.closest('.sugestao[data-i]')) e.preventDefault();
+  });
+
   lista.addEventListener('click', function (e) {
     var b = e.target.closest('.sugestao[data-i]');
     if (!b) return;

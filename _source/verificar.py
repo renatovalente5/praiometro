@@ -556,6 +556,57 @@ try:
     print('  sem resultados               %s  %s' % ('✓' if ok else '✗', json.dumps(d, ensure_ascii=False)))
     if not ok: erro('procura sem resultados: %s'%d)
 
+    # E CARREGAR COM O RATO ESCOLHE A PRAIA. Isto passou pela bateria toda
+    # sem ninguém dar por ele: a secção do teclado escolhe com ENTER, e o
+    # caminho do rato não era exercido em lado nenhum. O defeito era este —
+    # uma `<li role="option">` não é focável, portanto ao carregar nela o foco
+    # sai da caixa para lado nenhum, o `focusout` que fecha a lista com Tab
+    # fechava-a ENTRE o carregar e o soltar do rato, e o `click` chegava a
+    # seguir e já não encontrava sugestão nenhuma. Carregar não fazia nada, e
+    # sem erro. Reportado por quem usa o site.
+    #
+    # Tem de ser um clique de RATO A SÉRIO (Input.dispatchMouseEvent), e não um
+    # `.click()` em JavaScript: o `.click()` não dispara `mousedown`, portanto
+    # não move o foco, portanto não reproduz nada.
+    antes = len(falhas)
+    # A PRAIA QUE JÁ LÁ ESTAVA. Este Chrome vem de secções anteriores e o
+    # cartão traz uma praia de antes; sem guardar o valor, um clique que não
+    # faz NADA lê-se como «abriu a praia errada» — que manda procurar um
+    # defeito que não existe. O que se verifica é que MUDA.
+    praiaAntes = c.js("(document.getElementById('v-praia')||{}).textContent") or ''
+    c.js("var i=document.getElementById('procura'); i.focus(); i.value='carcavelos';"
+         "i.dispatchEvent(new Event('input',{bubbles:true}))")
+    time.sleep(.9)
+    onde = json.loads(c.js(r"""JSON.stringify((function(){
+      var s = document.querySelector('.sugestao[data-i]'); if (!s) return null;
+      var r = s.getBoundingClientRect();
+      return { x: Math.round(r.left + r.width/2), y: Math.round(r.top + r.height/2),
+               nome: s.textContent.replace(/\s+/g,' ').trim().slice(0,30) };})())"""))
+    if not onde:
+        erro('a procura por «carcavelos» não abriu sugestão nenhuma')
+    else:
+        for tipo in ('mousePressed', 'mouseReleased'):
+            c.cmd('Input.dispatchMouseEvent', type=tipo, x=onde['x'], y=onde['y'],
+                  button='left', clickCount=1)
+            time.sleep(.15)
+        _t0 = time.time()
+        praia = praiaAntes
+        while time.time() - _t0 < 40:
+            praia = c.js("(document.getElementById('v-praia')||{}).textContent") or ''
+            if 'arcavelos' in praia: break
+            time.sleep(.3)
+        if praia == praiaAntes:
+            estado = c.js("(document.getElementById('procura-estado')||{}).textContent") or ''
+            abertas = int(c.js("document.querySelectorAll('.sugestao[data-i]').length") or 0)
+            (semMedida if 'conseguimos' in estado else erro)(
+                'carregar com o RATO numa sugestão não fez nada: o cartão continua em %r '
+                '(sugestão: %r, sugestões abertas depois do clique: %d, o ecrã diz %r)'
+                % (praiaAntes, onde['nome'], abertas, estado))
+        elif 'arcavelos' not in praia:
+            erro('o rato abriu %r e a sugestão dizia %r' % (praia, onde['nome']))
+        elif len(falhas) == antes:
+            print('  clique do rato                  ✓ abriu %r' % praia)
+
     # A GAVETA FECHA QUANDO O FOCO SAI. Sair da caixa com Tab deixava a lista
     # aberta — um painel opaco com z-index 30 por cima do que vem a seguir, com
     # o foco a andar por baixo dele, e o combobox a anunciar aria-expanded=true
